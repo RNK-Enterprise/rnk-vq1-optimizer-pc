@@ -1,0 +1,74 @@
+<form class="rnk-opt" autocomplete="off">
+  <div class="rnk-opt__top">
+    <div class="rnk-opt__topLeft">
+      <div class="rnk-opt__title">System Optimizer</div>
+      <div class="rnk-opt__subtitle">Cleanup + Compendium Index Rebuild + Core Performance Tweaks</div>
+    </div>
+    <button type="button" class="rnk-opt__close" data-action="close" title="Close">&times;</button>
+  </div>
+
+  <div class="rnk-opt__body">
+    <div class="rnk-opt__left">
+      <div class="rnk-opt__card">
+        <h3>Cleanup</h3>
+
+        <div class="rnk-opt__row">
+          <label title="Delete chat messages older than N days">
+            <input type="checkbox" name="doCleanupChat" {{#if doCleanupChat}}checked{{/if}}>
+            <span>Prune old chat messages</span>
+          </label>
+        </div>
+
+        <div class="rnk-opt__row">
+          <div style="flex: 1">
+            <div style="font-size: 12px; font-weight: 700; color: var(--rn-text-primary)">Chat retention (days)</div>
+            <div style="font-size: 11px; color: var(--rn-text-secondary)">Messages older than this are deleted.</div>
+          </div>
+          <input class="rnk-opt__input" style="width: 110px" type="number" min="1" max="3650" name="chatRetentionDays" value="{{chatRetentionDays}}" title="Chat retention days">
+        </div>
+
+        <div class="rnk-opt__row">
+          <label title="Delete inactive combat encounters with no active turn">
+            <input type="checkbox" name="doCleanupInactiveCombats" {{#if doCleanupInactiveCombats}}checked{{/if}}>
+            <span>Delete inactive combats</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="rnk-opt__card">
+        <h3>Compendiums</h3>
+        <div class="rnk-opt__row">
+          <label title="Warms/rebuilds compendium indexes so lookups are faster">
+            <input type="checkbox" name="doRebuildCompendiumIndexes" {{#if doRebuildCompendiumIndexes}}checked{{/if}}>
+            <span>Rebuild compendium indexes</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="rnk-opt__card">
+        <h3>Performance</h3>
+        <div class="rnk-opt__row">
+          <label title="Applies safe-ish core settings tweaks (max FPS, performance mode)">
+            <input type="checkbox" name="doCorePerformanceTweaks" {{#if doCorePerformanceTweaks}}checked{{/if}}>
+            <span>Apply core performance tweaks</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="rnk-opt__card">
+        <h3>Run</h3>
+        <div class="rnk-opt__btns">
+          <button type="button" class="rnk-opt__btn" data-action="dryRun">Dry Run</button>
+          <button type="button" class="rnk-opt__btn rnk-opt__btn--primary" data-action="run">Optimize Now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rnk-opt__right">
+      <div class="rnk-opt__card">
+        <h3>Report</h3>
+        <div class="rnk-opt__log" id="rnk-opt-log">{{log}}</div>
+      </div>
+    </div>
+  </div>
+</form>

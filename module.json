@@ -1,0 +1,20 @@
+{
+  "id": "rnk-vortex-system-optimizer",
+  "title": "RNK Vortex System Optimizer",
+  "description": "Database optimization utility",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "13",
+    "maximum": "13"
+  },
+  "authors": [
+    {"name": "RNK Vortex"}
+  ],
+  "scripts": [
+    "scripts/dual-vq-connector.js",
+    "scripts/vortex-quantum-bridge.js",
+    "scripts/rnk-vortex-system-optimizer.js"
+  ],
+  "styles": ["styles/optimizer.css"]
+}
