@@ -20,8 +20,25 @@
  *   node scripts/check-stack-parity.js           # from Optimizer/
  *   npm run parity
  * Exits 1 when parity is broken (for CI and pre-commit hooks).
+ *
+ * The parity gate is only meaningful inside the full RNK workspace, where
+ * the private VQ 1 / VQ 2 stacks live next to this repository. In a
+ * standalone clone (the normal open-source checkout) the stacks do not
+ * exist, so the gate skips instead of failing - drift detection between
+ * the stacks is a workspace concern, not a module concern.
  */
-import { checkParity, formatReport } from './stack-parity.js';
+import fs from 'fs';
+import path from 'path';
+import { checkParity, formatReport, defaultStackRoot } from './stack-parity.js';
+
+const stackA = defaultStackRoot('VQ 1');
+const stackB = defaultStackRoot('VQ 2');
+
+if (!fs.existsSync(stackA) || !fs.existsSync(stackB)) {
+  console.log('Stack parity SKIPPED: VQ 1 / VQ 2 stacks not present (standalone checkout).');
+  console.log('The parity gate applies inside the full RNK workspace only.');
+  process.exit(0);
+}
 
 const report = checkParity();
 console.log(formatReport(report));
