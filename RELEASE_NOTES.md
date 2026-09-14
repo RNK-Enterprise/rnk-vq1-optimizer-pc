@@ -72,12 +72,24 @@ in code:
 - `updateMetrics` in the browser bridge attributes requests to VQ1/VQ2 by
   name-substring; replace with explicit unit ids when the unit builds land.
 
+## Security review (completed after the initial RC tag)
+
+A hostile review with live proof-of-concept attacks against the proxy and
+gateway found and fixed seven issues (see [SECURITY_REVIEW.md](SECURITY_REVIEW.md)):
+unauthenticated WS/gateway access by default, unbounded WS frames,
+topology disclosure, attacker-controlled requestId echo, dispatch
+amplification, and internal error leakage. The entry point now refuses to
+start without explicit shared tokens. Failure-injection tests
+(`test/failure-injection.test.js`, 18 cases) cover the dispatch/failover
+failure paths. Clean-room clone verification: fresh `git clone` +
+`npm install` + `npm test` (504 passed, real-stack suites skip visibly) +
+`npm run bench` reproduces the README table.
+
 ## Not yet done (audit agenda, not RC blockers)
 
-- Hostile security review of `optimizer-gateway.js` / `lisa-secure-proxy.js`
-  / `start-proxy.mjs` and failure-injection tests on the dispatch paths.
-- Clean-room clone verification of the full audit checklist.
 - Independent reproduction of the benchmark table on other hardware.
+- Optional hardening: per-connection message rate limiting; explicit
+  loopback bind for deployments that allow it (see SECURITY_REVIEW.md).
 
 ## How to verify this snapshot
 
