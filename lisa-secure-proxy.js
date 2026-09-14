@@ -36,6 +36,7 @@ const WebSocket = ws_.WebSocket || ws_.default;
 const WebSocketServer = ws_.WebSocketServer || ws_.Server || ws_.default;
 import http from 'http';
 import net from 'net';
+import { createHash, timingSafeEqual } from 'crypto';
 import { pathToFileURL } from 'url';
 import { classifyWork, pickUnitForWork, WORK_CLASSES } from './vq-work-routing.js';
 import { attachOptimizerGateway } from './optimizer-gateway.js';
@@ -49,6 +50,40 @@ const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 1500;
 const RECONNECT_DELAY_MS = 5000;
 const DISCOVERY_INTERVAL_MS = 15000;
+
+// Per-frame cap for client WebSocket traffic. Matches the gateway's HTTP
+// body limit so neither transport can be used to smuggle oversized
+// payloads into the cluster.
+const MAX_CLIENT_FRAME_BYTES = 128 * 1024;
+
+// Upper bound on cluster requests in flight at once. Beyond this the
+// proxy fails closed instead of amplifying load into the units.
+const MAX_ACTIVE_DISPATCHES = 64;
+
+/**
+ * Server-side requestId sanitizer. Client-supplied ids are echoed by
+ * units to correlate responses, so an attacker-chosen id must never
+ * reach the cluster verbatim: enforce type, length and charset, and
+ * mint a server id otherwise.
+ */
+function safeRequestId(value) {
+  if (typeof value === 'string' && value.length > 0 && value.length <= 128
+    && /^[A-Za-z0-9._:-]+$/.test(value)) {
+    return value;
+  }
+  return `req-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+}
+
+/**
+ * Timing-safe secret comparison. Both sides are hashed first so length
+ * differences do not leak and the call is constant-time.
+ */
+function tokensMatch(supplied, expected) {
+  if (typeof supplied !== 'string' || typeof expected !== 'string' || !supplied || !expected) return false;
+  const a = createHash('sha256').update(supplied).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
 
 /**
  * Probe a TCP port for liveness (fast discovery primitive).
@@ -297,6 +332,7 @@ class LISAProxyServer {
     this._lastRouting = null;
     this.pollTimer = null;
     this.discoveryTimer = null;
+    this._activeDispatches = 0;
     this.log = (msg) => console.log(msg);
   }
 
@@ -396,20 +432,28 @@ class LISAProxyServer {
    * one unit answers; a fully unavailable cluster still fails closed.
    */
   async dispatchTandem(payload) {
+    if (this._activeDispatches >= MAX_ACTIVE_DISPATCHES) {
+      throw new Error('Proxy busy: too many in-flight cluster requests');
+    }
     const healthy = this.getHealthyUnits();
     if (!healthy.length) throw new Error('No healthy VQ units available');
-    const tagged = { ...payload, requestId: payload.requestId || `req-${Date.now()}-${Math.floor(Math.random() * 1e6)}` };
+    const tagged = { ...payload, requestId: safeRequestId(payload.requestId) };
     this.stats.requestsDispatched += healthy.length;
-    const results = await Promise.allSettled(healthy.map(async (unit) => {
-      this._recordDispatch(classifyWork(payload).workClass, unit.id);
-      return unit.request(tagged);
-    }));
-    const fulfilled = results.filter((result) => result.status === 'fulfilled').map((result) => result.value);
-    if (!fulfilled.length) {
-      this.stats.failovers++;
-      throw new Error('All healthy VQ units rejected the request');
+    this._activeDispatches++;
+    try {
+      const results = await Promise.allSettled(healthy.map(async (unit) => {
+        this._recordDispatch(classifyWork(payload).workClass, unit.id);
+        return unit.request(tagged);
+      }));
+      const fulfilled = results.filter((result) => result.status === 'fulfilled').map((result) => result.value);
+      if (!fulfilled.length) {
+        this.stats.failovers++;
+        throw new Error('All healthy VQ units rejected the request');
+      }
+      return fulfilled;
+    } finally {
+      this._activeDispatches--;
     }
-    return fulfilled;
   }
 
   /**
@@ -419,14 +463,18 @@ class LISAProxyServer {
    * @returns {Promise<object>}
    */
   async dispatch(payload) {
+    if (this._activeDispatches >= MAX_ACTIVE_DISPATCHES) {
+      throw new Error('Proxy busy: too many in-flight cluster requests');
+    }
     const { workClass, reason } = classifyWork(payload);
     const unit = this.pickUnit(payload);
     if (!unit) {
       throw new Error('No healthy VQ units available');
     }
     this._recordDispatch(workClass, unit.id);
-    const tagged = { ...payload, requestId: payload.requestId || `req-${Date.now()}-${Math.floor(Math.random() * 1e6)}` };
+    const tagged = { ...payload, requestId: safeRequestId(payload.requestId) };
     this.stats.requestsDispatched++;
+    this._activeDispatches++;
     try {
       return await unit.request(tagged);
     } catch (error) {
@@ -441,6 +489,8 @@ class LISAProxyServer {
       if (!target) throw error;
       this.log(`[Tandem] Failover: ${unit.id} -> ${target.id}`);
       return await target.request(tagged);
+    } finally {
+      this._activeDispatches--;
     }
   }
 
@@ -455,19 +505,44 @@ class LISAProxyServer {
   }
 
   handleClient(ws, req) {
+    // Optional shared-token auth for WebSocket clients. When configured
+    // (LISA_PROXY_CLIENT_TOKEN), upgrades without the token are rejected
+    // before any cluster information is sent.
+    const clientToken = this.options.clientToken !== undefined
+      ? this.options.clientToken
+      : (process.env.LISA_PROXY_CLIENT_TOKEN || null);
+    if (clientToken) {
+      const supplied = req.headers['x-lisa-token']
+        || new URL(req.url || '/', 'http://localhost').searchParams.get('token');
+      if (!tokensMatch(supplied, clientToken)) {
+        this.log(`[LISA Proxy] Rejected unauthenticated client from ${req.socket.remoteAddress}`);
+        ws.close(1008, 'unauthorized');
+        return;
+      }
+    }
+
     const clientIp = req.socket.remoteAddress;
     this.log(`[LISA Proxy] Client connected from ${clientIp}`);
     this.clients.add(ws);
     this.stats.clientsConnected++;
 
+    // Topology hygiene: the hello deliberately omits unit host:port.
+    // Clients learn unit ids and health only; endpoints stay server-side.
     ws.send(JSON.stringify({
       type: 'lisa.proxy.connected',
       lisaAvailable: this.getHealthyUnits().length > 0,
-      units: this.units.map((u) => ({ id: u.id, endpoint: `${u.host}:${u.port}`, healthy: u.healthy })),
+      units: this.units.map((u) => ({ id: u.id, healthy: u.healthy })),
       cluster: this.clusterStatus()
     }));
 
     ws.on('message', async (data) => {
+      // Frame size gate: reject oversized frames before parsing.
+      if (Buffer.byteLength(data) > MAX_CLIENT_FRAME_BYTES) {
+        this.log(`[LISA Proxy] Oversized frame (${Buffer.byteLength(data)} bytes) from ${clientIp} - closing`);
+        try { ws.close(1009, 'frame too large'); } catch (_e) { /* already closed */ }
+        this.clients.delete(ws);
+        return;
+      }
       let message;
       try {
         message = JSON.parse(data.toString());
@@ -481,11 +556,11 @@ class LISAProxyServer {
       // Health/status queries are answered locally from cluster state.
       // requestId is echoed back so clients can correlate responses.
       if (message.type === 'lisa.status') {
-        ws.send(JSON.stringify({ type: 'lisa.status', cluster: this.clusterStatus(), requestId: message.requestId }));
+        ws.send(JSON.stringify({ type: 'lisa.status', cluster: this.clusterStatus(), requestId: safeRequestId(message.requestId) }));
         return;
       }
       if (message.type === 'lisa.cluster.status') {
-        ws.send(JSON.stringify({ type: 'lisa.cluster.status', cluster: this.clusterStatus(), requestId: message.requestId }));
+        ws.send(JSON.stringify({ type: 'lisa.cluster.status', cluster: this.clusterStatus(), requestId: safeRequestId(message.requestId) }));
         return;
       }
 
@@ -496,8 +571,12 @@ class LISAProxyServer {
           ws.send(JSON.stringify(response));
         }
       } catch (error) {
+        this.log(`[LISA Proxy] Dispatch failed for client ${clientIp}: ${error.message}`);
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'error', message: error.message, originalRequest: message }));
+          // Failure-injection hygiene: internal error details (unit ids,
+          // timeouts, stack context) stay in the server log; clients get
+          // a fixed, non-committal message.
+          ws.send(JSON.stringify({ type: 'error', message: 'Request could not be completed', requestId: safeRequestId(message.requestId) }));
         }
       }
     });
@@ -521,7 +600,8 @@ class LISAProxyServer {
       unitsTotal: this.units.length,
       units: this.units.map((u) => ({
         id: u.id,
-        endpoint: `${u.host}:${u.port}`,
+        // Topology hygiene: unit host:port never leaves the server. Only
+        // the proxy needs to know where the units live.
         healthy: u.healthy,
         connected: u.connected,
         inFlight: u.inFlight,

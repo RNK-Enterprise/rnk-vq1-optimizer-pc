@@ -167,7 +167,13 @@ describe('syncStacks (fixture stacks)', () => {
   });
 });
 
-describe('sync helper against the real stacks', () => {
+// Real-stack suite only applies inside the full RNK workspace.
+const REAL_STACKS = ['VQ 1', 'VQ 2'].every((dir) =>
+  fs.existsSync(path.resolve(process.cwd(), dir))
+  || fs.existsSync(path.resolve(process.cwd(), '..', dir)));
+const describeRealStacks = REAL_STACKS ? describe : describe.skip;
+
+describeRealStacks('sync helper against the real stacks', () => {
   test('real parity is green and the syncer is a no-op on it', () => {
     const parity = checkParity();
     expect(parity.ok).toBe(true);

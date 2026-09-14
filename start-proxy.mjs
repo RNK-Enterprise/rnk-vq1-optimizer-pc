@@ -30,6 +30,17 @@
 
 import { LISAProxyServer } from './lisa-secure-proxy.js';
 
+// Refuse to start with the insecure default. The proxy fronts the whole
+// VQ cluster, so shipping an unauthenticated listener by default is a
+// footgun; both tokens must be explicit. Generate them with:
+//   openssl rand -hex 32
+if (!process.env.VQ_CLUSTER_TOKEN || !process.env.OPTIMIZER_GATEWAY_TOKEN) {
+  console.error('[LISA Proxy] Refusing to start: set VQ_CLUSTER_TOKEN and OPTIMIZER_GATEWAY_TOKEN.');
+  console.error('[LISA Proxy] Both are shared secrets: the same VQ_CLUSTER_TOKEN must be set on every VQ unit.');
+  console.error('[LISA Proxy] Generate each with: openssl rand -hex 32');
+  process.exit(1);
+}
+
 const proxy = new LISAProxyServer(process.env.LISA_PROXY_PORT || 9999);
 proxy.start();
 

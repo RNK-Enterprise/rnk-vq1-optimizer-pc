@@ -20,6 +20,8 @@
  * in VQ-1/VQ-2; no engine, model, heuristic, or executable plan code lives here.
  */
 
+import { createHash, timingSafeEqual } from 'crypto';
+
 const PROTOCOL_VERSION = 1;
 const MAX_BODY_BYTES = 128 * 1024;
 const MAX_CLIENTS = 256;
@@ -42,6 +44,17 @@ function requestId() {
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Timing-safe secret comparison. Both sides are hashed first so length
+ * differences do not leak and the call is constant-time.
+ */
+function tokensMatch(supplied, expected) {
+  if (typeof supplied !== 'string' || typeof expected !== 'string' || !supplied || !expected) return false;
+  const a = createHash('sha256').update(supplied).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
 }
 
 function readBody(req) {
@@ -180,7 +193,7 @@ export function attachOptimizerGateway(server, proxy, { requireToken = null, now
     throw new TypeError('Gateway requires a tandem proxy');
   }
   const clients = new Map();
-  const authorize = (req) => !requireToken || req.headers['x-optimizer-token'] === requireToken;
+  const authorize = (req) => !requireToken || tokensMatch(req.headers['x-optimizer-token'], requireToken);
   const remember = (clientId, telemetry, extra = {}) => {
     if (!clientId) return;
     clients.set(clientId, { clientId, telemetry, lastSeen: new Date(now()).toISOString(), ...extra });

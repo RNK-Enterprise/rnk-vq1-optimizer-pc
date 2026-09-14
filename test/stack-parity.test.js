@@ -33,6 +33,10 @@ const HERE = process.cwd();
 const ROOT = fs.existsSync(path.join(HERE, 'VQ 1')) ? HERE : path.resolve(HERE, '..');
 const VQ1 = path.join(ROOT, 'VQ 1');
 const VQ2 = path.join(ROOT, 'VQ 2');
+// Real-stack suites only apply inside the full RNK workspace; a
+// standalone open-source clone has no VQ 1 / VQ 2 trees on disk.
+const REAL_STACKS = fs.existsSync(VQ1) && fs.existsSync(VQ2);
+const describeRealStacks = REAL_STACKS ? describe : describe.skip;
 
 function makeStackDir(base, files) {
   for (const [rel, content] of Object.entries(files)) {
@@ -42,7 +46,7 @@ function makeStackDir(base, files) {
   }
 }
 
-describe('real stacks parity (the actual guard)', () => {
+describeRealStacks('real stacks parity (the actual guard)', () => {
   test('VQ 1 and VQ 2 shared modules are byte-identical on disk', () => {
     const report = checkParity();
     expect(report.ok).toBe(true);
@@ -167,7 +171,7 @@ describe('checker behavior against fixture stacks', () => {
   });
 });
 
-describe('manifest integrity (meta-guard)', () => {
+describeRealStacks('manifest integrity (meta-guard)', () => {
   test('every manifest file exists in both real stacks', () => {
     for (const rel of [...PARITY_FILES, ...PRESENCE_FILES]) {
       expect(fs.existsSync(path.join(VQ1, rel))).toBe(true);
