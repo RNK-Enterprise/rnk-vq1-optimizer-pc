@@ -1,0 +1,31 @@
+{
+  "env": {
+    "es2022": true,
+    "node": true,
+    "browser": true
+  },
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "globals": {
+    "ChatMessage": "readonly",
+    "Combat": "readonly",
+    "Dialog": "readonly",
+    "FormApplication": "readonly",
+    "Hooks": "readonly",
+    "PIXI": "readonly",
+    "canvas": "readonly",
+    "foundry": "readonly",
+    "game": "readonly",
+    "ui": "readonly"
+  },
+  "rules": {
+    "no-async-promise-executor": "error",
+    "no-constant-condition": "error",
+    "no-duplicate-imports": "error",
+    "no-unreachable": "error",
+    "no-unsafe-finally": "error",
+    "no-unused-vars": ["warn", { "args": "none", "caughtErrors": "none" }]
+  }
+}

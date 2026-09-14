@@ -186,3 +186,231 @@
 	color: var(--rn-text-primary);
 	white-space: pre-wrap;
 }
+.rnk-opt__envSummary {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 10px;
+	margin-bottom: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.03);
+	font-size: 12px;
+	color: var(--rn-text-secondary);
+}
+
+.rnk-opt__envLine b {
+	color: var(--rn-text-primary);
+	font-weight: 600;
+}
+
+.rnk-gm-hub {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	background: linear-gradient(135deg, #0d1117, #171b22);
+	color: var(--rn-text-primary);
+}
+
+.rnk-gm-hub__header,
+.rnk-gm-hub__status,
+.rnk-gm-hub__body {
+	display: flex;
+}
+
+.rnk-gm-hub__header {
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	border-bottom: 1px solid rgba(255, 107, 107, 0.22);
+}
+
+.rnk-gm-hub__header h1 {
+	margin: 0;
+	font-size: 18px;
+	text-transform: uppercase;
+	color: var(--rn-primary);
+}
+
+.rnk-gm-hub__header p,
+.rnk-gm-hub__hint {
+	margin: 4px 0 0;
+	font-size: 11px;
+	color: var(--rn-text-secondary);
+}
+
+.rnk-gm-hub__close {
+	width: 32px;
+	height: 32px;
+	border: 1px solid rgba(255, 107, 107, 0.28);
+	border-radius: 8px;
+	background: transparent;
+	color: var(--rn-text-primary);
+	font-size: 20px;
+	cursor: pointer;
+}
+
+.rnk-gm-hub__status {
+	gap: 10px;
+	padding: 12px 18px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rnk-gm-hub__status-card {
+	flex: 1;
+	padding: 9px 11px;
+	border: 1px solid rgba(255, 107, 107, 0.16);
+	border-radius: 9px;
+	background: rgba(0, 0, 0, 0.25);
+}
+
+.rnk-gm-hub__status-card span,
+.rnk-gm-hub__status-card strong {
+	display: block;
+}
+
+.rnk-gm-hub__status-card span {
+	font-size: 10px;
+	text-transform: uppercase;
+	color: var(--rn-text-secondary);
+}
+
+.rnk-gm-hub__status-card strong {
+	margin-top: 3px;
+	font-size: 15px;
+	color: var(--rn-text-primary);
+}
+
+.rnk-gm-hub__body {
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.rnk-gm-hub__controls {
+	width: 285px;
+	flex: 0 0 285px;
+	padding: 14px;
+	overflow: auto;
+	border-right: 1px solid rgba(255, 107, 107, 0.16);
+}
+
+.rnk-gm-hub__main {
+	flex: 1;
+	min-width: 0;
+	padding: 14px;
+	overflow: auto;
+}
+
+.rnk-gm-hub__card {
+	margin-bottom: 12px;
+	padding: 12px;
+	border: 1px solid rgba(255, 107, 107, 0.15);
+	border-radius: 10px;
+	background: rgba(0, 0, 0, 0.24);
+}
+
+.rnk-gm-hub__card h2 {
+	margin: 0 0 9px;
+	font-size: 12px;
+	text-transform: uppercase;
+	color: var(--rn-primary);
+}
+
+.rnk-gm-hub__profiles {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.rnk-gm-hub__profile,
+.rnk-gm-hub__button,
+.rnk-gm-hub__select {
+	min-height: 34px;
+	border: 1px solid rgba(255, 107, 107, 0.22);
+	border-radius: 7px;
+	background: rgba(255, 255, 255, 0.04);
+	color: var(--rn-text-primary);
+	cursor: pointer;
+}
+
+.rnk-gm-hub__profile {
+	padding: 7px;
+	font-size: 10px;
+	text-transform: uppercase;
+}
+
+.rnk-gm-hub__profile[data-action="balanced"] {
+	border-color: var(--rn-primary);
+}
+
+.rnk-gm-hub__button {
+	width: 100%;
+	margin-top: 6px;
+	padding: 7px 9px;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.rnk-gm-hub__button--primary {
+	background: linear-gradient(135deg, var(--rn-primary), var(--rn-primary-dark));
+	color: #fff;
+}
+
+.rnk-gm-hub__select {
+	width: 100%;
+	padding: 6px;
+}
+
+.rnk-gm-hub__table-wrap {
+	overflow-x: auto;
+}
+
+.rnk-gm-hub__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+}
+
+.rnk-gm-hub__table th,
+.rnk-gm-hub__table td {
+	padding: 7px 6px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	text-align: left;
+	white-space: nowrap;
+}
+
+.rnk-gm-hub__table th {
+	font-size: 10px;
+	text-transform: uppercase;
+	color: var(--rn-text-secondary);
+}
+
+.rnk-gm-hub__metrics {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	font-size: 11px;
+	color: var(--rn-text-secondary);
+}
+
+.rnk-gm-hub__metrics b {
+	color: var(--rn-text-primary);
+}
+
+.rnk-gm-hub__plan,
+.rnk-gm-hub__log {
+	max-height: 180px;
+	overflow: auto;
+	margin: 0;
+	font: 11px/1.45 Consolas, ui-monospace, monospace;
+	white-space: pre-wrap;
+	color: var(--rn-text-primary);
+}
+
+@media (max-width: 760px) {
+	.rnk-gm-hub__body { display: block; overflow: auto; }
+	.rnk-gm-hub__controls { width: auto; border-right: 0; }
+	.rnk-gm-hub__metrics { grid-template-columns: 1fr 1fr; }
+}

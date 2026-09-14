@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Test / tooling output
+coverage/
+.eslintcache
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS noise
+.DS_Store
+Thumbs.db

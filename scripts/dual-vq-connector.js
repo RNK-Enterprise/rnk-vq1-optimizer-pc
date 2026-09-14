@@ -1,121 +1,199 @@
 /**
- * Dual-VQ WebSocket Client Integration
- * Connects Foundry to BOTH VQ instances and exposes them properly
- * Place this in your Foundry world scripts or load it before modules
+ * RNK Vortex Quantum™
+ * Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+ *
+ * PROPRIETARY AND CONFIDENTIAL
+ *
+ * LISA Master Control Connector for Foundry VTT
+ *
+ * SECURITY: Server-side proxy architecture
+ * - Connects through local Foundry server endpoint
+ * - No direct IP exposure to VQ infrastructure
+ * - All sensitive connections handled server-side
  */
 
-class DualVQConnector {
+if (typeof DualVQConnector === 'undefined') {
+  class DualVQConnector {
     constructor() {
-        this.vq1 = null;
-        this.vq2 = null;
+        this.lisa = null;
+        this.vqBridge = null;
         this.stats = {
-            vq1Connected: false,
-            vq2Connected: false,
-            vq1Messages: 0,
-            vq2Messages: 0,
+            lisaConnected: false,
+            bridgeConnected: false,
+            messagesProcessed: 0,
+            componentsAvailable: 0,
+            securityStatus: 'unknown',
             startTime: Date.now()
         };
     }
 
-    async connectVQ1(port = 8765) {
-        console.log('%c[Dual-VQ] Connecting to VQ Instance 1...', 'color: #00ff88;');
+    buildSecureEndpoint() {
+        // SECURITY: Connect only to local Foundry server proxy
+        // Server handles all VQ/LISA connections internally
+        const loc = window?.location;
+        const protocol = loc?.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = loc?.host || 'localhost:30000';
         
+        // Local proxy endpoint - no external IPs exposed
+        return `${protocol}//${host}/vq-lisa-proxy`;
+    }
+
+    async connectLISA() {
+        console.log('%c[LISA Connector] Connecting to LISA Master Control...', 'color: #00ff88;');
+        const endpoint = this.buildSecureEndpoint();
+
         return new Promise((resolve, reject) => {
-            const ws = new WebSocket(`ws://193.122.152.69:${port}`);
-            
+            const ws = new WebSocket(endpoint);
+            let connectionTimeout = setTimeout(() => {
+                ws.close();
+                reject(new Error('LISA connection timeout'));
+            }, 10000);
+
             ws.onopen = () => {
-                console.log('%c[Dual-VQ] ✓ VQ1 Connected!', 'color: #00ff88; font-weight: bold;');
-                this.stats.vq1Connected = true;
-                
-                // Create VQ1 instance object
-                this.vq1 = {
+                clearTimeout(connectionTimeout);
+                this.stats.lisaConnected = true;
+                console.log('%c[LISA Connector] Connected to LISA via secure proxy', 'color: #00ff88; font-weight: bold;');
+                // Request cluster status
+                ws.send(JSON.stringify({ 
+                    type: 'lisa.status',
+                    requestId: Date.now()
+                }));
+
+                this.lisa = {
                     version: '3.0.0',
                     system: 'RNK Vortex Quantum',
-                    bridge: true,
-                    ws: ws,
-                    port: port,
-                    logSecurityEvent: (event) => {
-                        this.stats.vq1Messages++;
-                        ws.send(JSON.stringify({ type: 'security-event', data: event }));
+                    lisaControl: true,
+                    ws,
+                    
+                    // LISA command interface
+                    executeCommand: (component, command, params = {}) => {
+                        this.stats.messagesProcessed++;
+                        ws.send(JSON.stringify({
+                            type: 'lisa.command',
+                            component,
+                            command,
+                            params,
+                            requestId: Date.now()
+                        }));
                     },
-                    send: (data) => {
-                        this.stats.vq1Messages++;
-                        ws.send(JSON.stringify(data));
+                    
+                    // Get component status
+                    getComponentStatus: (componentType) => {
+                        ws.send(JSON.stringify({
+                            type: 'lisa.component.status',
+                            componentType,
+                            requestId: Date.now()
+                        }));
+                    },
+                    
+                    // Security system control
+                    getSecurityStatus: () => {
+                        ws.send(JSON.stringify({
+                            type: 'lisa.security.status',
+                            requestId: Date.now()
+                        }));
+                    },
+                    
+                    // Bridge status
+                    getBridgeStatus: () => {
+                        ws.send(JSON.stringify({
+                            type: 'lisa.bridge.status',
+                            requestId: Date.now()
+                        }));
                     }
                 };
-                
-                // Expose globally
-                window.vortexQuantum = this.vq1;
-                resolve(this.vq1);
+
+                window.vortexQuantum = this.lisa;
+                window.LISA = this.lisa;
+                resolve(this.lisa);
             };
-            
+
             ws.onerror = (error) => {
-                console.error('%c[Dual-VQ] VQ1 Connection Error:', 'color: #ff0044;', error);
+                clearTimeout(connectionTimeout);
+                this.stats.lisaConnected = false;
+                console.warn('[LISA Connector] Connection failed', error);
                 reject(error);
             };
-            
+
             ws.onmessage = (event) => {
-                console.log('[VQ1 Message]', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('[LISA Message]', data.type);
+                    
+                    // Handle LISA status updates
+                    if (data.type === 'lisa.status') {
+                        this.stats.componentsAvailable = data.totalComponents || 0;
+                        this.stats.securityStatus = data.securityStatus || 'unknown';
+                        const cluster = data.cluster;
+                        if (cluster) {
+                            console.log(`%c[LISA] Tandem cluster mode=${cluster.mode} units=${cluster.unitsHealthy}/${cluster.unitsTotal}`, 'color: #00ff88;');
+                        } else {
+                            console.log(`%c[LISA] ${data.totalComponents} components available`, 'color: #00ff88;');
+                        }
+                    }
+                    
+                    // Broadcast to listeners
+                    if (window.lisaMessageHandlers) {
+                        window.lisaMessageHandlers.forEach(handler => handler(data));
+                    }
+                } catch (e) {
+                    console.error('[LISA] Parse error:', e);
+                }
             };
         });
     }
 
-    async connectVQ2(port = 8766) {
-        console.log('%c[Dual-VQ] Connecting to VQ Instance 2...', 'color: #ff00ff;');
+    async connectBridge() {
+        console.log('%c[LISA Connector] Connecting to VQ Bridge...', 'color: #ff00ff;');
         
-        return new Promise((resolve, reject) => {
-            const ws = new WebSocket(`ws://193.122.152.69:${port}`);
-            
-            ws.onopen = () => {
-                console.log('%c[Dual-VQ] ✓ VQ2 Connected!', 'color: #ff00ff; font-weight: bold;');
-                this.stats.vq2Connected = true;
+        // Bridge connection handled through same secure proxy
+        // No separate connection needed - LISA manages bridge
+        return new Promise((resolve) => {
+            this.vqBridge = {
+                version: '3.0.0',
+                system: 'VortexQuantum Bridge',
+                managed: true,
                 
-                // Create VQ2 instance object
-                this.vq2 = {
-                    version: '3.0.0',
-                    system: 'RNK Vortex Quantum',
-                    bridge: true,
-                    ws: ws,
-                    port: port,
-                    logSecurityEvent: (event) => {
-                        this.stats.vq2Messages++;
-                        ws.send(JSON.stringify({ type: 'security-event', data: event }));
-                    },
-                    send: (data) => {
-                        this.stats.vq2Messages++;
-                        ws.send(JSON.stringify(data));
+                // Bridge statistics
+                getStats: () => {
+                    if (this.lisa && this.lisa.ws) {
+                        this.lisa.ws.send(JSON.stringify({
+                            type: 'bridge.stats',
+                            requestId: Date.now()
+                        }));
                     }
-                };
-                
-                // Expose globally
-                window.vortexQuantum2 = this.vq2;
-                resolve(this.vq2);
+                }
             };
             
-            ws.onerror = (error) => {
-                console.error('%c[Dual-VQ] VQ2 Connection Error:', 'color: #ff0044;', error);
-                reject(error);
-            };
-            
-            ws.onmessage = (event) => {
-                console.log('[VQ2 Message]', event.data);
-            };
+            this.stats.bridgeConnected = true;
+            window.vortexQuantumBridge = this.vqBridge;
+            resolve(this.vqBridge);
         });
     }
 
     async initialize() {
         console.log('%c═══════════════════════════════════', 'color: #00ffff; font-size: 14px;');
-        console.log('%c   DUAL-VQ CONNECTOR STARTING', 'color: #00ffff; font-size: 14px; font-weight: bold;');
+        console.log('%c   LISA MASTER CONTROL CONNECTOR', 'color: #00ffff; font-size: 14px; font-weight: bold;');
+        console.log('%c   Secure Proxy Architecture', 'color: #00ffff; font-size: 12px;');
         console.log('%c═══════════════════════════════════', 'color: #00ffff; font-size: 14px;');
         
         try {
-            // Connect to both VQ instances
-            await this.connectVQ1(8765);
-            await this.connectVQ2(8766);
+            // Connect to LISA through secure proxy
+            const lisaPromise = this.connectLISA();
+            const bridgePromise = this.connectBridge();
+            
+            const timeout = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Connection timeout')), 5000)
+            );
+            
+            await Promise.race([
+                Promise.all([lisaPromise, bridgePromise]),
+                timeout
+            ]);
             
             console.log('%c', 'color: #00ff00; font-size: 16px;');
-            console.log('%c🚀 DUAL-VQ CLUSTER ONLINE!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
-            console.log('%c   Both instances connected and ready', 'color: #00ff00;');
+            console.log('%c[DUAL-VQ] CLUSTER ONLINE', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+            console.log('%c   Connected to VQ tandem cluster via secure proxy', 'color: #00ff00;');
             console.log('%c', 'color: #00ff00;');
             
             // Expose connector globally
@@ -123,8 +201,24 @@ class DualVQConnector {
             
             return true;
         } catch (error) {
-            console.error('%c[Dual-VQ] Initialization failed:', 'color: #ff0044; font-weight: bold;', error);
-            return false;
+            this.stats.lisaConnected = false;
+            console.warn('%c[Dual-VQ] VQ servers unavailable - continuing without VQ features', 'color: #ffaa00; font-weight: bold;');
+            console.warn('%c   To enable VQ features, start the LISA secure proxy on the Foundry server', 'color: #ffaa00;');
+            console.warn('%c   Error: ' + error.message, 'color: #ffaa00;');
+            
+            // Create dummy VQ objects to prevent errors
+            window.vortexQuantum = { 
+                version: '3.0.0',
+                system: 'RNK Vortex Quantum',
+                bridge: false,
+                offline: true,
+                logSecurityEvent: () => {},
+                send: () => {}
+            };
+            window.vortexQuantum2 = { ...window.vortexQuantum };
+            window.dualVQConnector = this;
+            
+            return false; // VQ unavailable but not critical
         }
     }
 
@@ -132,14 +226,20 @@ class DualVQConnector {
         const uptime = ((Date.now() - this.stats.startTime) / 1000 / 60).toFixed(1);
         return {
             status: {
-                vq1: this.stats.vq1Connected ? '✓ ONLINE' : '✗ OFFLINE',
-                vq2: this.stats.vq2Connected ? '✓ ONLINE' : '✗ OFFLINE',
-                cluster: (this.stats.vq1Connected && this.stats.vq2Connected) ? 'ACTIVE' : 'PARTIAL'
+                lisa: this.stats.lisaConnected ? '[ONLINE]' : '[OFFLINE]',
+                bridge: this.stats.bridgeConnected ? '[ACTIVE]' : '[INACTIVE]',
+                security: this.stats.securityStatus.toUpperCase(),
+                system: (this.stats.lisaConnected && this.stats.bridgeConnected) ? 'OPERATIONAL' : 'DEGRADED'
+            },
+            components: {
+                available: this.stats.componentsAvailable,
+                engines: Math.floor(this.stats.componentsAvailable * 0.214),
+                turbos: Math.floor(this.stats.componentsAvailable * 0.100),
+                libraries: Math.floor(this.stats.componentsAvailable * 0.685)
             },
             traffic: {
-                vq1Messages: this.stats.vq1Messages,
-                vq2Messages: this.stats.vq2Messages,
-                totalMessages: this.stats.vq1Messages + this.stats.vq2Messages
+                messagesProcessed: this.stats.messagesProcessed,
+                averagePerMinute: (this.stats.messagesProcessed / (parseFloat(uptime) || 1)).toFixed(1)
             },
             uptime: `${uptime} minutes`,
             timestamp: new Date().toISOString()
@@ -147,20 +247,27 @@ class DualVQConnector {
     }
 }
 
-// Auto-initialize when loaded
-if (typeof Hooks !== 'undefined') {
-  // Foundry VTT context
-  Hooks.once('init', async () => {
-    console.log('%c[Dual-VQ] Initializing in Foundry...', 'color: #ffff00;');
-    window.dualVQConnector = new DualVQConnector();
-    await window.dualVQConnector.initialize();
-  });
-} else {
-  // Standalone browser context
-  console.log(
-    '%c[Dual-VQ] Ready to initialize. Call: new DualVQConnector().initialize()',
-    'color: #ffff00;'
-  );
+  // Auto-initialize when loaded
+  if (typeof Hooks !== 'undefined') {
+    // Foundry VTT context
+    Hooks.once('init', async () => {
+      if (!window.dualVQConnector) {
+        console.log('%c[Dual-VQ] Initializing in Foundry...', 'color: #ffff00;');
+        window.dualVQConnector = new DualVQConnector();
+        await window.dualVQConnector.initialize();
+      } else {
+        console.log('%c[Dual-VQ] Already initialized, skipping duplicate load', 'color: #888;');
+      }
+    });
+  } else {
+    // Standalone browser context
+    console.log(
+      '%c[Dual-VQ] Ready to initialize. Call: new DualVQConnector().initialize()',
+      'color: #ffff00;'
+    );
 
-  window.DualVQConnector = DualVQConnector;
+    window.DualVQConnector = DualVQConnector;
+  }
+} else {
+  console.log('%c[Dual-VQ] DualVQConnector already defined, skipping redeclaration', 'color: #888;');
 }

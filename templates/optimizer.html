@@ -53,6 +53,28 @@
             <span>Apply core performance tweaks</span>
           </label>
         </div>
+        <div class="rnk-opt__row">
+          <label title="Allow the VQ optimizer to send bounded, consent-gated metrics when requesting plans">
+            <input type="checkbox" name="vqConsent" {{#if vqConsent}}checked{{/if}}>
+            <span>VQ: share performance metrics</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="rnk-opt__card">
+        <h3>VQ Optimizer</h3>
+        <div class="rnk-opt__row rnk-opt__envSummary" title="Detected device profile">
+          <span class="rnk-opt__envLine"><b>Device:</b> {{vqEnv.device}}</span>
+          <span class="rnk-opt__envLine"><b>Runtime:</b> {{vqEnv.runtime}}</span>
+          <span class="rnk-opt__envLine"><b>Network:</b> {{vqEnv.network}}</span>
+          <span class="rnk-opt__envLine"><b>Cores:</b> {{vqEnv.cores}}</span>
+          <span class="rnk-opt__envLine"><b>WebGL:</b> {{vqEnv.webgl}} · <b>WebGPU:</b> {{vqEnv.webgpu}} · <b>WASM:</b> {{vqEnv.wasm}}</span>
+          <span class="rnk-opt__envLine"><b>Plan source:</b> {{vqEnv.planSource}} · <b>Applied:</b> {{vqEnv.appliedCount}}</span>
+        </div>
+        <div class="rnk-opt__btns">
+          <button type="button" class="rnk-opt__btn rnk-opt__btn--primary" data-action="vqCycle" title="Detect environment, request a plan, apply allow-listed actions">Run VQ Cycle</button>
+          <button type="button" class="rnk-opt__btn" data-action="vqReset" title="Clear all VQ-applied optimizer settings">Reset VQ</button>
+        </div>
       </div>
 
       <div class="rnk-opt__card">

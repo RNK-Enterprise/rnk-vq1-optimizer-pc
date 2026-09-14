@@ -1,1 +1,15 @@
-{"en": {"rnk-vortex-system-optimizer": {"name": "System Optimizer"}}}
+{
+  "rnk-vortex-system-optimizer": {
+    "name": "RNK Vortex System Optimizer",
+    "description": "Advanced database optimization and performance enhancement module with LISA AI integration.",
+    "settings": {
+      "cleanup-chat": "Cleanup: Prune old chat messages",
+      "chat-retention": "Cleanup: Chat retention (days)",
+      "cleanup-combats": "Cleanup: Delete inactive combats",
+      "rebuild-indexes": "Compendiums: Rebuild indexes",
+      "performance-tweaks": "Performance: Apply core tweaks",
+      "auto-startup": "Auto-run on startup"
+    }
+  }
+}
+
