@@ -1,13 +1,25 @@
 /**
- * RNK Vortex Quantum™
- * Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+ * RNK Vortex System Optimizer
+ * Copyright © 2025 Asgard Innovations / RNK™
  *
- * PROPRIETARY AND CONFIDENTIAL
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
  *
  * Complete Test Suite - 100% Coverage Target
  */
 
 import { OptimizerCore } from '../scripts/optimizer-core.js';
+import { createFoundryCoreDependencies } from '../scripts/foundry-document-source.js';
 import { PerformanceTweaks } from '../scripts/performance-tweaks.js';
 import { SettingsManager } from '../scripts/settings-manager.js';
 import { OptimizerUI, formatBytes, nowISO } from '../scripts/optimizer-ui.js';
@@ -19,7 +31,10 @@ describe('OptimizerCore', () => {
 
   beforeEach(() => {
     mockLogFn = jest.fn();
-    optimizer = new OptimizerCore({ logFn: mockLogFn });
+    optimizer = new OptimizerCore({
+      logFn: mockLogFn,
+      ...createFoundryCoreDependencies({ logFn: mockLogFn })
+    });
     
     game.messages = { contents: [] };
     game.combats = { contents: [] };
@@ -312,10 +327,10 @@ describe('OptimizerCore', () => {
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('Failed index'));
   });
 
-  test('_applyCorePerformanceTweaks', async () => {
+  test('_applyPerformanceTweaks', async () => {
     const report = { performance: {} };
     
-    await optimizer._applyCorePerformanceTweaks(report);
+    await optimizer._applyPerformanceTweaks(report);
     
     expect(report.performance).toBeDefined();
   });
@@ -2227,7 +2242,10 @@ describe('OptimizerCore Edge Cases', () => {
 
   beforeEach(() => {
     mockLogFn = jest.fn();
-    optimizer = new OptimizerCore({ logFn: mockLogFn });
+    optimizer = new OptimizerCore({
+      logFn: mockLogFn,
+      ...createFoundryCoreDependencies({ logFn: mockLogFn })
+    });
     
     game.messages = { contents: [] };
     game.combats = { contents: [] };

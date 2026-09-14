@@ -1,14 +1,26 @@
 /**
- * RNK Vortex Quantum™
- * Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+ * RNK Vortex System Optimizer
+ * Copyright © 2025 Asgard Innovations / RNK™
  *
- * PROPRIETARY AND CONFIDENTIAL
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
  *
  * Optimizer UI Module
  * Handles FormApplication and user interface
  */
 
 import { OptimizerCore } from './optimizer-core.js';
+import { createFoundryCoreDependencies } from './foundry-document-source.js';
 import {
   getOptimizerClient,
   getOptimizerHost
@@ -60,12 +72,14 @@ export class OptimizerUI extends FormApplication {
   constructor(object = {}, options = {}) {
     super(object, options);
     this._logLines = [];
+    const captureLog = (line) => {
+      this._logLines.push(line);
+      if (this._logLines.length > 300) this._logLines.shift();
+      this._renderLog();
+    };
     this._service = new OptimizerCore({
-      logFn: (line) => {
-        this._logLines.push(line);
-        if (this._logLines.length > 300) this._logLines.shift();
-        this._renderLog();
-      }
+      logFn: captureLog,
+      ...createFoundryCoreDependencies({ logFn: captureLog })
     });
   }
 

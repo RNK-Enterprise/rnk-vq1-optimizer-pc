@@ -16,3 +16,6 @@ Only the relative import paths were adjusted. **Do not edit these files by
 hand** — change the source in `Vq Build` and re-vendor, so both stacks stay
 identical. The module-specific glue (Foundry host adapter, environment
 builder, UI wiring) lives outside this folder.
+
+**License:** these vendored files are distributed under GPL-3.0-only, the
+same license as the rest of this repository (see [LICENSE](../../LICENSE)).

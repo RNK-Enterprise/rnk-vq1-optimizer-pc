@@ -10,6 +10,7 @@
     "parity": "node scripts/check-stack-parity.js",
     "pretest": "node scripts/check-stack-parity.js",
     "sync-stacks": "node scripts/sync-stacks-cli.js",
+    "bench": "node scripts/benchmark-core.js",
     "test:nightly": "node scripts/run-nightly.js",
     "lint": "eslint scripts/**/*.js",
     "lint:fix": "eslint scripts/**/*.js --fix"
@@ -21,17 +22,17 @@
     "rnk-vortex"
   ],
   "author": "RNK Vortex",
-  "license": "PROPRIETARY",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "ws": "^8.21.3"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",
+    "@rnk/vq-contract-tests": "file:vendor/vq-contract-tests",
     "babel-jest": "^29.7.0",
     "eslint": "^8.50.0",
-    "jest": "^29.7.0",
-    "@rnk/vq-contract-tests": "file:../packages/vq-contract-tests"
+    "jest": "^29.7.0"
   },
   "jest": {
     "testEnvironment": "node",

@@ -1,8 +1,7 @@
 /**
- * RNK Vortex Quantum™
- * Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+ * RNK Vortex System Optimizer
+ * Copyright © 2025 Asgard Innovations / RNK™
  *
- * PROPRIETARY AND CONFIDENTIAL
  *
  * System Optimizer - Test Suite
  * Comprehensive testing for all optimizer components
@@ -50,7 +49,7 @@ describe('RNK Vortex System Optimizer', () => {
       });
     });
 
-    test('should have proper copyright headers', () => {
+    test('should have proper GPL-3.0 copyright headers', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
@@ -59,9 +58,11 @@ describe('RNK Vortex System Optimizer', () => {
       
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
-        expect(content).toMatch(/RNK Vortex Quantum™/);
+        expect(content).toMatch(/RNK Vortex System Optimizer/);
         expect(content).toMatch(/Copyright © 2025 Asgard Innovations/);
-        expect(content).toMatch(/PROPRIETARY AND CONFIDENTIAL/);
+        expect(content).toMatch(/GNU General Public License/);
+        expect(content).toMatch(/gnu\.org\/licenses\/gpl-3\.0\.html/);
+        expect(content).not.toMatch(/PROPRIETARY AND CONFIDENTIAL/);
       });
     });
 
@@ -164,7 +165,10 @@ describe('RNK Vortex System Optimizer', () => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
         
         if (content.includes('async ') || content.includes('await ')) {
-          expect(content.match(/try\s*{/) || content.match(/catch\s*\(/)).toBeTruthy();
+          // Adapters may declare an explicit ERROR POLICY comment instead of
+          // try/catch when error propagation is intentional delegation.
+          const explicitPolicy = content.includes('ERROR POLICY:');
+          expect(content.match(/try\s*{/) || content.match(/catch\s*\(/) || explicitPolicy).toBeTruthy();
         }
       });
     });

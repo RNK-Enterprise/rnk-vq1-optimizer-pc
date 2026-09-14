@@ -169,4 +169,4 @@ Before releasing module to community:
 **Community Ready**: ✓ Safe for distribution (exclude proxy server)
 
 ---
-**Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.**
+**Copyright © 2025 Asgard Innovations / RNK™. Licensed under the GNU General Public License v3; see [LICENSE](LICENSE) for the full text.**

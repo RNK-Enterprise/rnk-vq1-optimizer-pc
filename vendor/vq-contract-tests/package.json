@@ -1,0 +1,31 @@
+{
+  "name": "@rnk/vq-contract-tests",
+  "version": "1.0.0",
+  "description": "Shared behavioral contract suites for the VQ stacks' duplicated modules (engine runtime, cluster auth, unit server) - one contract, every stack, drift fails CI.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./test-suite": "./index.js",
+    "./jest.config": "./jest.config.mjs"
+  },
+  "files": [
+    "index.js",
+    "jest.config.mjs",
+    "test-suite/"
+  ],
+  "scripts": {
+    "test": "echo 'contract suites run from the consuming project (Optimizer/tests or a stack's tests/)' && exit 0"
+  },
+  "keywords": [
+    "rnk-vortex",
+    "contract-tests",
+    "tandem-cluster"
+  ],
+  "author": "RNK Vortex",
+  "license": "GPL-3.0-only",
+  "peerDependencies": {
+    "jest": ">=29",
+    "ws": ">=8"
+  }
+}

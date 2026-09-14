@@ -1,8 +1,18 @@
 /**
- * RNK Vortex Quantum™
- * Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+ * RNK Vortex System Optimizer
+ * Copyright © 2025 Asgard Innovations / RNK™
  *
- * PROPRIETARY AND CONFIDENTIAL
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
  * Vortex Quantum Bridge - Modular VQ Integration
  * Dual-VQ Parallel Processing with Lazy Loading
@@ -34,27 +44,26 @@ export class VQBridgeCore {
     return this;
   }
 
+  /** Fresh candidate list per call: window refs are re-read each scan. */
+  _vqCandidates() {
+    return [
+      ['VQ1', window.vortexQuantum],
+      ['VQ2', window.vortexQuantum2],
+      ['VQ-Primary', window.vortexQuantumPrimary],
+      ['VQ-Secondary', window.vortexQuantumSecondary]
+    ];
+  }
+
   discoverVQInstances() {
     console.log('%c[Vortex Bridge] Scanning for VQ instances...', 'color: #0088ff;');
-    
-    const vqChecks = [
-      { ref: window.vortexQuantum, name: 'VQ1' },
-      { ref: window.vortexQuantum2, name: 'VQ2' },
-      { ref: window.vortexQuantumPrimary, name: 'VQ-Primary' },
-      { ref: window.vortexQuantumSecondary, name: 'VQ-Secondary' }
-    ];
 
-    vqChecks.forEach(check => {
-      if (check.ref) this.connectToVQInstance(check.ref, check.name);
-    });
+    for (const [name, ref] of this._vqCandidates()) {
+      if (ref) this.connectToVQInstance(ref, name);
+    }
 
     const checkInterval = setInterval(() => {
-      if (window.vortexQuantum && !this.hasInstance('VQ1')) {
-        this.connectToVQInstance(window.vortexQuantum, 'VQ1');
-      }
-      
-      if (window.vortexQuantum2 && !this.hasInstance('VQ2')) {
-        this.connectToVQInstance(window.vortexQuantum2, 'VQ2');
+      for (const [name, ref] of this._vqCandidates()) {
+        if (ref && !this.hasInstance(name)) this.connectToVQInstance(ref, name);
       }
 
       if (this.vqInstances.length >= 2) {
@@ -65,9 +74,7 @@ export class VQBridgeCore {
       if (!this.initTime) this.initTime = Date.now();
       if (Date.now() - this.initTime > 10000) {
         clearInterval(checkInterval);
-        if (this.vqInstances.length > 0) {
-          console.log(`%c[Vortex Bridge] Operating with ${this.vqInstances.length} VQ instance(s)`, 'color: #00ff88;');
-        }
+        if (this.vqInstances.length > 0) console.log(`%c[Vortex Bridge] Operating with ${this.vqInstances.length} VQ instance(s)`, 'color: #00ff88;');
       }
     }, 100);
   }
@@ -113,7 +120,6 @@ export class VQBridgeCore {
 
   calculateBoostPercentage() {
     const instanceCount = this.vqInstances.filter(i => i.healthy).length;
-    if (instanceCount === 1) return 100;
     if (instanceCount === 2) return 150 + Math.floor(this.performanceMetrics.parallelBoost * 25);
     return 100;
   }
@@ -200,8 +206,7 @@ export class VQBridgeCore {
       return await taskFn(instances[0].ref);
     }
 
-    // Tandem load sharing: route to the least-loaded instance rather
-    // than duplicating the work on both units (Promise.race semantics).
+    // Tandem load sharing: least-loaded routing, never duplicated work.
     const sorted = instances.slice().sort((a, b) => {
       if (b.requestCount !== a.requestCount) return a.requestCount - b.requestCount;
       const la = a.avgResponseTime ?? Number.MAX_SAFE_INTEGER;
@@ -380,8 +385,7 @@ export class VQBridgeCore {
   performHealthChecks() {
     this.vqInstances.forEach(instance => {
       try {
-        // A instance is only healthy while its underlying ref is usable;
-        // null/removed refs (e.g. a unit going offline) mark it down.
+        // Healthy only while the underlying ref is usable; null/removed refs mark the unit down.
         const isHealthy = !!(instance.ref && typeof instance.ref === 'object' && !instance.ref.offline);
         const wasHealthy = instance.healthy;
         
@@ -479,10 +483,8 @@ let bridgeInstance = null;
 
 export async function initializeVQBridge() {
   if (bridgeInstance) return bridgeInstance;
-  
   bridgeInstance = new VQBridgeCore();
   await bridgeInstance.initialize();
-  
   window.vortexQuantumModuleBridge = bridgeInstance;
   return bridgeInstance;
 }

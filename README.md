@@ -157,16 +157,33 @@ Enable "Auto-run on startup" in settings to run optimization when world loads.
 
 ### Performance
 
-**Benchmarks (v3.0.0):**
-- Dry run: < 10ms (1000 messages)
-- Full optimization: < 500ms (1000 messages, 50 combats, 100 packs)
-- Component load time: < 50ms (lazy loading)
-- Memory overhead: < 2MB
+**Benchmarks**
 
-**Improvements vs v2.0.0:**
-- 85% faster initial load (lazy loading)
-- 40% less memory usage (modular design)
-- 60% faster optimization execution (optimized algorithms)
+All performance claims are tied to a reproducible benchmark that anyone can
+run on their own hardware:
+
+```bash
+npm run bench              # human-readable summary
+npm run bench -- --json    # machine-readable single-line JSON (for artifacts)
+```
+
+The benchmark drives the host-neutral `OptimizerCore` through the public
+dependency-injection surface with an in-memory document source over the
+canonical workload (1000 chat messages, 50 combats, 100 compendium packs),
+with warmup runs discarded and p50/p95 reported over 30 measured runs. No
+Foundry installation is required.
+
+Reference output (Node v22, linux/x64, 2026-09-14; your numbers will differ
+by hardware - run it yourself):
+
+| Metric                      | p50    | p95    |
+| --------------------------- | ------ | ------ |
+| Dry run                     | 0.02ms | 0.03ms |
+| Full optimization           | 0.29ms | 0.43ms |
+| Lazy module load (3 mods)   | 1.09ms | -      |
+
+In-browser figures (RAF FPS, ticker latency, heap) are environment-dependent
+and are reported live by the GM Hub telemetry rather than claimed statically.
 
 ### Testing
 
@@ -277,9 +294,19 @@ const options = SettingsManager.getOptionsFromSettings();
 
 ### License
 
-Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+Copyright © 2025 Asgard Innovations / RNK™
 
-PROPRIETARY AND CONFIDENTIAL
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
+
 
 ### Support
 
@@ -289,4 +316,4 @@ PROPRIETARY AND CONFIDENTIAL
 
 ---
 
-**RNK Vortex Quantum™** - Next-generation Foundry VTT modules
+**RNK Vortex System Optimizer** - Next-generation Foundry VTT modules

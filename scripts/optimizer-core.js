@@ -1,16 +1,58 @@
 /**
- * RNK Vortex Quantum™
- * Copyright © 2025 Asgard Innovations / RNK™. All Rights Reserved.
+ * RNK Vortex System Optimizer
+ * Copyright © 2025 Asgard Innovations / RNK™
  *
- * PROPRIETARY AND CONFIDENTIAL
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
  *
- * System Optimizer - Core Service Module
- * Handles optimization logic and operations
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * Optimizer Core - host-neutral optimization engine.
+ *
+ * This module contains NO Foundry VTT references. All environment access
+ * is injected through the DocumentSource and PerformanceProvider
+ * interfaces, so the same core can be driven by a Foundry adapter, a CLI,
+ * a test harness, or any other host.
  */
 
+/**
+ * Document source interface (implemented by the host adapter).
+ * All collections may be null/absent - the core treats them as empty.
+ * @typedef {object} DocumentSource
+ * @property {() => Array<{id?: string, timestamp?: number}>} [getMessages]
+ * @property {(ids: string[]) => Promise<void>} [deleteMessages]
+ * @property {() => Array<{id?: string, started?: boolean, turns?: Array}>} [getCombats]
+ * @property {(ids: string[]) => Promise<void>} [deleteCombats]
+ * @property {() => Array<{collection?: string, getIndex: () => Promise<Array>}>} [getPacks]
+ * @property {() => boolean} [isGM]
+ */
+
+/**
+ * Performance provider interface (implemented by the host adapter).
+ * @typedef {object} PerformanceProvider
+ * @property {() => Array<{setting: string, from: any, to: any}>} previewChanges
+ * @property {(report: object) => Promise<void>} apply
+ */
+
+const BATCH_SIZE_MESSAGES = 100;
+const BATCH_SIZE_COMBATS = 50;
+
 export class OptimizerCore {
-  constructor({ logFn } = {}) {
+  /**
+   * @param {{ logFn?: Function, documentSource?: DocumentSource,
+   *           performanceProvider?: PerformanceProvider }} [deps]
+   */
+  constructor({ logFn, documentSource, performanceProvider } = {}) {
     this._logFn = typeof logFn === 'function' ? logFn : null;
+    this._documents = documentSource ?? null;
+    this._performance = performanceProvider ?? null;
   }
 
   log(message) {
@@ -42,7 +84,7 @@ export class OptimizerCore {
       report.cleanup.chat.olderThan = new Date(cutoff).toISOString();
 
       try {
-        const docs = game.messages?.contents ?? [];
+        const docs = this._documents?.getMessages?.() ?? [];
         report.cleanup.chat.wouldDelete = docs.reduce((acc, msg) => {
           const ts = msg?.timestamp ?? 0;
           return acc + (ts > 0 && ts < cutoff ? 1 : 0);
@@ -54,7 +96,7 @@ export class OptimizerCore {
 
     if (options.doCleanupInactiveCombats) {
       try {
-        const combats = game.combats?.contents ?? [];
+        const combats = this._documents?.getCombats?.() ?? [];
         report.cleanup.combats.wouldDelete = combats.reduce((acc, c) => {
           const isActive = !!c?.started;
           const hasTurns = Array.isArray(c?.turns) ? c.turns.length > 0 : false;
@@ -67,23 +109,21 @@ export class OptimizerCore {
 
     if (options.doRebuildCompendiumIndexes) {
       try {
-        report.compendiums.packs = Array.from(game.packs?.values?.() ?? []).length;
+        report.compendiums.packs = (this._documents?.getPacks?.() ?? []).length;
       } catch (e) {
         report.notes.push('Could not enumerate compendium packs.');
       }
     }
 
     if (options.doCorePerformanceTweaks) {
-      const { PerformanceTweaks } = await import('./performance-tweaks.js');
-      const tweaks = new PerformanceTweaks();
-      report.performance.changes = tweaks.previewChanges();
+      report.performance.changes = this._performance?.previewChanges?.() ?? [];
     }
 
     return report;
   }
 
   async optimize(options, { dryRun = false } = {}) {
-    if (!game.user?.isGM) {
+    if (this._documents && typeof this._documents.isGM === 'function' && !this._documents.isGM()) {
       throw new Error('Optimizer requires GM permissions.');
     }
 
@@ -106,7 +146,7 @@ export class OptimizerCore {
     }
 
     if (options.doCorePerformanceTweaks) {
-      await this._applyCorePerformanceTweaks(report);
+      await this._applyPerformanceTweaks(report);
     }
 
     try {
@@ -144,7 +184,7 @@ export class OptimizerCore {
   async _cleanupChat(options, report) {
     const days = Number(options.chatRetentionDays) || 30;
     const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
-    const all = game.messages?.contents ?? [];
+    const all = this._documents?.getMessages?.() ?? [];
     const ids = all
       .filter(m => (m?.timestamp ?? 0) > 0 && (m.timestamp < cutoff))
       .map(m => m.id)
@@ -157,10 +197,9 @@ export class OptimizerCore {
 
     this.log(`Cleanup: Deleting ${ids.length} chat messages older than ${days} days`);
     try {
-      const batchSize = 100;
-      for (let i = 0; i < ids.length; i += batchSize) {
-        const batch = ids.slice(i, i + batchSize);
-        await ChatMessage.deleteDocuments(batch);
+      for (let i = 0; i < ids.length; i += BATCH_SIZE_MESSAGES) {
+        const batch = ids.slice(i, i + BATCH_SIZE_MESSAGES);
+        await this._documents.deleteMessages(batch);
       }
       report.cleanup.chat.deleted = ids.length;
     } catch (e) {
@@ -170,7 +209,7 @@ export class OptimizerCore {
   }
 
   async _cleanupCombats(report) {
-    const combats = game.combats?.contents ?? [];
+    const combats = this._documents?.getCombats?.() ?? [];
     const ids = combats
       .filter(c => {
         const isActive = !!c?.started;
@@ -187,10 +226,9 @@ export class OptimizerCore {
 
     this.log(`Cleanup: Deleting ${ids.length} inactive combats`);
     try {
-      const batchSize = 50;
-      for (let i = 0; i < ids.length; i += batchSize) {
-        const batch = ids.slice(i, i + batchSize);
-        await Combat.deleteDocuments(batch);
+      for (let i = 0; i < ids.length; i += BATCH_SIZE_COMBATS) {
+        const batch = ids.slice(i, i + BATCH_SIZE_COMBATS);
+        await this._documents.deleteCombats(batch);
       }
       report.cleanup.combats.deleted = ids.length;
     } catch (e) {
@@ -200,7 +238,7 @@ export class OptimizerCore {
   }
 
   async _rebuildCompendiumIndexes(report) {
-    const packs = Array.from(game.packs?.values?.() ?? []);
+    const packs = this._documents?.getPacks?.() ?? [];
     this.log(`Compendiums: Rebuilding indexes for ${packs.length} packs`);
 
     let totalDocs = 0;
@@ -218,9 +256,8 @@ export class OptimizerCore {
     this.log(`Compendiums: Indexed ~${totalDocs} documents`);
   }
 
-  async _applyCorePerformanceTweaks(report) {
-    const { PerformanceTweaks } = await import('./performance-tweaks.js');
-    const tweaks = new PerformanceTweaks(this.log.bind(this));
-    await tweaks.apply(report);
+  async _applyPerformanceTweaks(report) {
+    if (!this._performance || typeof this._performance.apply !== 'function') return;
+    await this._performance.apply(report);
   }
 }
