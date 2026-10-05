@@ -8,3 +8,7 @@ ownership visible instead of assuming the optimizer may intervene.
 
 It is analysis-only. It does not terminate, restart, suspend, reparent,
 modify files, or open transport.
+
+The dedicated `library.js` classifies process states and restart evidence,
+compares lifecycle snapshots, and emits immutable local review envelopes
+without changing process state.
