@@ -9,4 +9,6 @@
   and bounded fact envelopes.
 - Added interactive, headless, and unknown environment classification.
 - Added explicit trigger validation and refusal-path coverage.
+- Added the standalone lazy-loaded authority/dispatch mesh for the engine,
+  four turbos, and four turbo libraries.
 - Pending Odinn sign-off; not release-certified.

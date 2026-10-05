@@ -16,3 +16,8 @@ Supported triggers are `install.preflight`, `system.facts.request`,
 The result contains facts, pressure classifications, capabilities,
 limitations, and no actions. Native platform adapters remain the authority for
 execution in a later integration phase.
+
+The standalone system-facts mesh connects the engine, four turbos, and four
+turbo libraries through paired authority/dispatch FQNs and typed in-process
+routes. Components are lazy-loaded and selected by trigger; the mesh does not
+connect to Cerebrum or use an external transport.
