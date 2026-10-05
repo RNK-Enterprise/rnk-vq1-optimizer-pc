@@ -8,3 +8,6 @@ documented rebuild review, not permission to delete or regenerate files.
 
 It is analysis-only. It does not delete caches, change drivers, rebuild files,
 or open transport.
+
+The dedicated library is `pc/engines/shader-cache/library.js`. It classifies
+normalized shader-cache observations for the engine and remains analysis-only.
