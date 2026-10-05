@@ -7,3 +7,7 @@ keeps ambiguous routes and missing observations explicit for review.
 
 It is observation-only. It does not change routes, DNS, MTU, interfaces,
 firewalls, files, or transport.
+
+The dedicated library is `pc/engines/network-observation/library.js`. It
+classifies normalized network observations for the engine and remains
+observation-only.
