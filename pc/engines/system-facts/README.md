@@ -7,6 +7,10 @@ interactive developer workstations and headless servers. It is deliberately
 side-effect free. It does not read files, execute commands, alter settings, or
 open a mesh connection.
 
+Its dedicated library owns deterministic hardware fingerprints, snapshot
+comparison, adaptive sampling guidance, and bounded fact envelopes. The
+library has no dependency on a shared optimizer helper.
+
 Supported triggers are `install.preflight`, `system.facts.request`,
 `workload.changed`, and `health.interval`. Unsupported triggers fail closed.
 The result contains facts, pressure classifications, capabilities,
