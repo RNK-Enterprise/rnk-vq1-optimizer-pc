@@ -9,3 +9,6 @@ remain profile-required or observation-required.
 
 It is analysis-only. It never changes memory policy, reclaims memory, clears
 caches, accesses files, or opens transport.
+
+The dedicated `library.js` classifies policy posture, compares RAM and swap
+snapshots, and emits immutable local review envelopes without applying policy.
