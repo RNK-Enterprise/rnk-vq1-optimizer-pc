@@ -6,4 +6,6 @@
 - Added swap headroom evidence and conservative pressure recommendations.
 - Added explicit user-owned no-swap handling.
 - Added trigger, fact, clock, and refusal-path validation.
+- Added a dedicated library for swap classification, snapshot comparison,
+  immutable envelopes, and local facade construction.
 - Pending Odinn sign-off; not release-certified.

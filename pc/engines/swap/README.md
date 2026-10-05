@@ -8,3 +8,6 @@ holds destructive actions and requests review of memory pressure.
 
 It is analysis-only. It does not create swap, change swappiness, access files,
 or open transport.
+
+The dedicated `library.js` classifies swap availability and pressure, compares
+snapshots, and emits immutable local review envelopes without changing swap.
