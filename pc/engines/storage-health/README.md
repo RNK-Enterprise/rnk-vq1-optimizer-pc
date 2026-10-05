@@ -8,3 +8,7 @@ from data-protection review and keeps unknown health evidence visible.
 
 It is analysis-only. It does not repair, remount, delete, organize, modify
 files, or open transport.
+
+The dedicated `library.js` classifies occupancy and health evidence, compares
+storage snapshots, and emits immutable local review envelopes without storage
+mutation.
