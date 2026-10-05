@@ -1,0 +1,8 @@
+# Changelog
+
+## Unreleased
+
+- Added bounded burst-rate and adjacent-rise analysis for CPU samples.
+- Added insufficient, no-observation, stable, rising, and burst states.
+- Added trigger, window, threshold, snapshot, clock, and refusal-path validation.
+- Pending Odinn sign-off; not release-certified.
