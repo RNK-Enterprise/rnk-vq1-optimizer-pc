@@ -8,3 +8,6 @@ from headless service protection without assuming permission to intervene.
 
 It is analysis-only. It does not change fans, governors, workloads, shutdown
 policy, files, or transport.
+
+The dedicated library is `pc/engines/thermal/library.js`. It classifies
+normalized thermal observations for the engine and remains analysis-only.
