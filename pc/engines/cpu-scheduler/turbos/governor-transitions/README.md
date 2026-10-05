@@ -10,3 +10,7 @@ observations.
 It is analysis-only. It never changes frequency, scheduler policy, process
 priority, affinity, files, settings, or transport state. It is lazy and
 trigger-driven.
+
+Its dedicated `library.js` validates governor reports, merges weighted
+transition evidence, builds environment-aware observation plans, and creates
+immutable local envelopes without importing the turbo implementation.
