@@ -8,3 +8,6 @@ protects user ownership of files and storage layout.
 
 It is analysis-only. It does not delete, move, organize, repair, remount,
 modify files, or open transport.
+
+The dedicated `library.js` aggregates bounded capacity, compares headroom
+snapshots, and emits immutable local review envelopes without storage changes.
