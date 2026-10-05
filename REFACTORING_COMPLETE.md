@@ -135,9 +135,6 @@ rnk-vortex-system-optimizer/
 ├── module.json (v3.0.0, ES modules)
 ├── package.json (Test infrastructure)
 ├── README.md (Comprehensive documentation)
-├── archive/
-│   ├── rnk-vortex-system-optimizer.js.old (677 lines archived)
-│   └── vortex-quantum-bridge.js.old (645 lines archived)
 ├── scripts/
 │   ├── main.js (120 lines - Entry point)
 │   ├── optimizer-core.js (186 lines)
