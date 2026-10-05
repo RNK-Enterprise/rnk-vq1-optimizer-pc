@@ -8,3 +8,7 @@ may be installed, replaced, loaded, or tuned.
 
 It is analysis-only. It does not change drivers, files, settings, or
 transport.
+
+The dedicated library is `pc/engines/driver-capability/library.js`. It
+classifies normalized driver observations for the engine and remains
+analysis-only.
