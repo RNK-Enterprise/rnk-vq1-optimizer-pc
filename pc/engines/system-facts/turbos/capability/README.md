@@ -10,3 +10,8 @@ execution boundary explicit for headless, interactive, and unknown hosts.
 
 The turbo is analysis-only. It does not apply controls, access user files,
 open network connections, or connect to the optimizer mesh.
+
+The dedicated library merges capability reports and separates safe
+observations, admin-required controls, required failures, and disabled
+capabilities. It remains separate from the turbo until the explicit
+connection phase.
