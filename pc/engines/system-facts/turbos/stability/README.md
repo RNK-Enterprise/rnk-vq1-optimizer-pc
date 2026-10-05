@@ -9,3 +9,7 @@ or `unstable`.
 
 It is analysis-only. It does not apply operating-system actions, access user
 files, open a mesh connection, or delegate its algorithm to an engine library.
+
+The dedicated library aggregates bounded stability reports, resolves
+state/trend consensus, and builds environment-specific observation plans.
+It remains separate from the turbo until the explicit connection phase.
