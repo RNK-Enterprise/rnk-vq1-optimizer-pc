@@ -9,3 +9,6 @@ decision.
 
 It is analysis-only. It never applies a cap, changes display settings,
 modifies files, or opens transport.
+
+The dedicated `library.js` derives target candidates, compares provenance and
+gaps, and emits immutable local review envelopes without applying a cap.
