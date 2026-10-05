@@ -14,3 +14,7 @@ triggers and keeps its sample window bounded.
 
 The implementation and its tests are local to this turbo module. Its future
 mesh endpoint remains a separate integration step.
+
+The dedicated library validates and aggregates only frequency-residency
+reports, builds environment-specific observation plans, and emits immutable
+local envelopes. It does not import the turbo or the engine library.
