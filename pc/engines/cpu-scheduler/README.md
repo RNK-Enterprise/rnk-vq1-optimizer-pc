@@ -12,3 +12,10 @@ transport.
 
 The dedicated library at `library.js` provides run-queue/context-switch
 classification, deltas, sampling guidance, and immutable local envelopes.
+
+The four implemented turbo analyses are `run-queue-burst`, `context-churn`,
+`queue-utilization-mismatch`, and `governor-transitions`. Each turbo has its
+own implementation and dedicated library with tests, README, and changelog.
+The eight turbo/library files pass the family regression at
+100/100/100/100/100/100. Mesh wiring, automatic execution, and Odinn sign-off
+remain pending.
