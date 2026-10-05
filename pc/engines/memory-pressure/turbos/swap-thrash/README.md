@@ -12,3 +12,7 @@ transport. It fires only on system-facts, workload, and health triggers and
 keeps all windows and thresholds bounded.
 
 Its future mesh endpoint is a separate integration step.
+
+The dedicated library validates and aggregates only swap-thrash reports, builds
+environment-specific observation plans, and emits immutable local envelopes.
+It does not import the turbo or the engine library.

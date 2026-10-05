@@ -9,3 +9,5 @@
   refusal paths.
 - Added dedicated tests passing at 100/100/100/100/100/100; pending Odinn
   sign-off.
+- Added the dedicated report-validation, aggregation, planning, and envelope
+  library with its own 100/100/100/100/100/100 gate; pending Odinn sign-off.
