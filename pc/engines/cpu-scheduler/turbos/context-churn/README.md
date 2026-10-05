@@ -9,3 +9,7 @@ churn.
 
 It is analysis-only. It never changes scheduler policy, process priority,
 affinity, files, settings, or transport state. It is lazy and trigger-driven.
+
+Its dedicated `library.js` validates churn reports, merges weighted evidence,
+builds environment-aware observation plans, and creates immutable local
+envelopes without importing the turbo implementation.
