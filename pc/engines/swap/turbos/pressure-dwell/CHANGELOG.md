@@ -6,5 +6,7 @@
   evidence classification.
 - Added sustained-high, sustained-elevated, transient-or-normal,
   no-observation, invalid, and insufficient-data states.
+- Added dedicated report validation, aggregation, planning, and envelope
+  construction in the library.
 - Added dedicated tests passing at 100/100/100/100/100/100; pending Odinn
   sign-off.
