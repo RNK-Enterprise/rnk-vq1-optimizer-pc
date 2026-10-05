@@ -8,3 +8,7 @@ without assuming permission to change applications or services.
 
 It is analysis-only. It does not change processes, application settings,
 files, or transport.
+
+The dedicated library is `pc/engines/workload-profile/library.js`. It
+classifies normalized workload observations for the engine and remains
+analysis-only.
