@@ -8,3 +8,6 @@ states for storage contention review.
 
 It is analysis-only. It does not change mounts, queues, files, storage policy,
 or transport.
+
+The dedicated `library.js` aggregates device I/O observations, compares
+snapshots, and emits immutable local review envelopes without disk mutation.
