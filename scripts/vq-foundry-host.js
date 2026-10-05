@@ -35,6 +35,7 @@
 
 import { OptimizerClient } from './vq/client.js';
 import { createFoundryStorage, withPersistence, asBackend } from './vq/persistence/index.js';
+import { createBrowserEnvironment } from './browser-environment.js';
 
 const MODULE_ID = 'rnk-vortex-system-optimizer';
 
@@ -48,66 +49,8 @@ export const APPLIED_SETTINGS_KEY = 'vqAppliedSettings';
  *
  * @returns {Promise<Object>} Environment (detector-compatible shape)
  */
-export async function createFoundryEnvironment() {
-  const nav = globalThis.navigator ?? {};
-
-  // --- Platform ---
-  const uaData = nav.userAgentData;
-  const platformType = nav.platform || uaData?.platform || 'browser';
-  const mobile = uaData?.mobile ?? /Android|iPhone|iPad|iPod|Mobile/i.test(nav.userAgent ?? '');
-
-  // --- Hardware ---
-  let battery = null;
-  try {
-    if (typeof nav.getBattery === 'function') {
-      const b = await nav.getBattery();
-      battery = { charging: b.charging !== false };
-    }
-  } catch {
-    battery = null;
-  }
-  const hardware = {
-    cpu: { cores: Number.isFinite(nav.hardwareConcurrency) ? nav.hardwareConcurrency : null },
-    memory: Number.isFinite(nav.deviceMemory) ? { total: nav.deviceMemory * 1024 ** 3 } : null,
-    battery
-  };
-
-  // --- Capabilities ---
-  let webgl = null;
-  try {
-    const canvas = globalThis.document?.createElement?.('canvas');
-    if (canvas) {
-      webgl = (canvas.getContext('webgl2') && '2.0') || (canvas.getContext('webgl') && '1.0') || null;
-    }
-  } catch {
-    webgl = null;
-  }
-  let webgpu = false;
-  try {
-    webgpu = typeof nav.gpu?.requestAdapter === 'function' ? Boolean(await nav.gpu.requestAdapter()) : false;
-  } catch {
-    webgpu = false;
-  }
-  const capabilities = {
-    wasm: typeof WebAssembly === 'object' && WebAssembly !== null,
-    webgl,
-    webgpu
-  };
-
-  // --- Network ---
-  const conn = nav.connection ?? {};
-  const network = {
-    effectiveType: conn.effectiveType ?? null,
-    saveData: conn.saveData === true
-  };
-
-  return {
-    platform: { type: platformType, mobile },
-    runtime: mobile ? 'lite' : 'standard',
-    hardware,
-    capabilities,
-    network
-  };
+export function createFoundryEnvironment(options = {}) {
+  return createBrowserEnvironment({ ...options, host: 'foundry' });
 }
 
 /**

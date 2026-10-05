@@ -52,6 +52,8 @@
       "scripts/telemetry.js",
       "scripts/foundry-action-host.js",
       "scripts/settings-manager.js",
+      "scripts/browser-environment.js",
+      "scripts/pc-host.js",
       "!scripts/main.js",
       "!scripts/gm-hub-ui.js"
     ],
