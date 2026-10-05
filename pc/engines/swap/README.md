@@ -11,3 +11,18 @@ or open transport.
 
 The dedicated `library.js` classifies swap availability and pressure, compares
 snapshots, and emits immutable local review envelopes without changing swap.
+
+The completed turbo/library families are:
+
+- `pressure-dwell`: measures sustained high or elevated swap pressure.
+- `headroom-collapse`: tracks free-swap headroom collapse and recovery while
+  preserving no-swap ownership.
+- `availability-drift`: detects swap availability transitions and capacity
+  loss or gain.
+- `accounting-consistency`: compares total/free accounting with reported swap
+  utilization and fails closed on sensor disagreement.
+
+All eight turbo/library implementation files are analysis-only, lazy at the
+call boundary, trigger-gated, bounded below 500 LOC, and independent of HTTP,
+REST, sockets, and turbo-library imports. The family regression is 8 suites,
+40 tests, with 100% statements, branches, functions, and lines.
