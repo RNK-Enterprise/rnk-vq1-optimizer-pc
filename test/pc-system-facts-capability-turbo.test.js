@@ -35,7 +35,8 @@ describe('system-facts capability turbo', () => {
     expect(SYSTEM_FACTS_CAPABILITY_TRIGGERS).toEqual([
       'install.preflight',
       'system.facts.request',
-      'workload.changed'
+      'workload.changed',
+      'health.interval'
     ]);
     expect(Object.isFrozen(SYSTEM_FACTS_CAPABILITY_TRIGGERS)).toBe(true);
   });

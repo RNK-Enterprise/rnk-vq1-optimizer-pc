@@ -12,7 +12,8 @@ export const SYSTEM_FACTS_CAPABILITY_TURBO_VERSION = 1;
 export const SYSTEM_FACTS_CAPABILITY_TRIGGERS = Object.freeze([
   'install.preflight',
   'system.facts.request',
-  'workload.changed'
+  'workload.changed',
+  'health.interval'
 ]);
 
 const STATUS = Object.freeze({
