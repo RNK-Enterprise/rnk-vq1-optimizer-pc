@@ -8,3 +8,6 @@ battery environments rather than receiving laptop-specific recommendations.
 
 It is analysis-only. It does not change charging, power policy, files, or
 transport.
+
+The dedicated library is `pc/engines/battery/library.js`. It classifies
+normalized battery observations for the engine and remains analysis-only.
