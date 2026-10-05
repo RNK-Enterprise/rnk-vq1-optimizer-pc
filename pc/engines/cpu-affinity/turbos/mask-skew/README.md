@@ -9,3 +9,7 @@ insufficient evidence, and missing observations.
 
 It is analysis-only. It never applies masks, pins processes, changes files or
 settings, or opens transport. It is lazy and trigger-driven.
+
+Its dedicated `library.js` validates topology reports, merges coverage and
+overlap evidence, builds environment-aware review plans, and creates
+immutable local envelopes without importing the turbo implementation.

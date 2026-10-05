@@ -1,0 +1,194 @@
+/**
+ * RNK Vortex System Optimizer
+ * Contributor: Lisa's Dungeon
+ *
+ * Dedicated mask-skew turbo library. It validates and aggregates topology
+ * reports without importing the turbo, engine, or operating-system API.
+ */
+
+export const CPU_AFFINITY_MASK_LIBRARY_ID = 'cpu-affinity.mask-skew.library';
+export const CPU_AFFINITY_MASK_LIBRARY_VERSION = 1;
+
+const STATES = Object.freeze([
+  'stable-layout',
+  'under-covered',
+  'over-isolated',
+  'overlap-risk',
+  'no-observation',
+  'insufficient-data'
+]);
+const ENVIRONMENTS = Object.freeze(['interactive', 'headless', 'unknown']);
+
+function isRecord(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function bounded(value, lower, upper) {
+  return Number.isFinite(value) && value >= lower && value <= upper;
+}
+
+function requireReport(report) {
+  if (!isRecord(report)) throw new TypeError('Mask-skew library report must be an object');
+  if (report.turbo !== 'cpu-affinity.mask-skew') {
+    throw new Error('Mask-skew library requires a mask-skew turbo report');
+  }
+  if (!STATES.includes(report.state)) throw new Error('Mask-skew library report has an invalid state');
+  if (!Number.isInteger(report.sampleCount) || report.sampleCount < 0) {
+    throw new RangeError('Mask-skew library report sampleCount must be non-negative');
+  }
+  for (const [field, label] of [
+    ['observedCount', 'observed count'],
+    ['unknownCount', 'unknown count'],
+    ['overlapSampleCount', 'overlap count'],
+    ['overIsolatedSampleCount', 'over-isolated count'],
+    ['underCoveredSampleCount', 'under-covered count']
+  ]) {
+    if (!Number.isInteger(report[field]) || report[field] < 0 || report[field] > report.sampleCount) {
+      throw new RangeError(`Mask-skew library report ${label} must fit inside sampleCount`);
+    }
+  }
+  for (const [field, label] of [
+    ['peakAffinityCoverage', 'affinity coverage'],
+    ['peakIsolationCoverage', 'isolation coverage']
+  ]) {
+    if (report[field] !== null && !bounded(report[field], 0, 1)) {
+      throw new RangeError(`Mask-skew library report ${label} must be null or between 0 and 1`);
+    }
+  }
+  if (report.peakOverlapCount !== null
+    && (!Number.isInteger(report.peakOverlapCount) || report.peakOverlapCount < 0)) {
+    throw new RangeError('Mask-skew library report peak overlap must be null or non-negative');
+  }
+  return report;
+}
+
+function requireReports(reports) {
+  if (!Array.isArray(reports)) throw new TypeError('Mask-skew library reports must be an array');
+  if (reports.length > 64) throw new RangeError('Mask-skew library accepts at most 64 reports');
+  return Object.freeze(reports.map(requireReport));
+}
+
+function maximum(reports, selector) {
+  const values = reports.map(selector).filter((value) => value !== null);
+  return values.length === 0 ? null : Math.max(...values);
+}
+
+function mergedState(reports) {
+  if (reports.length === 0) return 'insufficient-data';
+  if (reports.some((report) => report.state === 'overlap-risk')) return 'overlap-risk';
+  if (reports.some((report) => report.state === 'over-isolated')) return 'over-isolated';
+  if (reports.some((report) => report.state === 'under-covered')) return 'under-covered';
+  if (reports.every((report) => report.state === 'no-observation')) return 'no-observation';
+  return reports.some((report) => report.state === 'stable-layout')
+    ? 'stable-layout'
+    : 'insufficient-data';
+}
+
+function mergedConfidence(reports) {
+  if (reports.length === 0) return 0;
+  const samples = reports.reduce((sum, report) => sum + report.sampleCount, 0);
+  if (samples === 0) return 0;
+  const observed = reports.reduce((sum, report) => sum + report.observedCount, 0);
+  return Math.round((observed / samples) * 10000) / 10000;
+}
+
+function recommendations(state) {
+  if (state === 'overlap-risk') return Object.freeze(['review-affinity-isolation-overlap']);
+  if (state === 'over-isolated') return Object.freeze(['review-isolated-cpu-coverage']);
+  if (state === 'under-covered') return Object.freeze(['review-affinity-cpu-coverage']);
+  if (state === 'no-observation') return Object.freeze(['request-affinity-topology-observation']);
+  if (state === 'insufficient-data') return Object.freeze(['collect-more-affinity-samples']);
+  return Object.freeze(['no-change']);
+}
+
+export function mergeCpuAffinityMaskReports(reports) {
+  const validated = requireReports(reports);
+  const state = mergedState(validated);
+  return Object.freeze({
+    library: CPU_AFFINITY_MASK_LIBRARY_ID,
+    libraryVersion: CPU_AFFINITY_MASK_LIBRARY_VERSION,
+    reportCount: validated.length,
+    state,
+    observedCount: validated.reduce((sum, report) => sum + report.observedCount, 0),
+    unknownCount: validated.reduce((sum, report) => sum + report.unknownCount, 0),
+    overlapSampleCount: validated.reduce((sum, report) => sum + report.overlapSampleCount, 0),
+    overIsolatedSampleCount: validated.reduce(
+      (sum, report) => sum + report.overIsolatedSampleCount, 0
+    ),
+    underCoveredSampleCount: validated.reduce(
+      (sum, report) => sum + report.underCoveredSampleCount, 0
+    ),
+    peakAffinityCoverage: maximum(validated, (report) => report.peakAffinityCoverage),
+    peakIsolationCoverage: maximum(validated, (report) => report.peakIsolationCoverage),
+    peakOverlapCount: maximum(validated, (report) => report.peakOverlapCount),
+    sampleCount: validated.reduce((sum, report) => sum + report.sampleCount, 0),
+    confidence: mergedConfidence(validated),
+    recommendations: recommendations(state)
+  });
+}
+
+function environmentOf(environment) {
+  return ENVIRONMENTS.includes(environment) ? environment : 'unknown';
+}
+
+function planMode(state, environment) {
+  if (environment === 'unknown') return 'profile-required';
+  if (state === 'overlap-risk') return 'overlap-review';
+  if (state === 'over-isolated') return 'isolation-review';
+  if (state === 'under-covered') return 'affinity-review';
+  if (state === 'no-observation') return 'observation-bootstrap';
+  if (state === 'insufficient-data') return 'sample-bootstrap';
+  return 'relaxed-observation';
+}
+
+function intervalFor(state, environment) {
+  if (state === 'overlap-risk') return 500;
+  if (state === 'over-isolated' || state === 'under-covered') return 750;
+  if (state === 'no-observation') return 2000;
+  if (state === 'insufficient-data') return 1500;
+  return environment === 'headless' ? 10000 : 5000;
+}
+
+export function buildCpuAffinityMaskPlan(report, environment) {
+  const validated = requireReport(report);
+  const normalizedEnvironment = environmentOf(environment);
+  return Object.freeze({
+    library: CPU_AFFINITY_MASK_LIBRARY_ID,
+    environment: normalizedEnvironment,
+    mode: planMode(validated.state, normalizedEnvironment),
+    intervalMs: intervalFor(validated.state, normalizedEnvironment),
+    state: validated.state,
+    confidence: validated.observedCount === 0 || validated.sampleCount === 0
+      ? 0
+      : Math.round((validated.observedCount / validated.sampleCount) * 10000) / 10000
+  });
+}
+
+function requireClock(now) {
+  const timestamp = now();
+  if (!Number.isFinite(timestamp)) throw new TypeError('Mask-skew library clock must return a number');
+  return timestamp;
+}
+
+export function buildCpuAffinityMaskEnvelope(report, { trigger, now = Date.now } = {}) {
+  if (typeof trigger !== 'string' || trigger.length === 0) {
+    throw new TypeError('Mask-skew library trigger is required');
+  }
+  return Object.freeze({
+    library: CPU_AFFINITY_MASK_LIBRARY_ID,
+    libraryVersion: CPU_AFFINITY_MASK_LIBRARY_VERSION,
+    trigger,
+    generatedAt: new Date(requireClock(now)).toISOString(),
+    report: requireReport(report)
+  });
+}
+
+export function createCpuAffinityMaskLibrary() {
+  return Object.freeze({
+    id: CPU_AFFINITY_MASK_LIBRARY_ID,
+    version: CPU_AFFINITY_MASK_LIBRARY_VERSION,
+    merge: mergeCpuAffinityMaskReports,
+    plan: buildCpuAffinityMaskPlan,
+    envelope: buildCpuAffinityMaskEnvelope
+  });
+}
