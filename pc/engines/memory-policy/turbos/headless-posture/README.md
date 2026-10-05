@@ -1,4 +1,4 @@
-# Memory Policy Headless-Posture Turbo
+# Memory Policy Headless-Posture Turbo and Library
 
 Status: implementation complete locally; pending Odinn sign-off.
 
@@ -12,4 +12,9 @@ clear caches, touch user files, alter settings, open sockets, or use HTTP,
 REST, or API transport. It fires only on system-facts, workload, and health
 triggers and keeps its sample window bounded.
 
-Its future mesh endpoint is a separate integration step.
+The dedicated library validates posture reports, merges bounded counts, and
+builds environment-aware observation plans and immutable local envelopes. It
+does not import the turbo or change policy.
+
+Both components are analysis-only. Their future mesh endpoint is a separate
+integration step.
