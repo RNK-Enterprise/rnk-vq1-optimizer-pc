@@ -9,3 +9,6 @@ services.
 
 It is analysis-only. It does not change scheduling, frequency, affinity,
 files, settings, or transport state.
+
+The dedicated library at `library.js` provides bounded classification, deltas,
+sampling guidance, and immutable local envelopes for this engine.
