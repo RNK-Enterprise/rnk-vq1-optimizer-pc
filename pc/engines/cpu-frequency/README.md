@@ -12,3 +12,10 @@ settings, or open transport.
 
 The dedicated library is `pc/engines/cpu-frequency/library.js`. It classifies
 normalized frequency observations for the engine and remains analysis-only.
+
+The two implemented turbo analyses are `policy-shift` and
+`load-governor-mismatch`. Each has its own implementation and dedicated
+library with tests, README, and changelog. The four completed
+turbo/library files pass the family regression at 100/100/100/100/100/100.
+Two additional frequency turbo pairs remain pending, along with mesh wiring,
+automatic execution, and Odinn sign-off.
