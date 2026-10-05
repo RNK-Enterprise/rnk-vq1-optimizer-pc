@@ -13,3 +13,9 @@ files, or opens transport.
 The dedicated `library.js` normalizes explicit affinity and isolated-CPU lists,
 compares snapshots, and emits immutable trigger envelopes for local consumers.
 It does not apply masks or make administrative changes.
+
+The four implemented turbo analyses are `mask-skew`, `mask-drift`,
+`topology-drift`, and `smt-layout`. Each turbo has its own implementation and
+dedicated library with tests, README, and changelog. The eight turbo/library
+files pass the family regression at 100/100/100/100/100/100. Mesh wiring,
+automatic execution, and Odinn sign-off remain pending.
