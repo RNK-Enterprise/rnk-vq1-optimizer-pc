@@ -8,3 +8,6 @@ remain unknown.
 
 It is observation-only. It does not change routes, DNS, MTU, QoS, firewalls,
 files, or transport.
+
+The dedicated library is `pc/engines/network-safety/library.js`. It classifies
+normalized safety observations for the engine and remains observation-only.
