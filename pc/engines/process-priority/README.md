@@ -9,3 +9,7 @@ change a process.
 
 It is analysis-only. It does not renice, terminate, suspend, modify files, or
 open transport.
+
+The dedicated `library.js` classifies priority labels and ownership flags,
+compares process snapshots, and emits immutable local review envelopes without
+changing process priority.
