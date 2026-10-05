@@ -12,8 +12,12 @@
     "sync-stacks": "node scripts/sync-stacks-cli.js",
     "bench": "node scripts/benchmark-core.js",
     "test:nightly": "node scripts/run-nightly.js",
-    "lint": "eslint scripts/**/*.js",
-    "lint:fix": "eslint scripts/**/*.js --fix"
+    "lint": "eslint scripts/**/*.js native/**/*.js",
+    "lint:fix": "eslint scripts/**/*.js native/**/*.js --fix",
+    "native:facts": "node native/cli.mjs facts",
+    "native:optimize": "node native/cli.mjs optimize",
+    "native:cache:preview": "node native/cli.mjs cache-preview",
+    "native:organize:preview": "node native/cli.mjs organize-preview"
   },
   "keywords": [
     "foundry-vtt",
@@ -54,6 +58,15 @@
       "scripts/settings-manager.js",
       "scripts/browser-environment.js",
       "scripts/pc-host.js",
+      "native/agent.js",
+      "native/cache-cleaner.js",
+      "native/command-runner.js",
+      "native/linux-adapter.js",
+      "native/organizer.js",
+      "native/platform.js",
+      "native/protocol.js",
+      "native/system-facts.js",
+      "native/windows-adapter.js",
       "!scripts/main.js",
       "!scripts/gm-hub-ui.js"
     ],

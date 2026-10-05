@@ -1,9 +1,10 @@
-# PC browser integration
+# PC integration
 
-The PC surface uses the same host-neutral optimizer client as the Foundry
-module. It is intended for a browser application running on a PC, including a
-Foundry client when the application needs a standalone PC-facing control
-surface.
+The repository has two separate PC surfaces. The browser host under
+`scripts/pc-host.js` is for browser capabilities and embedded applications.
+The native whole-PC agent under `native/` is for Windows/Linux CPU, memory,
+GPU observation, process controls, power controls, and explicit cache cleanup.
+Neither surface is the Foundry module.
 
 ## Integration
 
@@ -31,14 +32,17 @@ host state so the embedding application can consume `host.getAppliedState()`.
 The client uses browser `localStorage` by default and falls back to memory when
 browser storage is unavailable.
 
-## Boundaries
+## Browser-host boundaries
 
 - Server responses are data-only plans. The client validates the protocol,
   action allow-list, and bounds before applying anything.
-- PC support targets the embedding browser application. It does not execute
-  shell commands, alter arbitrary processes, or claim operating-system tuning.
+- Browser support targets the embedding application. It does not execute shell
+  commands, alter arbitrary processes, or claim operating-system tuning.
 - Metrics are consent-aware and bounded. Missing browser signals remain null or
   false; the host never invents hardware or network facts.
 - Execution is trigger-based. A host application decides when to call
   `client.run()`; this integration does not install a polling loop.
 
+For actual whole-PC changes, use the native CLI and its platform adapter. The
+native path is preview-first and keeps file organization outside automatic
+optimization.
