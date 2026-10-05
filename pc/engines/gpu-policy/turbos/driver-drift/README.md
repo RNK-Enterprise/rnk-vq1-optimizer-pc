@@ -12,3 +12,7 @@ touch user files or settings, open sockets, or use HTTP, REST, or API
 transport. It is trigger-gated and keeps its sample window bounded.
 
 Its future mesh endpoint is a separate integration step.
+
+The dedicated library validates turbo reports, merges bounded evidence,
+produces environment-aware observation plans, and emits immutable local
+envelopes. It does not import or execute the turbo.
