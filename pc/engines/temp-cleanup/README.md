@@ -8,3 +8,6 @@ the candidate set and requires review.
 
 It is preview-only. It does not inspect paths, delete files, organize user
 data, modify storage, or open transport.
+
+The dedicated library is `pc/engines/temp-cleanup/library.js`. It classifies
+normalized temporary-file observations for the engine and remains analysis-only.
