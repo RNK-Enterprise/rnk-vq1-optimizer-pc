@@ -1,4 +1,4 @@
-# Swap Availability-Drift Turbo
+# Swap Availability-Drift Turbo and Library
 
 Status: implementation complete locally; pending Odinn sign-off.
 
@@ -12,3 +12,7 @@ HTTP, REST, or API transport. It is trigger-gated and keeps its sample window
 bounded.
 
 Its future mesh endpoint is a separate integration step.
+
+The dedicated library validates availability-drift reports, merges bounded
+counts, and builds environment-aware observation plans and immutable local
+envelopes. It does not import the turbo or change swap policy.
