@@ -9,3 +9,6 @@ states.
 
 It is analysis-only. It does not change GPU policy or drivers, access files,
 or open transport.
+
+The dedicated `library.js` aggregates bounded GPU observations, compares
+snapshots, and emits immutable local review envelopes without applying policy.
