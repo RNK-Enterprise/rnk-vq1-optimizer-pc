@@ -8,3 +8,6 @@ configuration.
 
 It is analysis-only. It does not disable startup items, edit boot entries,
 modify files, or open transport.
+
+The dedicated library is `pc/engines/startup/library.js`. It classifies
+normalized startup observations for the engine and remains analysis-only.
