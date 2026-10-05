@@ -8,3 +8,7 @@ infer permission to disable background work.
 
 It is analysis-only. It does not start, stop, disable, terminate, modify
 service files, or open transport.
+
+The dedicated library is `pc/engines/background-services/library.js`. It
+classifies normalized service observations for the engine and remains
+analysis-only.
