@@ -10,3 +10,7 @@ and stable windows.
 It is analysis-only. It never changes scheduler policy, process priority,
 affinity, files, settings, or transport state. The implementation is lazy
 and trigger-driven through its exported function.
+
+Its dedicated `library.js` validates reports, merges pressure evidence,
+builds environment-aware observation plans, and creates immutable local
+envelopes without importing the turbo implementation.
