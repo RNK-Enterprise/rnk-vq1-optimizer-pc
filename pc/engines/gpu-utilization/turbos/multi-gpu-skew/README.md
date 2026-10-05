@@ -1,4 +1,4 @@
-# GPU Multi-GPU-Skew Turbo
+# GPU Multi-GPU-Skew Turbo and Library
 
 Status: implementation complete locally; pending Odinn sign-off.
 
@@ -11,3 +11,7 @@ controls, user files, or settings; it does not open sockets or use HTTP, REST,
 or API transport. It is trigger-gated and keeps its sample window bounded.
 
 Its future mesh endpoint is a separate integration step.
+
+The dedicated library validates multi-GPU skew reports, merges bounded counts,
+and builds environment-aware observation plans and immutable local envelopes.
+It does not import the turbo or change GPU policy.
