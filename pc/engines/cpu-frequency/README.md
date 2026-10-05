@@ -9,3 +9,6 @@ frequency control could be considered.
 
 It is analysis-only. It does not change frequency policy, write files, alter
 settings, or open transport.
+
+The dedicated library is `pc/engines/cpu-frequency/library.js`. It classifies
+normalized frequency observations for the engine and remains analysis-only.
