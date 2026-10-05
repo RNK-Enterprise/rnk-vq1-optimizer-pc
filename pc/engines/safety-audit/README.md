@@ -8,3 +8,7 @@ proposals are rejected in the audit result.
 
 It is analysis-only. It does not execute actions, modify files, change network
 state, or open transport.
+
+The dedicated library is `pc/engines/safety-audit/library.js`. It classifies
+normalized audit observations for the engine and remains fail-closed and
+analysis-only.
