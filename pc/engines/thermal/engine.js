@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Thermal engine. It classifies bounded temperature and thermal-headroom
  * evidence without changing fans, governors, workloads, or transport state.
