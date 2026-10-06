@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Memory-policy consent-boundary turbo. It evaluates explicit consent and
  * destructive-action boundaries without approving or applying policy changes.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated thermal-margin library. It validates, aggregates, and plans
  * thermal reports without importing the turbo or changing GPU policy.

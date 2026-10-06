@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-utilization library. It provides deterministic utilization classes,
  * deltas, sampling guidance, and an immutable local facade for the engine.

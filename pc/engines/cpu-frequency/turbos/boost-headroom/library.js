@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated boost-headroom turbo library. It validates, aggregates, and plans
  * headroom reports without importing the turbo or operating-system API.

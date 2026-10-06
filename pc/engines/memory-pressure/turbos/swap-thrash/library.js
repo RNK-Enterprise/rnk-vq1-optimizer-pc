@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated swap-thrash turbo library. It validates, aggregates, and plans
  * swap reports without importing the turbo or operating-system API.

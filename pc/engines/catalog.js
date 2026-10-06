@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Canonical PC optimizer engine inventory. The catalog describes identity and
  * trigger ownership only; each engine keeps its own implementation, library,

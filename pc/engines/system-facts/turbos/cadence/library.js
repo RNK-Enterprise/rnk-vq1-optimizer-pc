@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated cadence-turbo library. It coalesces bounded schedules using the
  * sooner safe interval and builds an explicit observation policy without

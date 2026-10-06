@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated core-skew turbo library. It validates and aggregates per-core
  * reports without importing the turbo or changing affinity policy.

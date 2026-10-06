@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Memory-policy pressure-policy-drift turbo. It observes bounded pressure and
  * policy transitions without changing policy, reclaiming memory, or opening transport.

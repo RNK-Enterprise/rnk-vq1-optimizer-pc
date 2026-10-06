@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Memory-pressure headroom-volatility turbo. It measures bounded headroom
  * dispersion without reclaiming memory, touching files, or opening transport.

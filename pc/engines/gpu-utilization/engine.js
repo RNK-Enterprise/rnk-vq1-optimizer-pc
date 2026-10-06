@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU-utilization engine. It aggregates bounded GPU observations and reports
  * thermal/utilization pressure without changing GPU policy, drivers, files,

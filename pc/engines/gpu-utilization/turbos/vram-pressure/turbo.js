@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU VRAM-pressure turbo. It measures bounded VRAM pressure without changing
  * GPU policy, drivers, files, or opening transport.

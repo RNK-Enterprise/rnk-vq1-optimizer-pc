@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated swap-policy-alignment library. It validates, aggregates, and
  * plans swap alignment reports without importing the turbo or applying policy.

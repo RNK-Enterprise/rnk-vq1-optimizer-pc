@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Swap engine. It distinguishes absent, normal, elevated, high, and unknown
  * swap evidence without creating swap, changing swappiness, touching files,

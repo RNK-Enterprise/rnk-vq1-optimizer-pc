@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-utilization engine. It classifies normalized CPU observations and
  * produces bounded workload guidance. It never changes scheduling, frequency,

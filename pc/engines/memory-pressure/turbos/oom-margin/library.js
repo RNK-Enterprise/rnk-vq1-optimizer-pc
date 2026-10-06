@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated OOM-margin turbo library. It validates, aggregates, and plans
  * composite margin reports without importing the turbo or operating-system API.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated trend-slope turbo library. It validates and aggregates slope
  * reports without importing the turbo or changing CPU policy.

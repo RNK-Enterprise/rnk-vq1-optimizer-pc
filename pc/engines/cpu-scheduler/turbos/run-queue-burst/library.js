@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated run-queue-burst turbo library. It validates and aggregates
  * reports without importing the turbo, engine, or any operating-system API.

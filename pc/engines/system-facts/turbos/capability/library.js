@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated capability-turbo library. It merges bounded capability reports
  * and separates safe observations, admin-required controls, and disabled

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Swap library. It classifies swap availability and pressure for review only;
  * it never creates swap, changes swappiness, or edits the filesystem.

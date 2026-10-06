@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU thermal-margin turbo. It measures bounded thermal headroom without
  * changing GPU policy, clocks, drivers, files, or opening transport.

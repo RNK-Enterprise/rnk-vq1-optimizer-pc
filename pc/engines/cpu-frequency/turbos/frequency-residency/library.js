@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated frequency-residency turbo library. It validates, aggregates, and
  * plans residency reports without importing the turbo or operating-system API.

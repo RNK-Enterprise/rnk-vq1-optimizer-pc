@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-scheduler context-churn turbo. It detects bounded context-switch
  * volatility and reversals without changing scheduler policy or process state.

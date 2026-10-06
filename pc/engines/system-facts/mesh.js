@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Standalone system-facts mesh. It connects the engine, its dedicated library,
  * four turbos, and four turbo libraries through typed in-process routes. The

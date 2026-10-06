@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated VRAM-pressure library. It validates, aggregates, and plans VRAM
  * reports without importing the turbo or changing GPU policy.

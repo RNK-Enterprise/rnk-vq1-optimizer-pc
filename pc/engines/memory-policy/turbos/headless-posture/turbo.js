@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Memory-policy headless-posture turbo. It compares environment-specific
  * policy posture without changing policy, reclaiming memory, or opening transport.

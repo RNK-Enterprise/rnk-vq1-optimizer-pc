@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Swap availability-drift turbo. It observes bounded capacity changes without
  * creating swap, changing swappiness, or opening transport.

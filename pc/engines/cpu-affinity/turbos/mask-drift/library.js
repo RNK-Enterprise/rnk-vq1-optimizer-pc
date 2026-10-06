@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated mask-drift turbo library. It validates and aggregates list-drift
  * reports without importing the turbo, engine, or operating-system API.

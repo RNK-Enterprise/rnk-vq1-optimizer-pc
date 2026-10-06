@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-scheduler engine. It classifies the observed workload and governor
  * alignment without changing scheduler policy, frequency, affinity, files,

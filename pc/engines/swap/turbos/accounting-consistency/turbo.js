@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Swap accounting-consistency turbo. It compares capacity accounting with
  * reported utilization without creating swap, changing swappiness, or opening

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-affinity engine. It evaluates normalized topology and SMT shape so a
  * later approved controller can reason about affinity safely. It never pins

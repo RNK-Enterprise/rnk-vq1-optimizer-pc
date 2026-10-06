@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated topology-drift turbo library. It validates and aggregates CPU
  * topology reports without importing the turbo, engine, or operating-system API.

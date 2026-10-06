@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated pressure-turbo library. It ranks resource signals, aggregates
  * bounded reports, and builds a conservative protection plan without

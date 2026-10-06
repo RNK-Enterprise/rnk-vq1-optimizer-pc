@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated multi-gpu-skew library. It validates, aggregates, and plans
  * adapter-balance reports without importing the turbo or changing GPU policy.

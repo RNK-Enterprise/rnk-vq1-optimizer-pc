@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-scheduler run-queue-burst turbo. It measures bounded queue and
  * context-switch pressure from normalized snapshots without changing policy.

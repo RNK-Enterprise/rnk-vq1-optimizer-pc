@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated SMT-layout turbo library. It validates and aggregates ratio
  * reports without importing the turbo, engine, or operating-system API.

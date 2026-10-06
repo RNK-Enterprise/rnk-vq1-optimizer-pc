@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated pressure-policy-drift library. It validates, aggregates, and
  * plans drift reports without importing the turbo or operating-system API.

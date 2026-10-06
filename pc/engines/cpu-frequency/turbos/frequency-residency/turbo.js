@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-frequency frequency-residency turbo. It classifies bounded frequency
  * residency evidence without changing policy, writing system files, or

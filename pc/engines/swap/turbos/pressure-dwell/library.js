@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated pressure-dwell library. It validates, aggregates, and plans
  * pressure persistence reports without importing the turbo or changing swap.

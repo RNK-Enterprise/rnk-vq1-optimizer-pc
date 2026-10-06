@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Memory-pressure used-trend turbo. It classifies bounded RAM utilization
  * movement without reclaiming memory, touching files, or opening transport.

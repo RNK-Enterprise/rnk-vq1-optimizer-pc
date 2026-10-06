@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * System-facts capability turbo. It evaluates which observations and controls
  * are available for a normalized host profile. It never executes a control or

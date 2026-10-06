@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated headroom-volatility turbo library. It validates, aggregates, and
  * plans dispersion reports without importing the turbo or operating-system API.

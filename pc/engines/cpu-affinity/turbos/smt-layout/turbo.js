@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-affinity SMT-layout turbo. It observes logical-to-physical CPU ratios
  * without changing affinity, masks, or scheduler state.

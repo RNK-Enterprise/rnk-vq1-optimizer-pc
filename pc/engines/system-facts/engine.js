@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * System-facts engine. This module only normalizes supplied observations and
  * derives bounded capability facts. It never reads files, runs commands, or

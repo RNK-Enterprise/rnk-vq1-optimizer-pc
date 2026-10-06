@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated accounting-consistency library. It validates, aggregates, and
  * plans accounting reports without importing the turbo or changing swap.

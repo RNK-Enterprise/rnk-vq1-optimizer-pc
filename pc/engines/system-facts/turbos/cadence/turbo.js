@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * System-facts cadence turbo. It selects a bounded observation interval from
  * current pressure, recent volatility, host environment, trigger urgency,

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * System-facts library. This is a dedicated algorithm library for the
  * system-facts engine. It accepts normalized facts and produces deterministic

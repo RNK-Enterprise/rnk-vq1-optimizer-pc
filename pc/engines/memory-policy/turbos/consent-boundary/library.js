@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated consent-boundary library. It validates, aggregates, and plans
  * consent reports without importing the turbo or approving policy changes.

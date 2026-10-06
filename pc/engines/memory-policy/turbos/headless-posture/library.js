@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated headless-posture library. It validates, aggregates, and plans
  * posture reports without importing the turbo or changing environment policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated mask-skew turbo library. It validates and aggregates topology
  * reports without importing the turbo, engine, or operating-system API.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * CPU-affinity library. It normalizes explicit CPU-list evidence and compares
  * snapshots without applying masks or pinning processes.

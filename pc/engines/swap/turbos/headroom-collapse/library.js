@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated headroom-collapse library. It validates, aggregates, and plans
  * headroom movement reports without importing the turbo or changing swap.
