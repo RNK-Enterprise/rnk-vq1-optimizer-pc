@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Startup library. It classifies bounded startup evidence without disabling
  * entries, changing boot configuration, or modifying files.
