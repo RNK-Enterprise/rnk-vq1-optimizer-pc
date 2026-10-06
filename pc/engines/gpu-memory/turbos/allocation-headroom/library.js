@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated allocation-headroom library. It validates, aggregates, and plans
  * VRAM headroom reports without importing the turbo or changing memory policy.

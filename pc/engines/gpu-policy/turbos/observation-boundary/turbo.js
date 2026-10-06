@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU observation-boundary turbo. It measures bounded observation capability
  * stability without enabling sensors, changing policy, or opening transport.

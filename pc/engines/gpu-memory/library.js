@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU-memory library. It evaluates bounded VRAM occupancy for review only and
  * never evicts resources, changes allocation policy, or touches applications.

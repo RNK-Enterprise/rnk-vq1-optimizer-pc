@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated evidence-completeness library. It validates, aggregates, and
  * plans evidence reports without importing the turbo or changing GPU policy.

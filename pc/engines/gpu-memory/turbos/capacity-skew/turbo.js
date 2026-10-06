@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU capacity-skew turbo. It measures bounded adapter VRAM asymmetry without
  * changing allocation policy, drivers, files, or opening transport.

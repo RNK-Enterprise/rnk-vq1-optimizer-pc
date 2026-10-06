@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated counter-integrity library. It validates, aggregates, and plans
  * VRAM counter reports without importing the turbo or changing memory policy.

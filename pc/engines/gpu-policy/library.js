@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU-policy library. It classifies vendor and driver evidence for documented
  * review only; it never installs, loads, or changes a driver or GPU policy.

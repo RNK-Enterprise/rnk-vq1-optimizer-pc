@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU evidence-completeness turbo. It measures bounded vendor, model, and
  * driver evidence without changing GPU policy, files, or opening transport.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU allocation-headroom turbo. It measures bounded remaining VRAM without
  * evicting resources, changing allocation policy, or opening transport.

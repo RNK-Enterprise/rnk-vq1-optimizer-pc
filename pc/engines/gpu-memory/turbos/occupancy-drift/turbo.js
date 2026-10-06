@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU occupancy-drift turbo. It measures bounded VRAM usage movement without
  * evicting resources, changing allocation policy, or opening transport.

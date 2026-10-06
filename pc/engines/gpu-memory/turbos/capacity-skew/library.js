@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Dedicated capacity-skew library. It validates, aggregates, and plans VRAM
  * capacity composition reports without importing the turbo or changing policy.

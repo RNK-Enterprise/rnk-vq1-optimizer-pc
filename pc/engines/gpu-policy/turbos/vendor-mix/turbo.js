@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * GPU vendor-mix turbo. It measures bounded adapter-vendor composition
  * without changing GPU policy, drivers, files, or opening transport.
