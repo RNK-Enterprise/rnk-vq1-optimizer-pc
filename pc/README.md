@@ -46,3 +46,13 @@ browser storage is unavailable.
 For actual whole-PC changes, use the native CLI and its platform adapter. The
 native path is preview-first and keeps file organization outside automatic
 optimization.
+
+## Local PC mesh
+
+`pc/mesh.js` is the local typed mesh boundary for all 34 PC engines, their 34
+dedicated libraries, and all 136 turbo/library pairs. It exposes command and
+event routes, lazy module loading, and the four declared trigger paths.
+
+The mesh is in-process only. It does not use HTTP, REST, sockets, public
+listeners, or network mutation. Dispatch produces immutable review envelopes;
+it does not execute optimizer actions.
