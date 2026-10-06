@@ -8,4 +8,9 @@
 - Added trigger, fact, clock, process-list, and refusal-path validation.
 - Added a dedicated library for lifecycle classification, snapshot comparison,
   immutable envelopes, and local facade construction.
+- Added four RNK Enterprise turbo/library pairs: restart burst, zombie
+  persistence, uptime churn, and state coverage.
+- Added strict per-file tests for every turbo and library with bounded inputs,
+  headless handling, trigger validation, immutable outputs, and 100% coverage
+  across statements, branches, functions, and lines.
 - Pending Odinn sign-off; not release-certified.
