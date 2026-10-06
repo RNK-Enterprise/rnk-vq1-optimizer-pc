@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Process-lifecycle library. It classifies state and restart evidence for
  * review and never terminates, restarts, suspends, or re-parents processes.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Process-lifecycle engine. It classifies process states and restart evidence
  * without terminating, restarting, suspending, or changing process files.
