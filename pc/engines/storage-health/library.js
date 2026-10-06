@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Storage-health library. It classifies occupancy and health evidence for
  * review and never repairs, remounts, deletes, organizes, or writes files.
