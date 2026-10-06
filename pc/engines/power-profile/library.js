@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Power-profile library. It classifies documented profile evidence and the
  * declared control boundary without switching profiles or changing policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Power-profile engine. It classifies documented active power profiles and
  * control capability without switching profiles or changing system policy.
