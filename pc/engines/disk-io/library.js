@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Disk-I/O library. It aggregates bounded device observations for review and
  * never changes mounts, queues, files, or storage policy.
