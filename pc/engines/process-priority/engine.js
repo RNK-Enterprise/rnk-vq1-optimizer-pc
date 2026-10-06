@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Process-priority engine. It classifies documented process priority labels
  * without changing priorities, processes, files, or transport state.
