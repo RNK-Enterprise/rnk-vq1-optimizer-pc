@@ -12,3 +12,13 @@ files, or transport.
 The dedicated library is `pc/engines/workload-profile/library.js`. It
 classifies normalized workload observations for the engine and remains
 analysis-only.
+
+The four independent turbo/library pairs are:
+
+- `context-drift`: declared workload context movement.
+- `intensity-trend`: bounded workload-intensity movement.
+- `environment-boundary`: interactive/headless boundary evidence.
+- `declaration-stability`: explicit declaration and interactive-flag movement.
+
+Each pair is lazy and trigger-driven. It returns bounded evidence and review
+plans only; it does not change processes, applications, services, or files.
