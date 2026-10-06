@@ -11,3 +11,15 @@ transport.
 
 The dedicated library is `pc/engines/battery/library.js`. It classifies
 normalized battery observations for the engine and remains analysis-only.
+
+The engine now has four lazy, trigger-driven turbo/library pairs:
+
+- `charge-trend`: bounded charge movement and recovery or loss review.
+- `health-boundary`: explicit health degradation and failed-health protection evidence.
+- `power-source-drift`: battery presence and charging-state transition review.
+- `charge-ceiling`: high-charge ceiling persistence and movement review.
+
+Each pair is analysis-only. Its library validates turbo reports, merges
+bounded evidence, builds environment-aware review plans, and creates triggered
+envelopes. No pair changes charging, imposes a charge limit, changes power
+policy, modifies files, or opens transport.
