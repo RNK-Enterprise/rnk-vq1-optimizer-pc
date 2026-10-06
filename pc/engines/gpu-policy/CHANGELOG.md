@@ -13,4 +13,8 @@
   boundary, and evidence completeness.
 - Verified the GPU-policy turbo family with 4 suites, 20 tests, and 100%
   statements, branches, functions, and lines.
+- Added four dedicated turbo libraries with report validation, merge, plan,
+  envelope, and factory boundaries.
+- Verified the complete GPU-policy turbo/library family with 8 suites, 40
+  tests, and 100% statements, branches, functions, and lines.
 - Pending Odinn sign-off; not release-certified.
