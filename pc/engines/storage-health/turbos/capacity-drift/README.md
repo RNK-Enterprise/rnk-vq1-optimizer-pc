@@ -8,3 +8,7 @@ it does not delete files, organize paths, remount volumes, or write to disk.
 
 It validates the trigger, sample window, minimum evidence, pressure threshold,
 and clock. Its output is immutable and exposes recommendations only.
+
+The dedicated library validates reports, merges bounded observations with
+safety precedence, and derives environment-aware observation plans. It does
+not import or execute the turbo.
