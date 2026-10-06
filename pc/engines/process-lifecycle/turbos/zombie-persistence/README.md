@@ -11,3 +11,7 @@ The turbo is lazy-loaded by the process-lifecycle engine and fires only on the
 declared installation, facts, workload, and health triggers. It does not
 terminate, reparent, edit files, or open HTTP, API, REST, socket, or other
 transport paths.
+
+The paired dedicated library validates bounded sample and process counts,
+merges zombie reports with safety precedence, derives explicit observation
+plans, and wraps trigger evidence in immutable envelopes.
