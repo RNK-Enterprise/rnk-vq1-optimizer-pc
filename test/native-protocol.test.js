@@ -1,7 +1,7 @@
 /**
  * Native optimizer protocol tests.
- * Copyright © 2025 Asgard Innovations / RNK™
- * Contributor: Lisa's Dungeon
+ * Copyright © 2026 RNK Enterprise
+ * Contributor: RNK Enterprise
  */
 
 import {

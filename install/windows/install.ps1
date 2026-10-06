@@ -1,7 +1,7 @@
 <#
   RNK Vortex System Optimizer
-  Copyright © 2025 Asgard Innovations / RNK™
-  Contributor: Lisa's Dungeon
+  Copyright © 2026 RNK Enterprise
+  Contributor: RNK Enterprise
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,4 +36,3 @@ node (Join-Path $InstallDirectory 'native\cli.mjs') facts
 if ($RunOptimize) {
   node (Join-Path $InstallDirectory 'native\cli.mjs') optimize
 }
-
