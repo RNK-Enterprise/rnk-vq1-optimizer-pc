@@ -9,3 +9,10 @@ headless, and disabled telemetry from becoming an automatic control decision.
 It is lazy-loaded by the FPS-target engine and fires only on the four declared
 triggers. It never applies a cap, changes display policy, modifies files, or
 opens transport.
+
+The paired dedicated library validates and merges confidence reports, derives
+bounded interactive or headless observation plans, and wraps trigger evidence
+in immutable envelopes. It exposes `mergeFpsObservationConfidenceReports`,
+`buildFpsObservationConfidencePlan`, `buildFpsObservationConfidenceEnvelope`,
+and `createFpsObservationConfidenceLibrary` without importing or delegating to
+the turbo.
