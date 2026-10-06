@@ -10,3 +10,9 @@ changes display policy, modifies files, or opens transport.
 The turbo reports bounded headroom values, persistence counts, headless and
 disabled-observation boundaries, and an immutable recommendation set for the
 dedicated library boundary.
+
+The paired dedicated library validates and merges headroom reports, derives
+bounded interactive or headless observation plans, and wraps trigger evidence
+in immutable envelopes. It exposes `mergeFpsRefreshHeadroomReports`,
+`buildFpsRefreshHeadroomPlan`, `buildFpsRefreshHeadroomEnvelope`, and
+`createFpsRefreshHeadroomLibrary` without importing or delegating to the turbo.
