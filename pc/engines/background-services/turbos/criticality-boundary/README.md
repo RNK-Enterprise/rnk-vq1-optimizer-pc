@@ -9,3 +9,7 @@ safe.
 It is analysis-only. It does not start, stop, disable, terminate, modify
 service files, or open transport. It fires only for an explicit supported
 trigger and loads its analysis when invoked.
+
+Its dedicated `library.js` validates criticality reports, merges protection
+evidence, builds observation plans, and creates trigger envelopes without
+controlling services.

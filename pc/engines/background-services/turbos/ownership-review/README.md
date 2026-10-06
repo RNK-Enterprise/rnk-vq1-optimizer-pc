@@ -8,3 +8,7 @@ flag remains unknown and is never treated as permission to change a service.
 It is analysis-only. It does not start, stop, disable, terminate, modify
 service files, or open transport. It fires only for an explicit supported
 trigger and loads its analysis when invoked.
+
+Its dedicated `library.js` validates ownership reports, merges owner evidence,
+builds review plans, and creates trigger envelopes without changing service
+ownership.
