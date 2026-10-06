@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Network-observation library. It classifies bounded link and route evidence
  * without changing network settings, routes, files, or transport state.
