@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Frame-pacing library. It classifies display timing evidence for review and
  * never sets caps, changes display policy, or modifies files.
