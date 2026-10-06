@@ -11,3 +11,7 @@ The turbo is lazy-loaded by the process-priority engine and fires only on the
 declared installation, facts, workload, and health triggers. It does not
 rename, suspend, terminate, edit files, or open HTTP, API, REST, socket, or
 other transport paths.
+
+The paired dedicated library validates bounded counts and rates, merges
+unknown-label evidence with safety precedence, derives explicit observation
+plans, and wraps trigger evidence in immutable envelopes.
