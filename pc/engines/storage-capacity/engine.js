@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Storage-capacity engine. It reports bounded total/free capacity and
  * headroom without deleting, moving, or changing files.

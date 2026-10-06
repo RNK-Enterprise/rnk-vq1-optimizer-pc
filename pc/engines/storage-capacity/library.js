@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Storage-capacity library. It reports bounded total/free capacity for review
  * and never deletes, moves, organizes, repairs, or changes files.
