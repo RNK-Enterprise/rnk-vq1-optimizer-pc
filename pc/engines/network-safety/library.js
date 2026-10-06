@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Network-safety library. It classifies explicit trust and encryption evidence
  * without changing routes, DNS, MTU, QoS, firewalls, files, or transport.
