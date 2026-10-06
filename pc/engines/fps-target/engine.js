@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * FPS-target engine. It proposes a bounded target from user-owned or
  * observed values without applying a cap or changing display state.
