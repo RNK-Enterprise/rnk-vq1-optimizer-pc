@@ -9,6 +9,12 @@ adapter owns the executable allow-list and applies only validated actions.
 
 ## Safe use
 
+The Linux and Windows installers require an explicit `headless` or
+`interactive` environment choice before installation. The choice controls the
+front-end posture only; it does not grant permission to apply actions. Preview
+remains the default and administrative or destructive work remains separately
+approved.
+
 ```sh
 node native/cli.mjs facts
 node native/cli.mjs optimize --gateway http://127.0.0.1:9999/optimizer/v1/plan
