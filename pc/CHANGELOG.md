@@ -1,5 +1,9 @@
 # PC browser integration changelog
 
+## 2026-10-06
+
+- Added lazy, trigger-validated engine execution to the local PC mesh without adding transport or OS mutation.
+
 ## 2026-10-05
 
 - Clarified the separation between the browser host and native whole-PC agent.

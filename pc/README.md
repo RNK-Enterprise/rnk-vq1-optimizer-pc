@@ -55,4 +55,6 @@ event routes, lazy module loading, and the four declared trigger paths.
 
 The mesh is in-process only. It does not use HTTP, REST, sockets, public
 listeners, or network mutation. Dispatch produces immutable review envelopes;
-it does not execute optimizer actions.
+it does not execute optimizer actions. The mesh can lazily execute an engine's
+analysis function through a validated trigger; engine results remain
+analysis-only and the native adapter remains the sole OS-action authority.

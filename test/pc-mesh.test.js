@@ -50,6 +50,22 @@ describe('PC-wide local mesh', () => {
     expect(Object.isFrozen(command.payload)).toBe(true);
   });
 
+  test('executes a lazy engine through its validated trigger boundary', async () => {
+    const mesh = createPcMesh({ now: () => 1700000000000 });
+    const result = await mesh.executeEngine('system-facts.engine', {
+      environment: 'headless',
+      cpu: { model: 'test-cpu', logicalCpus: 4 },
+      memory: { totalBytes: 1000, availableBytes: 500 },
+      displayPresent: false
+    }, { trigger: 'system.facts.request' });
+    expect(result.engine).toBe('system-facts');
+    expect(result.facts.environment).toBe('headless');
+    expect(mesh.loadedNodes()).toEqual(['system-facts.engine']);
+    await expect(mesh.executeEngine('system-facts.library', {}, { trigger: 'system.facts.request' })).rejects.toThrow('requires an engine node');
+    await expect(mesh.executeEngine('missing')).rejects.toThrow('requires an engine node');
+    await expect(mesh.executeEngine('system-facts.engine', {}, { trigger: 'bad' })).rejects.toThrow('Unsupported PC mesh trigger: bad');
+  });
+
   test('rejects unknown routes, invalid payloads, triggers, bridges, clocks, and options', () => {
     const mesh = createPcMesh({ now: () => 0 });
     expect(() => mesh.dispatch({ type: 'command', from: 'system-facts.engine', to: 'cpu-utilization.engine', trigger: 'bad' })).toThrow('Unsupported PC mesh trigger: bad');

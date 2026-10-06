@@ -104,6 +104,10 @@ function findNode(nodes, reference) {
 }
 function routeKey(bridge) { return `${bridge.type}:${bridge.from}->${bridge.to}`; }
 function loadedNodeIds(loaded) { return Object.freeze([...loaded.keys()]); }
+function runnerName(engine) {
+  const name = engine.split('-').map((part) => `${part[0].toUpperCase()}${part.slice(1)}`).join('');
+  return `run${name}Engine`;
+}
 
 export function createPcMesh({ now = Date.now } = {}) {
   const clock = requireClock(now);
@@ -119,6 +123,15 @@ export function createPcMesh({ now = Date.now } = {}) {
     const module = await import(node.modulePath);
     loaded.set(node.id, module);
     return module;
+  }
+
+  async function executeEngine(reference, input = {}, { trigger } = {}) {
+    const node = findNode(nodes, reference);
+    if (!node || node.kind !== 'engine') throw new Error('PC mesh execution requires an engine node');
+    requireTrigger(trigger);
+    const module = await loadNode(node.id);
+    const run = module[runnerName(node.engine)];
+    return run(input, { trigger, now: clock });
   }
 
   function dispatchMessage({ type, from, to, trigger, payload = {}, requestId = null } = {}) {
@@ -145,6 +158,7 @@ export function createPcMesh({ now = Date.now } = {}) {
     resolveNode: (reference) => findNode(nodes, reference),
     loadedNodes: () => loadedNodeIds(loaded),
     loadNode,
+    executeEngine,
     dispatch: dispatchMessage
   });
 }
