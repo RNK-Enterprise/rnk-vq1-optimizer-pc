@@ -1,13 +1,12 @@
-# Process Priority: Priority Drift Turbo
+# Process Priority: Priority Drift Turbo and Library
 
 Status: implementation complete locally; pending Odinn sign-off.
 
-This analysis-only turbo compares bounded, normalized process-priority
-signatures across system-facts samples. It accepts interactive and headless
-environments, treats unknown environments or priority labels as incomplete,
-and reports sustained or observed movement without changing process state.
+The turbo compares bounded normalized process-priority signatures and reports
+stable, observed, sustained, empty, and incomplete evidence. The dedicated
+library validates and merges those reports, derives explicit interactive or
+headless observation plans, and wraps trigger evidence in immutable envelopes.
 
-The turbo is lazy-loaded by the process-priority engine and fires only on the
-declared installation, facts, workload, and health triggers. It does not
-renice, suspend, terminate, edit files, or open HTTP, API, REST, socket, or
-other transport paths.
+Both files are local analysis components. They do not import or delegate to
+each other, mutate priorities or processes, modify user files, or open HTTP,
+API, REST, socket, or other transport paths.
