@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Temp-cleanup library. It classifies bounded temporary-file observations for
  * review and never reads paths, deletes files, or changes storage policy.
