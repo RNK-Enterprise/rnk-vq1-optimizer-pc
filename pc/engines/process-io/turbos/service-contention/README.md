@@ -11,3 +11,7 @@ The turbo is lazy-loaded by the process-io engine and fires only on the
 declared installation, facts, workload, and health triggers. It does not
 throttle, terminate, or edit files and does not open HTTP, API, REST, socket,
 or other transport paths.
+
+The paired dedicated library validates bounded sample and service counts,
+merges service-contention reports with safety precedence, derives explicit
+observation plans, and wraps trigger evidence in immutable envelopes.
