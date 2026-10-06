@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Display-pipeline engine. It classifies display facts without changing
  * resolution, refresh, HDR, VRR, files, or transport state.

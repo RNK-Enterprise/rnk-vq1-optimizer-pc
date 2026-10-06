@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Display-pipeline library. It classifies display evidence for review and
  * never changes resolution, refresh, HDR, VRR, files, or transport.
