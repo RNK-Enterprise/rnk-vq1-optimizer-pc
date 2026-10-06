@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: Lisa's Dungeon
+ * Contributor: RNK Enterprise
  *
  * Process-I/O engine. It aggregates bounded process I/O observations without
  * changing priorities, processes, files, or transport state.
