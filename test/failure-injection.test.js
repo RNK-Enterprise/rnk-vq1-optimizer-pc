@@ -167,7 +167,10 @@ describe('gateway failure injection over real HTTP', () => {
 
   async function startGateway(proxyMock, opts = {}) {
     const server = http.createServer();
-    const gateway = attachOptimizerGateway(server, proxyMock, opts);
+    const gateway = attachOptimizerGateway(server, proxyMock, {
+      authenticateGM: () => ({ ok: true, gmId: 'test-gm' }),
+      ...opts
+    });
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     servers.push(server);
     return { server, gateway, port: server.address().port };
@@ -251,8 +254,8 @@ describe('gateway failure injection over real HTTP', () => {
   test('valid tandem plan -> 200 with merged, bounded actions', async () => {
     const proxy = makeProxyMock();
     proxy.dispatchTandem.mockResolvedValue([
-      { unitId: 'VQ-1', plan: { protocolVersion: 1, planId: 'p1', actions: [{ type: 'set-quality', key: 'render.quality', value: 1 }] } },
-      { unitId: 'VQ-2', plan: { protocolVersion: 1, planId: 'p2', actions: [{ type: 'set-quality', key: 'render.quality', value: 2 }] } }
+      { unitId: 'VQ-1', plan: { protocolVersion: 1, planId: 'p1', actions: [{ type: 'set-quality', key: 'render.distance', value: 2 }] } },
+      { unitId: 'VQ-2', plan: { protocolVersion: 1, planId: 'p2', actions: [{ type: 'set-quality', key: 'render.distance', value: 3 }] } }
     ]);
     const { port } = await startGateway(proxy);
 
@@ -261,7 +264,7 @@ describe('gateway failure injection over real HTTP', () => {
     const body = JSON.parse(res.body);
     expect(body.success).toBe(true);
     // Later units specialize the same action key - exactly one wins.
-    expect(body.plan.actions).toEqual([{ type: 'set-quality', key: 'render.quality', value: 2 }]);
+    expect(body.plan.actions).toEqual([{ type: 'set-quality', key: 'render.distance', value: 3 }]);
     expect(body.plan.sourceUnits).toEqual(['VQ-1', 'VQ-2']);
   });
 

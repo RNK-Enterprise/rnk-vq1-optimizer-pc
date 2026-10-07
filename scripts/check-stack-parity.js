@@ -29,7 +29,13 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { checkParity, formatReport, defaultStackRoot } from './stack-parity.js';
+import {
+  checkParity,
+  formatReport,
+  defaultStackRoot,
+  hasCompleteStackPair,
+  PRESENCE_FILES
+} from './stack-parity.js';
 
 const stackA = defaultStackRoot('VQ 1');
 const stackB = defaultStackRoot('VQ 2');
@@ -37,6 +43,13 @@ const stackB = defaultStackRoot('VQ 2');
 if (!fs.existsSync(stackA) || !fs.existsSync(stackB)) {
   console.log('Stack parity SKIPPED: VQ 1 / VQ 2 stacks not present (standalone checkout).');
   console.log('The parity gate applies inside the full RNK workspace only.');
+  process.exit(0);
+}
+
+if (!hasCompleteStackPair(stackA, stackB, PRESENCE_FILES)) {
+  console.log('Stack parity SKIPPED: VQ 1 / VQ 2 directories are present but incomplete.');
+  console.log(`Complete-stack markers required in both roots: ${PRESENCE_FILES.join(', ')}.`);
+  console.log('The parity gate activates only for two complete private VQ stacks.');
   process.exit(0);
 }
 

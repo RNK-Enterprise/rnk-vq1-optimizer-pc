@@ -26,7 +26,12 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { syncStacks, formatSyncReport, defaultStackRoot } from '../scripts/sync-stacks.js';
-import { PARITY_FILES, checkParity } from '../scripts/stack-parity.js';
+import {
+  PARITY_FILES,
+  PRESENCE_FILES,
+  checkParity,
+  hasCompleteStackPair
+} from '../scripts/stack-parity.js';
 
 function makeFixtureStack() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'vq-sync-'));
@@ -168,9 +173,9 @@ describe('syncStacks (fixture stacks)', () => {
 });
 
 // Real-stack suite only applies inside the full RNK workspace.
-const REAL_STACKS = ['VQ 1', 'VQ 2'].every((dir) =>
-  fs.existsSync(path.resolve(process.cwd(), dir))
-  || fs.existsSync(path.resolve(process.cwd(), '..', dir)));
+const STACK_A = defaultStackRoot('VQ 1');
+const STACK_B = defaultStackRoot('VQ 2');
+const REAL_STACKS = hasCompleteStackPair(STACK_A, STACK_B, PRESENCE_FILES);
 const describeRealStacks = REAL_STACKS ? describe : describe.skip;
 
 describeRealStacks('sync helper against the real stacks', () => {

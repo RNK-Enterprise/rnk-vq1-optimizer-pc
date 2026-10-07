@@ -21,18 +21,21 @@
  * from the other stack), this file goes red.
  */
 
-import fs from 'fs';
-import path from 'path';
 import { registerRuntimeSuite } from '@rnk/vq-contract-tests';
+import {
+  defaultStackRoot,
+  hasCompleteStackPair,
+  PRESENCE_FILES
+} from '../scripts/stack-parity.js';
 
 // Contract suites import the real stack copies, which only exist inside
-// the full RNK workspace. In a standalone clone, skip - the same suites
-// run for real in the nightly real-tree pass.
-const STACKS_PRESENT = ['VQ 1', 'VQ 2'].every((dir) =>
-  fs.existsSync(path.resolve(process.cwd(), dir))
-  || fs.existsSync(path.resolve(process.cwd(), '..', dir)));
+// the full RNK workspace. Partial PC/Foundry trees skip these contracts;
+// the same suites run for real in the nightly real-tree pass.
+const STACK_A = defaultStackRoot('VQ 1');
+const STACK_B = defaultStackRoot('VQ 2');
+const COMPLETE_STACKS = hasCompleteStackPair(STACK_A, STACK_B, PRESENCE_FILES);
 
-if (STACKS_PRESENT) {
+if (COMPLETE_STACKS) {
   registerRuntimeSuite(
     'VQEngineRuntime contract - VQ 1 runtime copy',
     () => import('../../VQ 1/vq-engine-runtime.js')
@@ -44,7 +47,7 @@ if (STACKS_PRESENT) {
   );
 } else {
   describe('VQEngineRuntime contract', () => {
-    test('SKIPPED: VQ stacks not present (standalone checkout)', () => {
+    test('SKIPPED: complete VQ stacks are not present', () => {
       expect(true).toBe(true);
     });
   });

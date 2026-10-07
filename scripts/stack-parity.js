@@ -108,6 +108,21 @@ export function defaultStackRoot(rel) {
   return candidates[0];
 }
 
+/**
+ * Return whether both roots have the minimum files that identify complete
+ * VQ stacks. Partial PC or Foundry trees must not activate the private-stack
+ * parity gate, but a complete pair must still be checked strictly.
+ * @param {string} stackA absolute or project-relative VQ 1 root
+ * @param {string} stackB absolute or project-relative VQ 2 root
+ * @param {string[]} [presenceFiles] files required in both complete stacks
+ * @returns {boolean} true only when every required file exists in both roots
+ */
+export function hasCompleteStackPair(stackA, stackB, presenceFiles = PRESENCE_FILES) {
+  return [stackA, stackB].every((root) => presenceFiles.every((rel) => (
+    fs.existsSync(path.join(root, rel))
+  )));
+}
+
 export function checkParity(options = {}) {
   const stackA = options.stackRoot1 || defaultStackRoot('VQ 1');
   const stackB = options.stackRoot2 || defaultStackRoot('VQ 2');

@@ -27,7 +27,14 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { checkParity, formatReport, defaultStackRoot, PARITY_FILES, PRESENCE_FILES } from '../scripts/stack-parity.js';
+import {
+  checkParity,
+  formatReport,
+  defaultStackRoot,
+  hasCompleteStackPair,
+  PARITY_FILES,
+  PRESENCE_FILES
+} from '../scripts/stack-parity.js';
 
 const HERE = process.cwd();
 const ROOT = fs.existsSync(path.join(HERE, 'VQ 1')) ? HERE : path.resolve(HERE, '..');
@@ -36,7 +43,8 @@ const VQ2 = path.join(ROOT, 'VQ 2');
 // Real-stack suites only apply inside the full RNK workspace; a
 // standalone open-source clone has no VQ 1 / VQ 2 trees on disk.
 const REAL_STACKS = fs.existsSync(VQ1) && fs.existsSync(VQ2);
-const describeRealStacks = REAL_STACKS ? describe : describe.skip;
+const COMPLETE_STACKS = REAL_STACKS && hasCompleteStackPair(VQ1, VQ2, PRESENCE_FILES);
+const describeRealStacks = COMPLETE_STACKS ? describe : describe.skip;
 
 function makeStackDir(base, files) {
   for (const [rel, content] of Object.entries(files)) {
@@ -137,6 +145,14 @@ describe('checker behavior against fixture stacks', () => {
   test('defaultStackRoot falls back when neither candidate exists', () => {
     const rel = 'definitely-not-a-real-stack-dir-optimizer-xyz';
     expect(defaultStackRoot(rel)).toBe(path.resolve(process.cwd(), rel));
+  });
+
+  test('complete stack pairs require presence markers in both roots', () => {
+    expect(hasCompleteStackPair(a, b)).toBe(false);
+    makeStackDir(a, { 'vq-unit-server.js': 'A', 'package.json': '{}' });
+    expect(hasCompleteStackPair(a, b)).toBe(false);
+    makeStackDir(b, { 'vq-unit-server.js': 'B', 'package.json': '{}' });
+    expect(hasCompleteStackPair(a, b)).toBe(true);
   });
 
   test('formatReport renders statuses and an OK summary', () => {
