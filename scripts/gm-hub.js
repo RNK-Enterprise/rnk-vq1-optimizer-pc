@@ -1,6 +1,7 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
+ * Contributor: Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,10 +86,11 @@ export function validateGMPlan(plan, limits = DEFAULT_LIMITS) {
  * decision engine; if VQ is unavailable, the request fails visibly.
  */
 export class GMHubApi {
-  constructor({ baseUrl = DEFAULT_ENDPOINT, fetchFn, token = null, timeoutMs = 7000 } = {}) {
+  constructor({ baseUrl = DEFAULT_ENDPOINT, fetchFn, token = null, gmAssertion = null, timeoutMs = 7000 } = {}) {
     this.baseUrl = String(baseUrl || DEFAULT_ENDPOINT).replace(/\/$/, '');
     this.fetchFn = fetchFn || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
     this.token = typeof token === 'string' && token.trim() ? token.trim() : null;
+    this.gmAssertion = typeof gmAssertion === 'string' && gmAssertion.trim() ? gmAssertion.trim() : null;
     this.timeoutMs = Math.max(1000, Number(timeoutMs) || 7000);
     if (!this.fetchFn) throw new TypeError('GMHubApi requires fetch');
   }
@@ -103,6 +105,7 @@ export class GMHubApi {
     const headers = { Accept: 'application/json' };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (this.token) headers['x-optimizer-token'] = this.token;
+    if (this.gmAssertion) headers['x-foundry-gm-assertion'] = this.gmAssertion;
     try {
       const response = await this.fetchFn(this._url(path), {
         method,
@@ -164,6 +167,18 @@ export class GMHubApi {
       }
     });
   }
+
+  authorizeApply({ planId, scope, actionCount } = {}) {
+    return this._request('/control/apply', {
+      method: 'POST',
+      body: {
+        protocolVersion: GM_HUB_PROTOCOL,
+        planId,
+        scope,
+        actionCount
+      }
+    });
+  }
 }
 
 /**
@@ -212,6 +227,13 @@ export class GMHubController {
   async apply(plan = this.state.lastPlan, { broadcast = false } = {}) {
     if (!plan) throw new Error('No GM plan available');
     const safePlan = validateGMPlan(plan);
+    if (typeof this.api.authorizeApply === 'function') {
+      await this.api.authorizeApply({
+        planId: safePlan.planId,
+        scope: safePlan.scope,
+        actionCount: safePlan.actions.length
+      });
+    }
     if (broadcast && safePlan.scope !== 'self') {
       if (!this.broadcastPlan) throw new Error('No Foundry plan transport is available');
       await this.broadcastPlan(safePlan);

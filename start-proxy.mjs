@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
+ * Contributor: Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,9 +35,10 @@ import { LISAProxyServer } from './lisa-secure-proxy.js';
 // VQ cluster, so shipping an unauthenticated listener by default is a
 // footgun; both tokens must be explicit. Generate them with:
 //   openssl rand -hex 32
-if (!process.env.VQ_CLUSTER_TOKEN || !process.env.OPTIMIZER_GATEWAY_TOKEN) {
-  console.error('[LISA Proxy] Refusing to start: set VQ_CLUSTER_TOKEN and OPTIMIZER_GATEWAY_TOKEN.');
-  console.error('[LISA Proxy] Both are shared secrets: the same VQ_CLUSTER_TOKEN must be set on every VQ unit.');
+if (!process.env.VQ_CLUSTER_TOKEN || !process.env.OPTIMIZER_GATEWAY_TOKEN || !process.env.FOUNDRY_GM_TOKEN) {
+  console.error('[LISA Proxy] Refusing to start: set VQ_CLUSTER_TOKEN, OPTIMIZER_GATEWAY_TOKEN, and FOUNDRY_GM_TOKEN.');
+  console.error('[LISA Proxy] The same VQ_CLUSTER_TOKEN must be set on every VQ unit; the other secrets remain on the proxy.');
+  console.error('[LISA Proxy] FOUNDRY_GM_TOKEN authenticates GM control requests and stays server-side.');
   console.error('[LISA Proxy] Generate each with: openssl rand -hex 32');
   process.exit(1);
 }

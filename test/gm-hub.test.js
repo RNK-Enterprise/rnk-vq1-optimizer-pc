@@ -18,7 +18,7 @@
  * GM Hub API-only contract tests.
  */
 
-import http from 'http';
+import { EventEmitter } from 'events';
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import {
   GMHubApi, GMHubController, GM_HUB_PROTOCOL, OPTIMIZATION_PROFILES,
@@ -37,21 +37,32 @@ const fakeResponse = (body, ok = true, status = 200) => ({ ok, status, json: asy
 
 function httpRequest(server, path, { method = 'GET', body, headers = {} } = {}) {
   return new Promise((resolve, reject) => {
-    const address = server.address();
-    const request = http.request({ hostname: '127.0.0.1', port: address.port, path, method, headers: {
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...headers
-    }}, (response) => {
-      let raw = '';
-      response.on('data', (chunk) => { raw += chunk; });
-      response.on('end', () => {
+    const request = new EventEmitter();
+    const response = {
+      statusCode: 200,
+      headers: {},
+      writableEnded: false,
+      setHeader(key, value) { this.headers[key.toLowerCase()] = key.toLowerCase() === 'set-cookie' ? [value] : value; },
+      end(raw = '') {
+        this.writableEnded = true;
         let parsed = null;
         try { parsed = raw ? JSON.parse(raw) : null; } catch { parsed = raw; }
-        resolve({ status: response.statusCode, body: parsed });
+        resolve({ status: this.statusCode, body: parsed, headers: this.headers });
+      }
+    };
+    request.url = path;
+    request.method = method;
+    request.headers = {
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }), ...headers
+    };
+    request.destroy = jest.fn();
+    server.emit('request', request, response);
+    if (body !== undefined) {
+      setImmediate(() => {
+        request.emit('data', JSON.stringify(body));
+        request.emit('end');
       });
-    });
-    request.on('error', reject);
-    if (body !== undefined) request.write(JSON.stringify(body));
-    request.end();
+    }
   });
 }
 
@@ -91,15 +102,19 @@ describe('GMHubApi', () => {
       if (url.endsWith('/clients')) return fakeResponse({ clients: [] });
       if (url.endsWith('/telemetry')) return fakeResponse({ accepted: true });
       if (url.endsWith('/cleanup/recommend')) return fakeResponse({ recommendations: ['review'] });
+      if (url.endsWith('/control/apply')) return fakeResponse({ accepted: true });
       return fakeResponse({ plan: makePlan() });
     };
-    const api = new GMHubApi({ baseUrl: 'http://gateway/', fetchFn, token: 'secret' });
+    const api = new GMHubApi({ baseUrl: 'http://gateway/', fetchFn, token: 'secret', gmAssertion: 'gm-proof' });
     await expect(api.getStatus()).resolves.toEqual({ gateway: 'online' });
     await expect(api.getClients()).resolves.toEqual({ clients: [] });
     await expect(api.sendTelemetry('c1', { fps: {} })).resolves.toEqual({ accepted: true });
     await expect(api.requestPlan({ profile: 'power', scope: 'all', targetClientIds: ['c1'], clientId: 'gm', telemetry: {} })).resolves.toHaveProperty('profile', 'balanced');
     await expect(api.requestCleanupRecommendation({ clientId: 'gm' })).resolves.toEqual({ recommendations: ['review'] });
+    await expect(api.authorizeApply({ planId: 'relay-1', scope: 'self', actionCount: 1 })).resolves.toEqual({ accepted: true });
+    await expect(api.authorizeApply()).resolves.toEqual({ accepted: true });
     expect(calls.every(({ options }) => options.headers['x-optimizer-token'] === 'secret')).toBe(true);
+    expect(calls.every(({ options }) => options.headers['x-foundry-gm-assertion'] === 'gm-proof')).toBe(true);
     expect(calls.find(({ url }) => url.endsWith('/status')).options.method).toBe('GET');
     expect(calls.find(({ url }) => url.endsWith('/plan')).options.method).toBe('POST');
   });
@@ -168,6 +183,17 @@ describe('GMHubController', () => {
     await expect(controller.apply(undefined, { broadcast: true })).rejects.toThrow('transport');
     controller.log('hello');
     expect(logFn).toHaveBeenCalledWith('hello');
+  });
+
+  test('authorizes an apply before mutating the host when the API supports it', async () => {
+    const host = { applyAction: jest.fn().mockResolvedValue(true), settings: {}, disabled: new Set() };
+    const authorizeApply = jest.fn().mockResolvedValue({ accepted: true });
+    const api = { requestPlan: jest.fn(), authorizeApply };
+    const controller = new GMHubController({ api, host });
+    const plan = makePlan();
+    await expect(controller.apply(plan)).resolves.toEqual(expect.objectContaining({ applied: [safeAction] }));
+    expect(authorizeApply).toHaveBeenCalledWith({ planId: 'plan-1', scope: 'self', actionCount: 1 });
+    expect(host.applyAction).toHaveBeenCalledWith(safeAction);
   });
 });
 
@@ -406,26 +432,36 @@ describe('optimizer gateway', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    server = http.createServer();
-    gateway = attachOptimizerGateway(server, proxy, { requireToken: 'secret', now: () => 1700000000000 });
-    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    server = new EventEmitter();
+    gateway = attachOptimizerGateway(server, proxy, {
+      requireToken: 'secret',
+      authenticateGM: () => ({ ok: true, gmId: 'test-gm' }),
+      now: () => 1700000000000
+    });
   });
   afterEach(async () => {
     gateway.close();
-    await new Promise((resolve) => server.close(resolve));
   });
 
   test('serves status, clients, telemetry, plan, and cleanup', async () => {
     const headers = { 'x-optimizer-token': 'secret' };
-    expect((await httpRequest(server, '/optimizer/v1/status', { headers })).body.gateway).toBe('online');
-    expect((await httpRequest(server, '/optimizer/v1/clients', { headers })).body.clients).toEqual([]);
-    expect((await httpRequest(server, '/optimizer/v1/telemetry', { method: 'POST', headers, body: { protocolVersion: 1, clientId: 'c1', telemetry: { fps: {} } } })).body.accepted).toBe(true);
-    expect((await httpRequest(server, '/optimizer/v1/clients', { headers })).body.clients[0].clientId).toBe('c1');
-    const p = await httpRequest(server, '/optimizer/v1/plan', { method: 'POST', headers, body: { protocolVersion: 1, profile: 'balanced', scope: 'self', targetClientIds: [], clientId: 'c1', telemetry: {} } });
+    const first = await httpRequest(server, '/optimizer/v1/status', { headers });
+    const cookie = first.headers['set-cookie'][0].split(';')[0];
+    expect(first.body.gateway).toBe('online');
+    expect((await httpRequest(server, '/optimizer/v1/clients', { headers: { ...headers, cookie } })).body.clients).toEqual([]);
+    expect((await httpRequest(server, '/optimizer/v1/telemetry', { method: 'POST', headers: { ...headers, cookie }, body: { protocolVersion: 1, clientId: 'spoofed', telemetry: { fps: {}, chat: 'secret' } } })).body.accepted).toBe(true);
+    const client = (await httpRequest(server, '/optimizer/v1/clients', { headers: { ...headers, cookie } })).body.clients[0];
+    expect(client.clientId).toMatch(/^client_[A-Za-z0-9_-]{20,}$/);
+    const p = await httpRequest(server, '/optimizer/v1/plan', { method: 'POST', headers: { ...headers, cookie }, body: { protocolVersion: 1, profile: 'balanced', scope: 'self', targetClientIds: [], clientId: 'spoofed', telemetry: {} } });
     expect(p.body.success).toBe(true);
     expect(p.body.plan.sourceUnits).toEqual(['VQ-1', 'VQ-2']);
-    const c = await httpRequest(server, '/optimizer/v1/cleanup/recommend', { method: 'POST', headers, body: { protocolVersion: 1, clientId: 'c1', telemetry: {}, categories: ['chat'] } });
+    expect(p.body.plan.planId).toMatch(/^relay-/);
+    const applyBody = { protocolVersion: 1, planId: p.body.plan.planId, scope: p.body.plan.scope, actionCount: p.body.plan.actions.length };
+    expect((await httpRequest(server, '/optimizer/v1/control/apply', { method: 'POST', headers: { ...headers, cookie }, body: applyBody })).body.accepted).toBe(true);
+    expect((await httpRequest(server, '/optimizer/v1/control/apply', { method: 'POST', headers: { ...headers, cookie }, body: applyBody })).status).toBe(400);
+    const c = await httpRequest(server, '/optimizer/v1/cleanup/recommend', { method: 'POST', headers: { ...headers, cookie }, body: { protocolVersion: 1, clientId: 'spoofed', telemetry: {}, categories: ['chat'] } });
     expect(c.body.recommendations).toEqual(expect.arrayContaining(['render']));
+    expect(gateway.audit()).toEqual([expect.objectContaining({ operation: 'apply', gmId: 'test-gm', actionCount: 1 })]);
     expect(proxy.dispatchTandem).toHaveBeenCalledTimes(3);
   });
 
