@@ -1,5 +1,11 @@
 # PC browser integration changelog
 
+## 2026-10-07
+
+- Scoped the completeness gate to the VQ1 PC inventory: 34 engines, 136
+  turbos, and 170 paired libraries. The Foundry VQ2 surface is not inspected
+  by this PC check.
+
 ## 2026-10-06
 
 - Added lazy, trigger-validated engine execution to the local PC mesh without adding transport or OS mutation.

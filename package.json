@@ -7,11 +7,9 @@
     "test": "jest --coverage --verbose",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
-    "parity": "node scripts/check-stack-parity.js",
-    "pretest": "node scripts/check-stack-parity.js",
-    "sync-stacks": "node scripts/sync-stacks-cli.js",
+    "pc:vq1:check": "node scripts/check-pc-vq1.js",
+    "pretest": "node scripts/check-pc-vq1.js",
     "bench": "node scripts/benchmark-core.js",
-    "test:nightly": "node scripts/run-nightly.js",
     "lint": "eslint scripts/**/*.js native/**/*.js",
     "lint:fix": "eslint scripts/**/*.js native/**/*.js --fix",
     "native:facts": "node native/cli.mjs facts",
@@ -33,7 +31,6 @@
   "devDependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",
-    "@rnk/vq-contract-tests": "file:vendor/vq-contract-tests",
     "babel-jest": "^29.7.0",
     "eslint": "^8.50.0",
     "jest": "^29.7.0"
@@ -58,6 +55,7 @@
       "scripts/settings-manager.js",
       "scripts/browser-environment.js",
       "scripts/pc-host.js",
+      "scripts/check-pc-vq1-completeness.js",
       "native/agent.js",
       "native/cache-cleaner.js",
       "native/command-runner.js",
@@ -74,8 +72,7 @@
       "**/test/**/*.test.js"
     ],
     "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/test/nightly/"
+      "/node_modules/"
     ],
     "modulePaths": [
       "<rootDir>/node_modules"
