@@ -30,7 +30,7 @@ describe('workstation-steward engine and library', () => {
     expect(WORKSTATION_STEWARD_TRIGGERS).toEqual(['install.preflight', 'system.facts.request', 'workload.changed', 'health.interval']);
     expect(result).toMatchObject({ state: 'plan-ready', platform: 'win32', game: { detected: true, name: 'game.exe' } });
     expect(result.capabilities.cpuHardCap).toContain('unsupported');
-    expect(result.resources.actions[0]).toMatchObject({ type: 'budget-process', pid: 11, requiresApproval: true });
+    expect(result.resources).toMatchObject({ capabilities: { cpuPercent: 'hard-limit-adapter', memoryBytes: 'hard-limit-adapter', ioBytesPerSecond: 'priority-only', gpuPercent: 'observation-only' }, actions: [expect.objectContaining({ type: 'budget-process', pid: 11, requiresApproval: true, enforcement: 'hard-where-supported' })] });
     expect(result.files.duplicateGroups).toHaveLength(1);
     expect(result.files.incomplete).toEqual(['C:/Downloads/c.part']);
     expect(result.files.suggestedTarget).toBe('F:');
@@ -43,13 +43,13 @@ describe('workstation-steward engine and library', () => {
 
   test('fails closed for sparse, malformed, and alternate platform evidence', () => {
     const sparse = runWorkstationStewardEngine({ engine: 'workstation-steward-input', platform: 'solaris', storage: [{ mount: '/', freeBytes: -1, totalBytes: NaN, writable: false }], processes: [{ pid: 0, name: '', role: '' }], files: [{ path: '', sizeBytes: -1 }], downloads: [{ name: '', sizeBytes: -1, destinationMount: '' }], media: [{ type: '' }] }, { trigger: 'system.facts.request', now: () => 1 });
-    expect(sparse).toMatchObject({ state: 'plan-ready', platform: 'unknown', game: { detected: false }, resources: { enforcement: 'observation-only' } });
+    expect(sparse).toMatchObject({ state: 'plan-ready', platform: 'unknown', game: { detected: false }, resources: { enforcement: 'observation-only', capabilities: { cpuPercent: 'unsupported', memoryBytes: 'unsupported' } } });
     expect(sparse.files).toMatchObject({ duplicateGroups: [], incomplete: [], large: [], suggestedTarget: null, moveRequiresPreview: false });
     expect(sparse.downloads[0].state).toBe('observation-required');
     const empty = runWorkstationStewardEngine({ engine: 'system-facts' }, { trigger: 'health.interval', now: () => 2 });
     expect(empty.state).toBe('observation-required');
     const declared = runWorkstationStewardEngine({ engine: 'system-facts', os: { platform: 'linux' }, game: { detected: true, pid: 99, name: 'declared' }, workload: {}, storage: [], processes: [] }, { trigger: 'health.interval', now: () => 3 });
-    expect(declared).toMatchObject({ platform: 'linux', game: { detected: true, pid: 99, confidence: 1 } });
+    expect(declared).toMatchObject({ platform: 'linux', game: { detected: true, pid: 99, confidence: 1 }, resources: { capabilities: { cpuPercent: 'unsupported', memoryBytes: 'hard-limit-adapter' } } });
     const candidateWithoutPid = runWorkstationStewardEngine({ engine: 'system-facts', processes: [{ role: 'game', foreground: false }] }, { trigger: 'health.interval', now: () => 4 });
     expect(candidateWithoutPid.game).toMatchObject({ detected: true, pid: null, confidence: 0.8 });
     expect(runWorkstationStewardEngine({ engine: 'system-facts', processes: [{ role: 'build', foreground: true }] }, { trigger: 'health.interval', now: () => 5 }).game.detected).toBe(false);
