@@ -248,8 +248,11 @@ supported soft responses—lower process priority and, on Linux, lower I/O
 priority—to explicitly approved background PIDs. Memory and GPU hard caps stay
 unsupported evidence; the command never claims those limits were enforced.
 
-`game-session-monitor` is a trigger-based gaming-session supervisor. It detects
-an explicitly named or role-labelled foreground game, previews background
+`game-session-monitor` is a trigger-based gaming-session supervisor. Windows
+process telemetry supplies the current desktop foreground PID through fixed
+user32 calls; Linux and macOS require explicit foreground evidence from the
+platform adapter or caller. It detects an explicitly named or role-labelled
+foreground game, previews background
 priority/I/O reductions, and can opt into approved-PID application. On session
 exit it restores only priority values captured before application; missing
 pre-change evidence remains review-required. It does not impose hard CPU,

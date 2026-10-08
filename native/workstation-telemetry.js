@@ -73,7 +73,7 @@ export function parseProcessTelemetry(output, { platform = 'unknown' } = {}) {
 export async function collectProcessTelemetry({ platform = process.platform, commandRunner } = {}) {
   if (!commandAvailable(commandRunner)) return Object.freeze({ available: false, processes: EMPTY, truncated: false, reason: 'command runner unavailable' });
   const command = platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-Process | Select-Object Id,ProcessName,WorkingSet64,CPU,StartTime | ConvertTo-Json -Compress'], { timeoutMs: 5000, maxOutputBytes: 65536 }]
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$signature='[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);'; Add-Type -MemberDefinition $signature -Name ForegroundWindow -Namespace RnkNative -ErrorAction Stop; $window=[RnkNative.ForegroundWindow]::GetForegroundWindow(); [uint32]$foregroundPid=0; [void][RnkNative.ForegroundWindow]::GetWindowThreadProcessId($window,[ref]$foregroundPid); Get-Process | ForEach-Object { [pscustomobject]@{ Id=$_.Id; ProcessName=$_.ProcessName; WorkingSet64=$_.WorkingSet64; CPU=$_.CPU; StartTime=$_.StartTime; foreground=($_.Id -eq $foregroundPid) } } | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 65536 }]
     : platform === 'linux' || platform === 'darwin'
       ? ['ps', ['-eo', 'pid=,comm=,pcpu=,rss=,etime=,state='], { timeoutMs: 2500, maxOutputBytes: 65536 }]
       : null;

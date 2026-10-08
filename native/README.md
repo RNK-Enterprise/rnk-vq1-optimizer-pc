@@ -190,7 +190,11 @@ duration, format, codec, audio-channel, and video-dimension facts. Missing
 `ffprobe`, invalid output, symlinks, and unsupported files stay unavailable.
 
 `workload-preview` detects only declared game evidence, a foreground process
-with an explicit game role, or a caller-supplied exact process name. It plans
+with an explicit game role, or a caller-supplied exact process name. On
+Windows, process telemetry also marks the current desktop foreground PID via
+the fixed user32 `GetForegroundWindow` and `GetWindowThreadProcessId` calls;
+other platforms retain explicit caller/platform evidence and fail closed when
+foreground state is unavailable. It plans
 low/normal process and I/O priorities only for non-foreground, non-protected,
 non-system background PIDs. `workload-apply` requires `--confirm` and an
 explicit `--approve-pids` list. The Linux adapter can apply both priority

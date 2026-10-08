@@ -35,11 +35,11 @@ function fakeFs(files, missing = new Set()) {
 describe('workstation process telemetry', () => {
   test('parses Windows JSON and bounded POSIX rows', () => {
     const windows = parseProcessTelemetry(JSON.stringify([
-      { Id: 10, ProcessName: 'builder', WorkingSet64: 2048, CPU: 4, State: 'running', protected: true, role: 'build' },
+      { Id: 10, ProcessName: 'builder', WorkingSet64: 2048, CPU: 4, State: 'running', foreground: true, protected: true, role: 'build' },
       { Id: 11, ProcessName: '', WorkingSet64: 0, CPU: 0, StartTime: null }
     ]), { platform: 'win32' });
     expect(windows).toMatchObject({ available: true, truncated: false });
-    expect(windows.processes[0]).toMatchObject({ pid: 10, name: 'builder', memoryBytes: 2048, cpuSeconds: 4, protected: true, role: 'build' });
+    expect(windows.processes[0]).toMatchObject({ pid: 10, name: 'builder', memoryBytes: 2048, cpuSeconds: 4, foreground: true, protected: true, role: 'build' });
     expect(windows.processes[1]).toMatchObject({ pid: 11, name: 'unknown', state: 'unknown' });
     expect(parseProcessTelemetry(JSON.stringify({ Id: 12, ProcessName: 'one' }), { platform: 'win32' }).processes).toHaveLength(1);
     expect(parseProcessTelemetry(JSON.stringify([
@@ -61,7 +61,9 @@ describe('workstation process telemetry', () => {
   test('collects with fixed platform commands and fails closed', async () => {
     const win = runner({ code: 0, stdout: JSON.stringify({ Id: 1, ProcessName: 'one' }) });
     await expect(collectProcessTelemetry({ platform: 'win32', commandRunner: win })).resolves.toMatchObject({ available: true });
-    expect(win.run.mock.calls[0][1].join(' ')).toContain('Get-Process');
+    expect(win.run.mock.calls[0][1].join(' ')).toEqual(expect.stringContaining('Get-Process'));
+    expect(win.run.mock.calls[0][1].join(' ')).toEqual(expect.stringContaining('GetForegroundWindow'));
+    expect(win.run.mock.calls[0][1].join(' ')).toEqual(expect.stringContaining('GetWindowThreadProcessId'));
     await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '1 init 0 1 00:01 S' }) })).resolves.toMatchObject({ available: true });
     await expect(collectProcessTelemetry({ platform: 'darwin', commandRunner: runner({ code: 1, stderr: 'denied' }) })).resolves.toMatchObject({ available: false, reason: 'denied' });
     await expect(collectProcessTelemetry({ platform: 'win32', commandRunner: runner({ code: 1 }) })).resolves.toMatchObject({ available: false, reason: 'process command failed' });

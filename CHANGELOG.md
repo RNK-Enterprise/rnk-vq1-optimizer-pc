@@ -27,6 +27,8 @@
   priority application and evidence-gated restoration.
 - Extended read-only SMART evidence with available temperature, percentage-used,
   power-on-hour, unsafe-shutdown, and critical-warning attributes.
+- Extended Windows process telemetry with read-only foreground-window PID
+  evidence; unsupported platforms remain explicit rather than inferred.
 - Added explicit cross-platform read-only filesystem-health evidence through
   fixed Windows, Linux, and macOS volume checkers.
 - Added an append-only native steward history store and cross-platform report

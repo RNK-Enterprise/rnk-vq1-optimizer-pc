@@ -12,6 +12,8 @@
 - Added the bounded Storage Pressure Guard with configurable pressure levels,
   target free-space floor, fixed reclaimable categories, protected-path
   precedence, symlink refusal, and explicit approval boundaries.
+- Extended Windows process telemetry with read-only foreground-window PID
+  evidence; unsupported platforms remain explicit rather than inferred.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor
