@@ -50,7 +50,9 @@
     "native:media:playlist": "node native/cli.mjs media-playlist",
     "native:media:export": "node native/cli.mjs media-export",
     "native:media:import": "node native/cli.mjs media-import",
-    "native:media:playback-plan": "node native/cli.mjs media-playback-plan"
+    "native:media:playback-plan": "node native/cli.mjs media-playback-plan",
+    "native:media:player": "node native/cli.mjs media-player",
+    "native:media:panel": "node native/cli.mjs media-panel"
   },
   "keywords": [
     "pc-optimizer",

@@ -33,6 +33,7 @@ import { createDownloadGuard } from './download-guard.js';
 import { createDownloadMonitor } from './download-monitor.js';
 import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
+import { buildMediaPanelPlan, createMediaPlayer } from './media-player.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
@@ -370,6 +371,15 @@ async function runMediaCommand(command, args) {
   throw new Error(`Unknown media command: ${command}`);
 }
 
+async function runMediaPlayerCommand(args) {
+  const queue = JSON.parse(requireOption(args, 'tracks'));
+  const player = createMediaPlayer({ queue, initial: typeof args.initial === 'string' ? JSON.parse(args.initial) : {} });
+  const action = args.action || 'read';
+  if (action === 'read') return player.read();
+  const value = action === 'select' ? numberOption(args, 'index', null) : action === 'shuffle' ? args.enabled === true : action === 'repeat' ? requireOption(args, 'mode') : undefined;
+  return player.command(action, value);
+}
+
 export async function runCli(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
@@ -404,6 +414,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
   if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
+  if (command === 'media-player') return runMediaPlayerCommand(args);
+  if (command === 'media-panel') return buildMediaPanelPlan(requireOption(args, 'url'));
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);
 }

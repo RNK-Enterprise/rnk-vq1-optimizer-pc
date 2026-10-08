@@ -155,6 +155,8 @@ node native/cli.mjs media-favorite --state-path "$HOME/.rnk-optimizer/media.json
   --file "$HOME/Music/track-a.mp3"
 node native/cli.mjs media-playback-plan --state-path "$HOME/.rnk-optimizer/media.json" \
   --file "$HOME/Music/track-a.mp3"
+node native/cli.mjs media-player --tracks '["/music/track-a.mp3","/music/track-b.mp3"]' --action next
+node native/cli.mjs media-panel --url "https://www.youtube.com/playlist?list=EXAMPLE"
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```
@@ -183,6 +185,12 @@ audio, video, and image files. It supports duplicate evidence, favorites,
 recently played entries, playlists, import/export, and an explicit
 player-host handoff plan. It never plays, downloads, moves, copies, or deletes
 media; actual playback remains an application-owned host responsibility.
+
+The media player state machine supplies queue selection, play/pause, previous/
+next, shuffle, repeat, search, and host handoff state. It does not claim an
+audio decoder or download service. The media panel accepts only HTTPS URLs on
+an explicit allow-list and produces an approval-gated embed plan; it never
+fetches media or bypasses service restrictions.
 
 `steward-report` reduces the bounded facts retained by `steward-monitor` into a
 daily workstation report. It reports observed storage/free-space movement,

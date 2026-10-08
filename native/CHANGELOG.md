@@ -43,6 +43,8 @@
   samples and bounded cleanup.
 - Added network contention review from interface facts and explicit per-process
   rates without claiming unavailable bandwidth authority.
+- Added deterministic local media queue/player state and HTTPS-only media-panel
+  handoff plans without decoder or download authority.
 
 ## 2026-10-06
 

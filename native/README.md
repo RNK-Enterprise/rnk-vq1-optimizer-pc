@@ -68,6 +68,8 @@ node native/cli.mjs media-favorite --state-path "$HOME/.rnk-optimizer/media.json
   --file "$HOME/Music/track-a.mp3"
 node native/cli.mjs media-playback-plan --state-path "$HOME/.rnk-optimizer/media.json" \
   --file "$HOME/Music/track-a.mp3"
+node native/cli.mjs media-player --tracks '["/music/track-a.mp3","/music/track-b.mp3"]' --action next
+node native/cli.mjs media-panel --url "https://www.youtube.com/playlist?list=EXAMPLE"
 ```
 
 Remote gateways require HTTPS. Plain HTTP is accepted only for exact
@@ -148,6 +150,11 @@ limits depth and entries, optionally hashes within a byte budget, and stores
 only metadata in a caller-selected state file. It does not play, move, copy,
 download, or delete media; an application-owned player host remains required
 for playback.
+
+`media-player` provides deterministic queue, play/pause, previous/next,
+shuffle, repeat, select, and search state for an application-owned player
+host. `media-panel` accepts only HTTPS URLs on its explicit allow-list and
+returns an approval-gated embed plan; it does not fetch or download media.
 
 `workload-preview` detects only declared game evidence, a foreground process
 with an explicit game role, or a caller-supplied exact process name. It plans
