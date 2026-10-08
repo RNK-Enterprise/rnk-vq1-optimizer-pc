@@ -4,6 +4,8 @@
 
 - Added separate GPU temperature evidence to daily workstation reports, with
   canonical and alternate host field support and explicit unavailable states.
+- Extended the deterministic workstation assistant to include GPU temperature
+  when explaining the highest observed thermal reading.
 
 - Added cross-platform interface bandwidth-rate derivation and a trigger-based
   `network-rate-monitor` command with counter-reset and per-process authority

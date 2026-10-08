@@ -40,7 +40,8 @@ function memoryAnswer(facts) {
 function thermalAnswer(facts) {
   const thermals = record(facts.thermals) ? facts.thermals : null;
   const gpu = record(facts.gpu) ? facts.gpu : null;
-  const max = number(thermals?.maxTemperatureC);
+  const readings = [number(thermals?.maxTemperatureC), number(gpu?.temperatureC)].filter((value) => value !== null);
+  const max = readings.length ? Math.max(...readings) : null;
   return Object.freeze({ intent: 'thermals', state: thermals || gpu ? 'answered' : 'observation-required', answer: max === null ? 'Thermal evidence is unavailable.' : `The highest observed thermal reading is ${max} C.`, evidence: Object.freeze({ thermals, gpu }), recommendations: Object.freeze(max !== null && max >= 90 ? ['reduce-sustained-load', 'check-cooling'] : ['continue-thermal-observation']) });
 }
 

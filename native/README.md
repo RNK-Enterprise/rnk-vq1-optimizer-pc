@@ -301,7 +301,7 @@ Protected, incomplete, duplicate, unclassified, and missing-evidence entries
 remain skipped. Apply and rollback delegate to the existing placement authority.
 
 `assistant` is a deterministic local facts-to-plan interface. It answers
-supported storage, memory/pagefile, thermal, battery, history, daily-priority,
+supported storage, memory/pagefile, CPU/GPU thermal, battery, history, daily-priority,
 workload, and placement questions from supplied or locally collected facts. It
 refuses unknown operations and never turns natural-language text into a
 command.
