@@ -21,12 +21,20 @@
 
 import { spawn } from 'child_process';
 
+const SENSITIVE_ENV_KEY = /(TOKEN|SECRET|PASSWORD|PASSWD|API[_-]?KEY|PRIVATE[_-]?KEY|CREDENTIAL|AUTHORIZATION)/i;
+
+export function scrubChildEnvironment(env = process.env) {
+  if (!env || typeof env !== 'object') return {};
+  return Object.fromEntries(Object.entries(env).filter(([key]) => !SENSITIVE_ENV_KEY.test(key)));
+}
+
 export function createCommandRunner({
   spawnFile = spawn,
   env = process.env,
   setTimeoutImpl = setTimeout,
   clearTimeoutImpl = clearTimeout
 } = {}) {
+  const childEnv = scrubChildEnvironment(env);
   return {
     run(file, args = [], { timeoutMs = 5000, maxOutputBytes = 32768 } = {}) {
       if (typeof file !== 'string' || file.length === 0 || !Array.isArray(args)) {
@@ -38,7 +46,7 @@ export function createCommandRunner({
           child = spawnFile(file, args.map(String), {
             shell: false,
             windowsHide: true,
-            env
+            env: childEnv
           });
         } catch (error) {
           reject(error);

@@ -17,9 +17,8 @@
  *
  * VQ1 PC inventory gate.
  *
- * VQ1 is the PC optimizer stack. VQ2 is a separate Foundry surface and is
- * intentionally not inspected here. This check verifies the PC engine,
- * engine-library, and turbo inventory without requiring byte-identical files.
+ * This check verifies the PC engine, engine-library, and turbo inventory
+ * without requiring byte-identical files.
  */
 
 import fs from 'fs';

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
- * Guarded browser capability probes shared by the Foundry and PC hosts.
+ * Guarded browser capability probes for the PC host.
  * Missing browser APIs degrade to explicit null or false values.
  */
 

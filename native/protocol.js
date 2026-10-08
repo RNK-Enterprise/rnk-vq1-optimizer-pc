@@ -22,6 +22,7 @@
 
 export const NATIVE_PROTOCOL_VERSION = 1;
 export const MAX_NATIVE_ACTIONS = 24;
+export const MAX_NATIVE_PLAN_TTL_MS = 5 * 60 * 1000;
 
 export const POWER_PROFILES = Object.freeze(['balanced', 'performance', 'battery']);
 export const PROCESS_PRIORITIES = Object.freeze(['low', 'normal', 'high']);
@@ -115,8 +116,16 @@ export function validateNativePlan(plan, { now = Date.now } = {}) {
   if (typeof plan.planId !== 'string' || plan.planId.length === 0 || plan.planId.length > 128) {
     throw new Error('Native plan requires a short planId');
   }
-  if (typeof plan.expiresAt === 'string' && Date.parse(plan.expiresAt) <= now()) {
-    throw new Error('Native plan expired');
+  if (typeof plan.expiresAt !== 'string') throw new Error('Native plan requires expiresAt');
+  const expiresAtMs = Date.parse(plan.expiresAt);
+  if (!Number.isFinite(expiresAtMs) || new Date(expiresAtMs).toISOString() !== plan.expiresAt) {
+    throw new Error('Native plan expiresAt must be a canonical ISO timestamp');
+  }
+  const nowMs = now();
+  if (!Number.isFinite(nowMs)) throw new Error('Native plan clock is invalid');
+  if (expiresAtMs <= nowMs) throw new Error('Native plan expired');
+  if (expiresAtMs - nowMs > MAX_NATIVE_PLAN_TTL_MS) {
+    throw new Error(`Native plan expiresAt exceeds ${MAX_NATIVE_PLAN_TTL_MS}ms maximum TTL`);
   }
   return { ...plan, actions: plan.actions.slice() };
 }

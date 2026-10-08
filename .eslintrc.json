@@ -8,18 +8,6 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "globals": {
-    "ChatMessage": "readonly",
-    "Combat": "readonly",
-    "Dialog": "readonly",
-    "FormApplication": "readonly",
-    "Hooks": "readonly",
-    "PIXI": "readonly",
-    "canvas": "readonly",
-    "foundry": "readonly",
-    "game": "readonly",
-    "ui": "readonly"
-  },
   "rules": {
     "no-async-promise-executor": "error",
     "no-constant-condition": "error",

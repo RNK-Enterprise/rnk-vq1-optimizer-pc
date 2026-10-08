@@ -1,28 +1,25 @@
 # RNK Vortex System Optimizer
 
-This repository is the PC face of the optimizer. The native agent under
-`native/` measures the host and applies only bounded, locally validated
-actions. The analysis engines and local typed mesh under `pc/` are separate
-from the Foundry face, which is released independently.
-
-The installer supports Windows and Linux. iOS is a controller-only surface;
-iOS cannot install a service that tunes the whole device.
+This repository is the public PC optimizer release. It contains a native
+Windows/Linux authority, a PC browser host, and the PC analysis engine tree.
+The native agent measures the host and applies only bounded, locally validated
+actions.
 
 ## Safety model
 
 Installation requires an explicit environment choice:
 
 - `headless` is CLI-first and does not assume a desktop session.
-- `interactive` permits desktop-oriented control while retaining the same
-  preview-first and approval boundaries.
+- `interactive` permits desktop-oriented control with the same preview and
+  approval boundaries.
 
-Installing does not change the operating system. `facts` is read-only.
+Installation does not change the operating system. `facts` is read-only.
 `optimize` requests a bounded data-only plan and previews it by default.
 Applying a plan, administrative actions, cache deletion, and file
 organization are separate explicit operations.
 
 The native agent does not sweep arbitrary directories, alter user files,
-install undocumented gaming tweaks, manipulate packets, or change network
+install undocumented tweaks, manipulate packets, or change network
 configuration. File organization is a separate preview/confirm workflow and
 never overwrites an existing destination.
 
@@ -36,33 +33,36 @@ The current platform adapters provide documented controls for:
 - Read-only CPU, memory, storage, process, network, and optional NVIDIA facts.
 
 GPU policy, CPU affinity, memory policy, network tuning, and frame-rate
-control are reported as unsupported until a platform-safe implementation is
-added. NVIDIA facts are observational only. The browser host under
-`scripts/pc-host.js` does not execute operating-system commands.
+control remain explicit unsupported results until a platform-safe
+implementation is added and proven. NVIDIA facts are observational only. The
+browser host under `scripts/pc-host.js` does not execute operating-system
+commands.
 
-## Install from Git
+## Install from an immutable release
 
 Linux:
 
 ```bash
-./install/linux/install.sh --mode interactive
+./install/linux/install.sh --mode interactive --ref v3.1.1
 ```
 
 Windows PowerShell:
 
 ```powershell
-.\install\windows\install.ps1 -EnvironmentMode interactive
+.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.1
 ```
 
-Both installers require Git, npm, and Node.js 20 or newer. They clone or
-fast-forward the repository, run `npm ci`, save the environment mode outside
-the checkout, and collect read-only facts.
+Both installers require Git, npm, and Node.js 20 or newer. They require an
+annotated release tag or full commit SHA, verify the checked-out commit, run
+`npm ci`, save the environment mode outside the checkout, and collect
+read-only facts. Floating branch installation is rejected.
 
-To request an optimization preview during installation, provide the VQ
-gateway explicitly:
+To request an optimization preview during installation, provide the gateway
+explicitly. Remote gateways must use HTTPS; HTTP is accepted only for
+loopback development endpoints:
 
 ```bash
-./install/linux/install.sh --mode headless --run-optimize \
+./install/linux/install.sh --mode headless --ref v3.1.1 --run-optimize \
   --gateway https://optimizer.example.invalid/v1/plan
 ```
 
@@ -83,19 +83,26 @@ node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```
 
-The optimizer gateway supplies bounded data. The native adapter validates the
-protocol, action allow-list, numeric limits, approvals, and admin boundary
+The gateway supplies bounded data. The native adapter validates the protocol,
+action allow-list, numeric limits, expiry, approvals, and admin boundary
 before any action can run. No arbitrary command or setting path is accepted.
 
-## PC mesh
+## PC mesh and empirical proof
 
 `pc/mesh.js` registers 34 engines, 34 engine libraries, 136 turbos, and 136
 turbo libraries behind typed local command/event routes. Nodes are lazy-loaded
 and execution requires a declared trigger. The mesh is in-process only: it
 does not use HTTP, REST, sockets, public listeners, or network mutation.
 
-The mesh produces immutable review envelopes. The native platform adapter is
-the only authority allowed to apply operating-system actions.
+The engine and turbo counts are inventory data, not performance proof. The
+public benchmark measures host observations including facts latency,
+event-loop delay, temporary I/O, power-state visibility, and cache preview /
+reclamation behavior. It does not apply system actions or claim an
+optimization improvement. A host result must be evaluated as:
+
+```text
+engine or domain -> evidence -> decision -> measured host result
+```
 
 ## Verification
 
@@ -105,15 +112,25 @@ npm test
 npm run lint
 npm run bench -- --json
 npm run native:facts
+npm run pc:vq1:check
 ```
 
-The Jest configuration requires 100% statements, branches, functions, and
-lines for its configured coverage set. The PC/native readiness gate also runs
-the complete PC tree with the same four coverage dimensions.
+The Jest configuration is a strict 100% statements, branches, functions, and
+lines gate over every tracked JavaScript runtime file in `pc/`, `native/`,
+and the retained PC host/client modules. No runtime path is excluded from
+coverage. The CI workflow runs the same commands from a clean checkout.
 
-The repository is not release-certified until the exact checkout, installer,
-platform apply path, and all RNK review requirements have been independently
-verified and Odinn has signed off.
+The benchmark is observational evidence only. A passing local suite does not
+prove a clean-machine install, Windows execution, a live gateway, or a real
+administrative apply. Those require platform-specific verification and
+Odinn's sign-off.
+
+## Release provenance
+
+Public release tags must be annotated, signed, and point at the exact tested
+commit. Release automation produces a deterministic archive, SHA-256
+checksum, provenance metadata, and a GitHub build attestation. Unsigned or
+floating branch installs are not release evidence.
 
 ## License and attribution
 
@@ -121,10 +138,6 @@ Copyright © 2026 Lisa's Dungeon.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
-Foundation, version 3 of the License.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+Foundation, version 3.
 
 See [LICENSE](LICENSE), [NOTICE](NOTICE), and [TRADEMARKS.md](TRADEMARKS.md).

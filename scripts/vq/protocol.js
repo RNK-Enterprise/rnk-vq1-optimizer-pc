@@ -2,8 +2,8 @@
  * Vortex Quantum - Shared Optimizer Protocol
  * Single source of truth for the client/server optimizer contract.
  *
- * Both stacks import these constants so the allow-list, limits and protocol
- * version can never drift between mobile, PC and Foundry hosts.
+ * The PC browser and native surfaces import these constants so the allow-list,
+ * limits, and protocol version cannot drift.
  *
  * @module _meta/protocol
  * @version 1
@@ -66,9 +66,9 @@ export const DEFAULT_LIMITS = {
 export const RUNTIME_VARIANTS = ['lite', 'standard', 'wasm', 'server'];
 
 /**
- * Host platforms covered by the dual stack.
+ * Host platforms covered by the PC browser surface.
  */
-export const PLATFORMS = ['foundry', 'pc', 'mobile'];
+export const PLATFORMS = ['pc'];
 
 /**
  * Structural + semantic validation of one plan action. Shared by the server

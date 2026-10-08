@@ -1,15 +1,15 @@
 {
   "name": "rnk-vortex-system-optimizer",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "RNK Vortex System Optimizer - bounded whole-PC optimization with explicit local approvals",
   "type": "module",
   "scripts": {
     "test": "jest --coverage --verbose",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
-    "pc:vq1:check": "node scripts/check-pc-vq1.js",
-    "pretest": "node scripts/check-pc-vq1.js",
-    "bench": "node scripts/benchmark-core.js",
+    "pc:vq1:check": "node --input-type=module -e \"import('./scripts/check-pc-vq1-completeness.js').then(({checkPcVq1, formatReport}) => { const report = checkPcVq1(); console.log(formatReport(report)); if (!report.ok) process.exitCode = 1; })\"",
+    "pretest": "npm run pc:vq1:check",
+    "bench": "node scripts/pc-host-benchmark.mjs",
     "lint": "eslint scripts/**/*.js native/**/*.js",
     "lint:fix": "eslint scripts/**/*.js native/**/*.js --fix",
     "native:facts": "node native/cli.mjs facts",
@@ -52,24 +52,16 @@
       }
     },
     "collectCoverageFrom": [
-      "scripts/gm-hub.js",
-      "scripts/telemetry.js",
-      "scripts/foundry-action-host.js",
-      "scripts/settings-manager.js",
+      "pc/**/*.js",
       "scripts/browser-environment.js",
       "scripts/pc-host.js",
       "scripts/check-pc-vq1-completeness.js",
-      "native/agent.js",
-      "native/cache-cleaner.js",
-      "native/command-runner.js",
-      "native/linux-adapter.js",
-      "native/organizer.js",
-      "native/platform.js",
-      "native/protocol.js",
-      "native/system-facts.js",
-      "native/windows-adapter.js",
-      "!scripts/main.js",
-      "!scripts/gm-hub-ui.js"
+      "scripts/vq/**/*.js",
+      "scripts/pc-host-benchmark.js",
+      "scripts/release-provenance.js",
+      "native/**/*.js",
+      "native/gateway-url.js",
+      "!scripts/pc-host-benchmark.mjs"
     ],
     "testMatch": [
       "**/test/**/*.test.js"

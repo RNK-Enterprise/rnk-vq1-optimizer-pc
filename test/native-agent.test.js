@@ -6,10 +6,11 @@
 
 import { NativeOptimizerAgent } from '../native/agent.js';
 
+const TEST_NOW = Date.parse('2030-01-01T00:00:00.000Z');
 const plan = {
   protocolVersion: 1,
   planId: 'plan-1',
-  expiresAt: '2099-01-01T00:00:00.000Z',
+  expiresAt: new Date(TEST_NOW + 60 * 1000).toISOString(),
   actions: [
     { type: 'set-power-profile', key: 'power.profile', value: 'performance' },
     { type: 'clear-cache', key: 'cache', value: 'user-temp' }
@@ -52,11 +53,11 @@ describe('NativeOptimizerAgent', () => {
       expect(options.signal).toBeDefined();
       return { ok: true, json: async () => ({ success: true, plan }) };
     });
-    const agent = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'https://optimizer.test/plan', gatewayToken: 'secret', fetchFn, clientId: 'pc-1', now: () => 1000 });
+    const agent = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'https://optimizer.test/plan', gatewayToken: 'secret', fetchFn, clientId: 'pc-1', now: () => TEST_NOW });
     await expect(agent.requestPlan({ memory: { usedPercent: 50 } }, { profile: 'battery' })).resolves.toEqual(plan);
     expect(agent.collectFacts()).toEqual({ cpu: { load1: 1 } });
 
-    const direct = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://direct', fetchFn: jest.fn().mockResolvedValue({ ok: true, json: async () => plan }), now: () => 1000 });
+    const direct = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: jest.fn().mockResolvedValue({ ok: true, json: async () => plan }), now: () => TEST_NOW });
     await expect(direct.requestPlan({})).resolves.toEqual(plan);
   });
 
@@ -64,21 +65,21 @@ describe('NativeOptimizerAgent', () => {
     const h = adapterHarness();
     const noUrl = new NativeOptimizerAgent({ adapter: h.adapter });
     await expect(noUrl.requestPlan({})).rejects.toThrow('gateway URL');
-    const noFetch = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn: null });
+    const noFetch = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: null });
     await expect(noFetch.requestPlan({})).rejects.toThrow('Fetch is unavailable');
-    const invalidProfile = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn: jest.fn() });
+    const invalidProfile = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: jest.fn() });
     await expect(invalidProfile.requestPlan({}, { profile: 'turbo' })).rejects.toThrow('Unsupported native profile');
-    const rejected = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn: jest.fn().mockResolvedValue({ ok: false, status: 503 }) });
+    const rejected = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: jest.fn().mockResolvedValue({ ok: false, status: 503 }) });
     await expect(rejected.requestPlan({})).rejects.toThrow('503');
-    const unknownStatus = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn: jest.fn().mockResolvedValue({ ok: false }) });
+    const unknownStatus = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: jest.fn().mockResolvedValue({ ok: false }) });
     await expect(unknownStatus.requestPlan({})).rejects.toThrow('unknown');
-    const noJson = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn: jest.fn().mockResolvedValue({ ok: true }) });
+    const noJson = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: jest.fn().mockResolvedValue({ ok: true }) });
     await expect(noJson.requestPlan({})).rejects.toThrow('no JSON');
-    const invalidPlan = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn: jest.fn().mockResolvedValue({ ok: true, json: async () => ({ plan: { protocolVersion: 1 } }) }) });
+    const invalidPlan = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn: jest.fn().mockResolvedValue({ ok: true, json: async () => ({ plan: { protocolVersion: 1 } }) }) });
     await expect(invalidPlan.requestPlan({})).rejects.toThrow('at most');
     const timedOutFetch = new NativeOptimizerAgent({
       adapter: h.adapter,
-      gatewayUrl: 'http://timeout',
+      gatewayUrl: 'http://127.0.0.1:9999/timeout',
       fetchFn: jest.fn((_url, options) => new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted'))))),
       timeoutMs: 1
     });
@@ -87,7 +88,7 @@ describe('NativeOptimizerAgent', () => {
 
   test('keeps normal-user, admin-required, destructive, invalid, and failed actions separate', async () => {
     const h = adapterHarness();
-    const agent = new NativeOptimizerAgent({ adapter: h.adapter, targetPid: 77, approvedBackgroundPids: [77], now: () => 1000 });
+    const agent = new NativeOptimizerAgent({ adapter: h.adapter, targetPid: 77, approvedBackgroundPids: [77], now: () => TEST_NOW });
     const mixed = {
       ...plan,
       actions: [
@@ -122,7 +123,7 @@ describe('NativeOptimizerAgent', () => {
   test('optimizes by collecting facts, requesting a plan, and applying by default in preview mode', async () => {
     const h = adapterHarness();
     const fetchFn = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ plan }) });
-    const agent = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://x', fetchFn, now: () => 1000 });
+    const agent = new NativeOptimizerAgent({ adapter: h.adapter, gatewayUrl: 'http://127.0.0.1:9999/plan', fetchFn, now: () => TEST_NOW });
     const result = await agent.optimize();
     expect(result.facts).toEqual({ cpu: { load1: 1 } });
     expect(result.plan).toEqual(plan);

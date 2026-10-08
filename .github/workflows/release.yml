@@ -1,0 +1,43 @@
+name: PC optimizer release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node scripts/verify-release-provenance.mjs
+      - name: Import release signing key
+        env:
+          RNK_RELEASE_PUBLIC_KEY: ${{ secrets.RNK_RELEASE_PUBLIC_KEY }}
+        run: |
+          test -n "$RNK_RELEASE_PUBLIC_KEY"
+          printf '%s\n' "$RNK_RELEASE_PUBLIC_KEY" | gpg --batch --import
+      - run: git verify-tag --raw "$GITHUB_REF_NAME"
+      - run: npm test -- --runInBand
+      - run: npm run lint
+      - run: git archive --format=tar.gz --prefix=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}/ --output=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz "${GITHUB_SHA}"
+      - run: sha256sum "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" > "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256"
+      - run: node --input-type=module -e "import { writeFile } from 'node:fs/promises'; await writeFile('provenance.json', JSON.stringify({ repository: process.env.GITHUB_REPOSITORY, tag: process.env.GITHUB_REF_NAME, commit: process.env.GITHUB_SHA, archive: 'rnk-vq1-optimizer-pc-' + process.env.GITHUB_REF_NAME + '.tar.gz' }, null, 2) + '\\n');"
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: rnk-vq1-optimizer-pc-${{ github.ref_name }}.tar.gz
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256" provenance.json --verify-tag --generate-notes

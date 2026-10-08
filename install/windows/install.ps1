@@ -11,8 +11,8 @@
 #>
 
 param(
-  [string]$RepositoryUrl = 'https://github.com/RNK-Enterprise/pc-optimizer.git',
   [string]$InstallDirectory = "$env:LOCALAPPDATA\RNK-Vortex-Optimizer",
+  [string]$Ref = '',
   [switch]$RunOptimize,
   [string]$GatewayUrl = $env:OPTIMIZER_GATEWAY_URL,
   [string]$EnvironmentMode = ''
@@ -27,6 +27,9 @@ $nodeMajor = [int]((node -p "process.versions.node").Split('.')[0])
 if ($nodeMajor -lt 20) { throw 'Node.js 20 or newer is required' }
 if ($RunOptimize -and [string]::IsNullOrWhiteSpace($GatewayUrl)) {
   throw 'RunOptimize requires -GatewayUrl or OPTIMIZER_GATEWAY_URL'
+}
+if ([string]::IsNullOrWhiteSpace($Ref) -or ($Ref -notmatch '^v\d+\.\d+\.\d+$' -and $Ref -notmatch '^[0-9a-fA-F]{40}$')) {
+  throw 'Ref is required and must be a release tag (vX.Y.Z) or a full 40-character commit SHA'
 }
 
 if ([string]::IsNullOrWhiteSpace($EnvironmentMode)) {
@@ -46,13 +49,31 @@ switch ($EnvironmentMode.Trim().ToLowerInvariant()) {
 }
 
 if (Test-Path (Join-Path $InstallDirectory '.git')) {
-  git -C $InstallDirectory pull --ff-only
-} else {
-  if ([string]::IsNullOrWhiteSpace($RepositoryUrl)) {
-    throw 'RepositoryUrl is required for a fresh install'
+  if ((git -C $InstallDirectory config --get remote.origin.url) -ne 'https://github.com/RNK-Enterprise/rnk-vq1-optimizer-pc.git') {
+    throw 'existing install has a different origin; refusing to cross repository boundaries'
   }
+  if ((git -C $InstallDirectory status --porcelain)) {
+    throw 'existing install has uncommitted changes; refusing to overwrite it'
+  }
+} else {
   New-Item -ItemType Directory -Force -Path (Split-Path -Parent $InstallDirectory) | Out-Null
-  git clone $RepositoryUrl $InstallDirectory
+  git clone --no-checkout 'https://github.com/RNK-Enterprise/rnk-vq1-optimizer-pc.git' $InstallDirectory
+}
+
+if ($Ref -match '^[0-9a-fA-F]{40}$') {
+  git -C $InstallDirectory fetch --no-tags origin $Ref
+  git -C $InstallDirectory checkout --detach $Ref
+} else {
+  git -C $InstallDirectory fetch origin "refs/tags/${Ref}:refs/tags/${Ref}"
+  if ((git -C $InstallDirectory cat-file -t $Ref) -ne 'tag') { throw 'Ref is not an annotated tag' }
+  git -C $InstallDirectory verify-tag $Ref | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'release tag signature could not be verified' }
+  git -C $InstallDirectory checkout --detach "${Ref}^{commit}"
+}
+
+$resolvedCommit = (git -C $InstallDirectory rev-parse HEAD).Trim()
+if ($Ref -match '^[0-9a-fA-F]{40}$' -and $resolvedCommit -ne $Ref) {
+  throw 'resolved commit does not match requested SHA'
 }
 
 npm --prefix $InstallDirectory ci
@@ -67,4 +88,4 @@ node (Join-Path $InstallDirectory 'native\cli.mjs') facts
 if ($RunOptimize) {
   node (Join-Path $InstallDirectory 'native\cli.mjs') optimize --gateway $GatewayUrl
 }
-Write-Host "Installed in $InstallDirectory ($EnvironmentMode mode)."
+Write-Host "Installed in $InstallDirectory ($EnvironmentMode mode, commit $resolvedCommit)."

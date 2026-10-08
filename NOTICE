@@ -2,12 +2,11 @@ RNK Vortex System Optimizer
 Copyright (c) 2026 Lisa's Dungeon. All Rights Reserved.
 
 This software is distributed under the GNU General Public License, version 3
-only ("GPL-3.0-only"); see the LICENSE file in this directory for the full
+only (GPL-3.0-only); see the LICENSE file in this directory for the full
 text.
 
-The PC release contains a native Windows/Linux agent, a local typed optimizer
-mesh, and bounded analysis engines. The Foundry release is maintained as a
-separate face and is not part of the PC installation workflow.
+The public PC release contains a native Windows/Linux agent, a local typed
+optimizer mesh, and bounded PC analysis engines.
 
 Trademark notice:
 

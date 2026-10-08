@@ -1,9 +1,8 @@
 /**
  * Vortex Quantum - Optimizer Persistence Storage Backends
  *
- * Storage is host-owned: each host decides where optimizer state lives
- * (browser localStorage, Foundry `game.settings`, or in-memory for tests and
- * fallbacks). All backends share one tiny contract:
+ * Storage is PC-host-owned: browser localStorage or in-memory fallback. All
+ * backends share one tiny contract:
  *
  *   hydrate(): Promise<record|null>    read the persisted record (or null)
  *   persist(record): Promise<boolean>  write the record; false on failure
@@ -22,10 +21,6 @@ export const PERSISTED_STATE_VERSION = 1;
 
 /** Default browser storage key. */
 export const DEFAULT_STORAGE_KEY = 'vortex-quantum.optimizer.state';
-
-/** Foundry settings namespace + key. */
-export const FOUNDRY_NAMESPACE = 'vortex-quantum';
-export const FOUNDRY_SETTINGS_KEY = 'optimizer-state';
 
 /** Upper bound on persisted disabled-component entries. */
 export const MAX_DISABLED_ENTRIES = 64;
@@ -182,9 +177,7 @@ export function createBrowserStorage({ key = DEFAULT_STORAGE_KEY, storage } = {}
   const ls =
     storage !== undefined
       ? storage
-      : typeof globalThis !== 'undefined'
-        ? globalThis.localStorage
-        : undefined;
+      : globalThis.localStorage;
 
   if (!ls || typeof ls.getItem !== 'function' || typeof ls.setItem !== 'function') {
     return createMemoryStorage();
@@ -207,77 +200,6 @@ export function createBrowserStorage({ key = DEFAULT_STORAGE_KEY, storage } = {}
         return true;
       } catch {
         return false; // private mode / quota exceeded: best-effort
-      }
-    }
-  };
-}
-
-/**
- * Foundry VTT `game.settings` backend. Registers a client-scoped, non-config
- * setting on first write, then stores the whole optimizer record under one
- * key. Falls back to memory when the settings API is unavailable.
- *
- * @param {Object} [options]
- * @param {string} [options.namespace]
- * @param {string} [options.key]
- * @param {Object} [options.foundry] - Foundry-like handle for tests (default: globalThis.game)
- * @returns {Object} Storage backend
- */
-export function createFoundryStorage({
-  namespace = FOUNDRY_NAMESPACE,
-  key = FOUNDRY_SETTINGS_KEY,
-  foundry
-} = {}) {
-  const game =
-    foundry !== undefined
-      ? foundry
-      : typeof globalThis !== 'undefined'
-        ? globalThis.game
-        : undefined;
-  const settingsApi = game?.settings;
-
-  if (
-    !settingsApi ||
-    typeof settingsApi.get !== 'function' ||
-    typeof settingsApi.set !== 'function'
-  ) {
-    return createMemoryStorage();
-  }
-
-  let registered = false;
-  async function ensureRegistered() {
-    if (registered) return;
-    if (typeof settingsApi.register === 'function') {
-      try {
-        settingsApi.register(namespace, key, { scope: 'client', config: false });
-      } catch {
-        /* duplicate registration: harmless */
-      }
-    }
-    registered = true;
-  }
-
-  return {
-    type: 'foundry',
-    async hydrate() {
-      try {
-        const raw = await settingsApi.get(namespace, key);
-        if (raw == null) return null;
-        if (typeof raw === 'string') {
-          return raw.length > 0 ? JSON.parse(raw) : null;
-        }
-        return raw;
-      } catch {
-        return null;
-      }
-    },
-    async persist(record) {
-      try {
-        await ensureRegistered();
-        await settingsApi.set(namespace, key, record);
-        return true;
-      } catch {
-        return false;
       }
     }
   };

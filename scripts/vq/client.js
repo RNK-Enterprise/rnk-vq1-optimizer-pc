@@ -8,8 +8,8 @@
  *   4. Applies only allow-listed, bounds-checked local actions
  *   5. Reports results over the shared event contract
  *
- * The core never touches DOM, Foundry hooks, or native APIs directly.
- * Hosts (foundry module, PC browser, mobile PWA) implement HostAdapter.
+ * The core never touches the DOM or native APIs directly. The PC browser host
+ * implements the HostAdapter boundary.
  *
  * @module optimizer/client
  * @version 1
@@ -182,8 +182,8 @@ export class OptimizerClient {
       clearTimeout(timer);
     }
 
-    if (!res.ok) {
-      throw new Error(`Plan request failed: HTTP ${res.status}`);
+    if (!res?.ok) {
+      throw new Error(`Plan request failed: HTTP ${res?.status || 'unknown'}`);
     }
 
     const data = await res.json();

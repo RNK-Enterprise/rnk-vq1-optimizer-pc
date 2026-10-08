@@ -11,16 +11,17 @@
 
 set -eu
 
-repository_url='https://github.com/RNK-Enterprise/pc-optimizer.git'
+repository_url='https://github.com/RNK-Enterprise/rnk-vq1-optimizer-pc.git'
 install_directory="${XDG_DATA_HOME:-$HOME/.local/share}/rnk-vortex-optimizer"
+release_ref=''
 run_optimize=0
 environment_mode=''
 gateway_url="${OPTIMIZER_GATEWAY_URL:-}"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --repo) repository_url="$2"; shift 2 ;;
     --dir) install_directory="$2"; shift 2 ;;
+    --ref) release_ref="$2"; shift 2 ;;
     --run-optimize) run_optimize=1; shift ;;
     --gateway) gateway_url="$2"; shift 2 ;;
     --mode|--environment-mode)
@@ -29,6 +30,11 @@ while [ "$#" -gt 0 ]; do
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
+
+if [ -z "$release_ref" ] || ! printf '%s\n' "$release_ref" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$|^[0-9a-fA-F]{40}$'; then
+  echo '--ref is required and must be a release tag (vX.Y.Z) or a full 40-character commit SHA' >&2
+  exit 2
+fi
 
 if [ -z "$environment_mode" ]; then
   if [ ! -t 0 ]; then
@@ -63,11 +69,39 @@ if [ "$run_optimize" -eq 1 ] && [ -z "$gateway_url" ]; then
 fi
 
 if [ -d "$install_directory/.git" ]; then
-  git -C "$install_directory" pull --ff-only
+  [ "$(git -C "$install_directory" config --get remote.origin.url || true)" = "$repository_url" ] || {
+    echo 'existing install has a different origin; refusing to cross repository boundaries' >&2
+    exit 2
+  }
+  [ -z "$(git -C "$install_directory" status --porcelain)" ] || {
+    echo 'existing install has uncommitted changes; refusing to overwrite it' >&2
+    exit 2
+  }
 else
-  [ -n "$repository_url" ] || { echo '--repo is required for a fresh install' >&2; exit 2; }
   mkdir -p "$(dirname "$install_directory")"
-  git clone "$repository_url" "$install_directory"
+  git clone --no-checkout "$repository_url" "$install_directory"
+fi
+
+if printf '%s\n' "$release_ref" | grep -Eq '^[0-9a-fA-F]{40}$'; then
+  git -C "$install_directory" fetch --no-tags origin "$release_ref"
+  git -C "$install_directory" checkout --detach "$release_ref"
+else
+  git -C "$install_directory" fetch origin "refs/tags/$release_ref:refs/tags/$release_ref"
+  [ "$(git -C "$install_directory" cat-file -t "$release_ref")" = 'tag' ] || {
+    echo 'release ref is not an annotated tag' >&2
+    exit 2
+  }
+  git -C "$install_directory" verify-tag "$release_ref" >/dev/null 2>&1 || {
+    echo 'release tag signature could not be verified' >&2
+    exit 2
+  }
+  git -C "$install_directory" checkout --detach "$release_ref^{commit}"
+fi
+
+resolved_commit="$(git -C "$install_directory" rev-parse HEAD)"
+if printf '%s\n' "$release_ref" | grep -Eq '^[0-9a-fA-F]{40}$' && [ "$resolved_commit" != "$release_ref" ]; then
+  echo 'resolved commit does not match requested SHA' >&2
+  exit 2
 fi
 
 npm --prefix "$install_directory" ci
@@ -78,4 +112,4 @@ node "$install_directory/native/cli.mjs" facts
 if [ "$run_optimize" -eq 1 ]; then
   node "$install_directory/native/cli.mjs" optimize --gateway "$gateway_url"
 fi
-printf 'Installed in %s (%s mode).\n' "$install_directory" "$environment_mode"
+printf 'Installed in %s (%s mode, commit %s).\n' "$install_directory" "$environment_mode" "$resolved_commit"

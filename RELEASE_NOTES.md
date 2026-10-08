@@ -1,50 +1,32 @@
-# Release Notes — v3.1.0
+# Release Notes — v3.1.1
 
 Status: working release candidate. Odinn sign-off is still required before
 this repository is called release-certified.
 
 ## PC release surface
 
-- Added the native Windows/Linux whole-PC agent with preview-first execution.
-- Added explicit `headless` and `interactive` installation modes.
-- Added Node.js 20+ checks to both installers.
-- Added explicit VQ gateway configuration for installer-time optimization.
-- Kept administrative, destructive, cache, and organization operations behind
-  separate approvals.
-- Kept network behavior observational; no undocumented network tuning is
-  applied.
-- Kept the iOS path controller-only.
-- Registered 34 engines, 34 engine libraries, 136 turbos, and 136 turbo
-  libraries in the lazy, trigger-validated local PC mesh.
+- Removed the non-PC module, relay, server, UI, templates, and test surface.
+- Added strict expiry validation with a bounded plan lifetime.
+- Restricted remote gateway URLs to HTTPS and loopback development URLs to
+  explicit local hosts.
+- Scrubbed gateway and VQ credentials from child-process environments.
+- Distinguished optimizer-owned temporary files from platform/driver shader
+  caches in code and documentation.
+- Replaced the former application workload benchmark with a host-observation
+  benchmark covering facts latency, event-loop delay, temporary I/O,
+  power-state visibility, and cache preview/reclamation behavior.
+- Added full PC-tree coverage collection and independent CI verification.
+- Changed installers to the public repository and immutable refs.
+- Added signed-tag, checksum, provenance, and build-attestation release
+  workflow policy.
 
-## Verification recorded for this checkout
+## Evidence boundary
 
-- Full Jest suite: 361 suites and 2,121 tests passed.
-- PC/native readiness suite: 352 suites and 1,600 tests passed.
-- PC-tree coverage: 100% statements, branches, functions, and lines.
-- ESLint passed.
-- Native facts collection passed on the local Linux host.
-- Cache and file-organization previews passed without applying changes.
-- Linux installer shell syntax passed.
+The engine and turbo counts are inventory data, not proof of optimization.
+The benchmark is observational and applies no system actions. Local tests do
+not prove a clean-machine install, Windows execution, live gateway, or
+administrator-approved apply.
 
-The Windows installer still requires a Windows PowerShell validation run. No
-administrative action, destructive cache cleanup, file move, or live gateway
-optimization was executed during this audit.
-
-## Explicit boundaries
-
-The current native adapters support documented power and process controls.
-GPU policy, CPU affinity, memory policy, network tuning, and frame-rate
-control remain unsupported results until platform-safe implementations and
-live proof are added. The PC mesh is an in-process typed boundary; it does not
-provide a public listener or arbitrary remote execution.
-
-The installer pulls the repository from Git. The exact pushed commit must be
-verified before a public install command is published. A clean-machine
-installation and platform-specific apply proof are separate release gates.
-
-## License and provenance
-
-The project is GPL-3.0-only and attributed to Lisa's Dungeon. See `LICENSE`,
-`NOTICE`, and `TRADEMARKS.md`. Every release change must remain committed in
-this repository and must pass the RNK review requirements before publication.
+The current checkout must still be independently verified on Windows and by a
+live gateway before release certification. Signed release publication also
+requires an available signing key; no unsigned tag is presented as certified.

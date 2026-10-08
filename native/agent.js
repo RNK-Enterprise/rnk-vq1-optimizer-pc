@@ -24,6 +24,7 @@ import {
   validateNativeAction,
   validateNativePlan
 } from './protocol.js';
+import { validateGatewayUrl } from './gateway-url.js';
 
 const PROFILE_MAP = Object.freeze({ balanced: 'balanced', performance: 'performance', battery: 'battery-mobile' });
 
@@ -79,12 +80,13 @@ export class NativeOptimizerAgent {
     if (!this.gatewayUrl) throw new Error('Optimizer gateway URL is required');
     if (typeof this.fetchFn !== 'function') throw new Error('Fetch is unavailable');
     if (!Object.hasOwn(PROFILE_MAP, profile)) throw new Error(`Unsupported native profile: ${profile}`);
+    const gatewayUrl = validateGatewayUrl(this.gatewayUrl);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers = { 'content-type': 'application/json' };
     if (this.gatewayToken) headers['x-optimizer-token'] = this.gatewayToken;
     try {
-      const response = await this.fetchFn(this.gatewayUrl, {
+      const response = await this.fetchFn(gatewayUrl, {
         method: 'POST',
         headers,
         signal: controller.signal,

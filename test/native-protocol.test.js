@@ -7,6 +7,7 @@
 import {
   DESTRUCTIVE_ACTIONS,
   MAX_NATIVE_ACTIONS,
+  MAX_NATIVE_PLAN_TTL_MS,
   NATIVE_PROTOCOL_VERSION,
   isDestructiveNativeAction,
   validateNativeAction,
@@ -23,6 +24,8 @@ const actions = [
   ['clear-cache', 'cache', 'user-temp'],
   ['stop-approved-process', 'process.stop', 'background-approved']
 ];
+const VALID_NOW = Date.parse('2029-01-01T00:00:00.000Z');
+const VALID_EXPIRY = new Date(VALID_NOW + 60 * 1000).toISOString();
 
 describe('native protocol', () => {
   test('validates every bounded action shape and returns a copy', () => {
@@ -53,17 +56,20 @@ describe('native protocol', () => {
     const plan = {
       protocolVersion: NATIVE_PROTOCOL_VERSION,
       planId: 'plan-1',
-      expiresAt: '2030-01-01T00:00:00.000Z',
+      expiresAt: VALID_EXPIRY,
       actions: [{ type: 'set-power-profile', key: 'power.profile', value: 'balanced' }]
     };
-    expect(validateNativePlan(plan, { now: () => Date.parse('2029-01-01') })).toEqual(plan);
-    expect(validateNativePlan({ ...plan, expiresAt: undefined })).toEqual({ ...plan, expiresAt: undefined });
+    expect(validateNativePlan(plan, { now: () => VALID_NOW })).toEqual(plan);
+    expect(() => validateNativePlan({ ...plan, expiresAt: undefined }, { now: () => VALID_NOW })).toThrow('requires expiresAt');
+    expect(() => validateNativePlan({ ...plan, expiresAt: 'not-a-date' }, { now: () => VALID_NOW })).toThrow('canonical ISO');
+    expect(() => validateNativePlan({ ...plan, expiresAt: new Date(VALID_NOW + MAX_NATIVE_PLAN_TTL_MS + 1).toISOString() }, { now: () => VALID_NOW })).toThrow('maximum TTL');
+    expect(() => validateNativePlan(plan, { now: () => Number.NaN })).toThrow('clock is invalid');
     expect(() => validateNativePlan(null)).toThrow('must be an object');
     expect(() => validateNativePlan({ ...plan, protocolVersion: 2 })).toThrow('protocol mismatch');
     expect(() => validateNativePlan({ ...plan, actions: 'nope' })).toThrow('at most');
     expect(() => validateNativePlan({ ...plan, actions: Array(MAX_NATIVE_ACTIONS + 1).fill({}) })).toThrow('at most');
     expect(() => validateNativePlan({ ...plan, planId: '' })).toThrow('short planId');
     expect(() => validateNativePlan({ ...plan, planId: 'x'.repeat(129) })).toThrow('short planId');
-    expect(() => validateNativePlan({ ...plan, expiresAt: '2000-01-01T00:00:00.000Z' }, { now: () => Date.parse('2029-01-01') })).toThrow('expired');
+    expect(() => validateNativePlan({ ...plan, expiresAt: '2000-01-01T00:00:00.000Z' }, { now: () => VALID_NOW })).toThrow('expired');
   });
 });
