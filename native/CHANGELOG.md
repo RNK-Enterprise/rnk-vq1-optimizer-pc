@@ -12,6 +12,8 @@
   boundaries.
 - Added a deterministic workstation policy planner and exact-ID approval gate
   for cross-domain handoffs without autonomous host mutation.
+- Added read-only policy state and approval-gated handoff counts to daily
+  workstation reports.
 - Added a reversible quarantine authority and cache-quarantine CLI workflow
   with separate-root, protected-path, symlink, same-volume, exact-receipt,
   and rollback boundaries.
