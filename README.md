@@ -235,6 +235,10 @@ multi-day window and reports storage fill rate, battery-health movement,
 thermal movement, memory-pressure movement, drive-failure evidence, and
 recommendations. Missing samples remain unknown.
 
+`network-monitor` adds trigger-based contention history around an explicit
+platform or caller per-process sampler. It reports gaming/download contention
+transitions and never claims to enforce a network budget.
+
 The workload governor connects gaming/build coexistence policy to the native
 priority authority. It detects only explicit game evidence, excludes protected
 and system processes, previews exact PID operations, and requires explicit

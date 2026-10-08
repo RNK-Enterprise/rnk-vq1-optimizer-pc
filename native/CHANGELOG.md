@@ -14,6 +14,8 @@
   precedence, symlink refusal, and explicit approval boundaries.
 - Extended Windows process telemetry with read-only foreground-window PID
   evidence; unsupported platforms remain explicit rather than inferred.
+- Added a trigger-based network contention monitor around explicit platform or
+  caller samples, with transition history and no unsupported throttle claim.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor

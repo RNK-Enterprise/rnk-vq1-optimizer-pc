@@ -167,6 +167,11 @@ rates and latency to identify gaming/download contention. Per-process
 bandwidth remains unavailable when the host does not provide counters, and no
 network throttle is claimed or applied.
 
+`network-monitor` provides a reusable trigger loop around a caller-owned
+platform sampler. It emits stable, started, continued, and stopped contention
+events, preserves the sample source, and remains observation-only. It does not
+intercept traffic or claim bandwidth enforcement.
+
 The media library provides a bounded read-only catalogue for local audio,
 video, and image files, plus explicit favorites, recently played entries,
 playlists, import/export, and a player-host handoff plan. It skips symlinks,
