@@ -29,6 +29,9 @@
 - Added the native workload governor bridge for previewed and explicitly
   approved gaming/build process-priority policies across supported adapters;
   hard CPU/RAM/GPU caps remain fail-closed unsupported outcomes.
+- Added cross-platform drive inventory and optional SMART observation to the
+  native storage evidence path without treating inventory metadata as health
+  proof.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

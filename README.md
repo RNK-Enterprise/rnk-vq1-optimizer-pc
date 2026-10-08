@@ -125,6 +125,8 @@ node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
   --background-pids 1234,5678
 node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
+node native/cli.mjs drive-health
+node native/cli.mjs drive-health --smart-device /dev/nvme0n1
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -178,6 +180,11 @@ and system processes, previews exact PID operations, and requires explicit
 approval before applying them. Hard CPU, RAM, and GPU caps remain unsupported
 until platform-safe implementations are proven; unsupported results are
 reported rather than presented as enforcement.
+
+`drive-health` provides cross-platform physical-drive inventory and explicit
+SSD/HDD classification. Its optional SMART probe is separate and uses strict
+device validation; inventory data is not presented as SMART health, and
+unavailable tooling remains unavailable.
 
 ## PC mesh and empirical proof
 

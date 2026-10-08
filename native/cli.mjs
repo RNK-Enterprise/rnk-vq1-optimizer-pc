@@ -34,6 +34,7 @@ import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
+import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -252,6 +253,12 @@ async function runWorkloadCommand(command, args) {
   return { facts, plan, report: await applyWorkloadPolicy(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runDriveHealthCommand(args) {
+  const inventory = await collectDriveHealth({ platform: process.platform, commandRunner: createCommandRunner() });
+  if (typeof args['smart-device'] !== 'string') return inventory;
+  return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
+}
+
 async function runDownloadCommand(command, args) {
   const guard = downloadGuardFromArgs(args);
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
@@ -310,6 +317,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-report') return runStewardReportCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
+  if (command === 'drive-health') return runDriveHealthCommand(args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);

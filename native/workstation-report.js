@@ -92,6 +92,12 @@ function pagefileSample(facts) {
   return { pressurePercent: nonNegative(pagefile.pressurePercent), allocatedBytes: nonNegative(pagefile.allocatedBytes), currentBytes: nonNegative(pagefile.currentBytes) };
 }
 
+function driveSample(facts) {
+  const source = record(facts.drives) ? facts.drives : {};
+  const drives = rows(source.drives);
+  return { available: source.available === true, count: drives.length, degraded: count(drives, (item) => item.health === 'degraded'), failed: count(drives, (item) => item.health === 'failed') };
+}
+
 function processSample(facts) {
   const processes = rows(facts.processes);
   const abnormal = processes.filter((process) => process.abnormal === true || ['crashed', 'failed', 'zombie', 'unresponsive'].includes(text(process.state)?.toLowerCase()));
@@ -133,6 +139,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const thermals = samples.map((entry) => thermalSample(entry.facts));
   const batteries = samples.map((entry) => batterySample(entry.facts));
   const pagefile = samples.map((entry) => pagefileSample(entry.facts));
+  const drives = samples.map((entry) => driveSample(entry.facts));
   const processes = samples.map((entry) => processSample(entry.facts));
   const network = samples.map((entry) => networkSample(entry.facts));
   const workloads = samples.map((entry) => workloadSample(entry, entry.facts));
@@ -169,6 +176,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     thermals: Object.freeze({ peakTemperatureC: maximum(temperatures), throttleEvents }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), systemManaged: true, cleanup: 'never' }),
+    drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
     network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)) }),
     development: Object.freeze({ activeClasses, contentionEvents: count(workloads, (item) => item.contention) }),

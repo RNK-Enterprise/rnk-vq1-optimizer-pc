@@ -42,6 +42,8 @@ node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
   --background-pids 1234,5678
 node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
+node native/cli.mjs drive-health
+node native/cli.mjs drive-health --smart-device /dev/nvme0n1
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -128,6 +130,13 @@ explicit `--approve-pids` list. The Linux adapter can apply both priority
 types; Windows currently reports I/O priority as unsupported. CPU, memory, and
 GPU hard caps remain explicit unsupported dimensions, and the governor does
 not claim an exact restore without pre-change priority evidence.
+
+`drive-health` inventories physical drives with fixed platform commands. Windows
+uses `Get-PhysicalDisk`, Linux uses `lsblk`, and macOS uses `diskutil list`.
+The optional `--smart-device` probe invokes only `smartctl -H` after strict
+device-path validation. Inventory metadata is not SMART proof; missing
+`smartctl`, unsupported devices, and command failures are reported as
+unavailable.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,

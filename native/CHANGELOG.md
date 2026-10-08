@@ -29,6 +29,8 @@
 - Added a bounded workload governor for explicit gaming/build coexistence,
   approved-PID process and I/O priority application, protected-process
   exclusion, and explicit unsupported hard-cap dimensions.
+- Added cross-platform drive inventory and optional validated SMART health
+  observation with fail-closed unavailable states.
 
 ## 2026-10-06
 
