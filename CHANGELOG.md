@@ -6,6 +6,12 @@
   coverage toolchain by enforcing the maintained `js-yaml` 4 graph.
 - Added analysis-only Workload Policy and Download Guard engine families for
   Developer, Gaming, Gaming+Build, and bounded download placement workflows.
+- Added the cross-platform Workstation Steward engine family for resource and
+  game policy, drive/file/download evidence, daily trend reports, local media
+  and music catalogues, fixed workstation intents, and reversible action
+  receipts.
+- Added an append-only native steward history store and cross-platform report
+  monitor with explicit delivery callbacks and no automatic host mutation.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

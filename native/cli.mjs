@@ -27,6 +27,8 @@ import { NativeOptimizerAgent } from './agent.js';
 import { createPlatformAdapter } from './platform.js';
 import { applyOrganization, previewOrganization } from './organizer.js';
 import { createStoragePressureGuard } from './storage-pressure.js';
+import { createStewardHistoryStore } from './steward-history.js';
+import { createStewardMonitor } from './steward-monitor.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -67,6 +69,10 @@ function approvals(value) {
 function requireOption(args, name) {
   if (typeof args[name] !== 'string' || args[name].length === 0) throw new Error(`--${name} is required`);
   return args[name];
+}
+
+function historyStoreFromArgs(args) {
+  return createStewardHistoryStore({ filePath: requireOption(args, 'path'), maxEntries: numberOption(args, 'max-entries', 2048) });
 }
 
 function storagePolicyFromArgs(args) {
@@ -169,6 +175,41 @@ async function runOrganizerCommand(command, args) {
   return { plan, result: await applyOrganization(plan, { approved: true, dryRun: false }) };
 }
 
+async function runStewardHistoryCommand(args) {
+  const store = historyStoreFromArgs(args);
+  if (typeof args.append === 'string') return store.append(JSON.parse(args.append));
+  if (typeof args.rollback === 'string') {
+    const entry = (await store.read()).find((item) => item.id === args.rollback);
+    if (!entry) throw new Error('steward-history rollback id was not found');
+    return store.rollbackPlan(entry);
+  }
+  if (typeof args.quarantine === 'string') {
+    const entry = (await store.read()).find((item) => item.id === args.quarantine);
+    if (!entry) throw new Error('steward-history quarantine id was not found');
+    return store.quarantinePlan(entry, args.protect ? [args.protect] : []);
+  }
+  return store.read();
+}
+
+async function runStewardMonitorCommand(args) {
+  const store = historyStoreFromArgs(args);
+  const monitor = createStewardMonitor({
+    adapter: createPlatformAdapter(),
+    store,
+    intervalMs: numberOption(args, 'interval-seconds', 900) * 1000,
+    onReport: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    onError: (error) => process.stderr.write(`steward monitor: ${error.message}\n`)
+  });
+  await monitor.collect();
+  monitor.start();
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
 export async function runCli(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
@@ -186,6 +227,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['cache-preview', 'cache-clean'].includes(command)) return runCacheCommand(command, args);
   if (['organize-preview', 'organize-apply'].includes(command)) return runOrganizerCommand(command, args);
   if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
+  if (command === 'steward-history') return runStewardHistoryCommand(args);
+  if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);
 }

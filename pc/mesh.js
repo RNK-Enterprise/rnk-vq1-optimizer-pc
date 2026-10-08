@@ -52,7 +52,8 @@ const TURBOS = Object.freeze({
   'safety-audit': ['admin-boundary', 'approval-drift', 'mutation-boundary', 'proposal-risk'],
   'workstation-health': ['storage-trend', 'resource-pressure', 'workload-conflict', 'cleanup-audit'],
   'workload-policy': ['mode-selection', 'resource-budget', 'foreground-protection', 'restore-plan'],
-  'download-guard': ['space-preflight', 'destination-selection', 'duplicate-review', 'hash-verification']
+  'download-guard': ['space-preflight', 'destination-selection', 'duplicate-review', 'hash-verification'],
+  'workstation-steward': ['resource-governance', 'storage-files', 'history-report', 'media-assistant']
 });
 
 function authority(id) { return `optimizer.authority.${id}`; }

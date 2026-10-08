@@ -9,6 +9,8 @@
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor
   CLI commands with opt-in safe-category automatic cleanup.
+- Added bounded append-only workstation history and a cross-platform report
+  monitor with explicit callback delivery.
 
 ## 2026-10-06
 

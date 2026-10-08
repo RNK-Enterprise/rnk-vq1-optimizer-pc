@@ -23,6 +23,27 @@ install undocumented tweaks, manipulate packets, or change network
 configuration. File organization is a separate preview/confirm workflow and
 never overwrites an existing destination.
 
+## Workstation steward policy layer
+
+The `workstation-steward` engine is the cross-platform policy layer for the
+broader workstation workflow. It accepts the same bounded evidence schema on
+Windows, Linux, and macOS and produces reviewable plans for:
+
+- foreground-game detection, developer/build coexistence, process and startup
+  explanations, and resource budgets;
+- SMART/health and read/write benchmark evidence, duplicate and incomplete-file
+  review, protected-path checks, download placement, and move previews;
+- storage, memory, battery, thermal, cleanup, network, workload, and gaming
+  trends for a daily report;
+- local media and music catalogues, playlists, favorites, approved HTTPS
+  media-panel references, fixed workstation questions, and reversible action
+  receipts.
+
+The policy layer is facts-to-plan only. It does not claim that a budget was
+enforced, a file was moved, a report was scheduled, or media was downloaded.
+Those outcomes require an explicit platform authority, approval, verification,
+and (where applicable) a caller-owned append-only history store.
+
 ## Supported native controls
 
 The current platform adapters provide documented controls for:
@@ -87,6 +108,11 @@ node native/cli.mjs storage-cleanup --target-free-gb 5 \
   --enable=temporary-files,package-cache --confirm
 node native/cli.mjs storage-monitor --target-free-gb 5 \
   --enable=temporary-files,package-cache --interval-seconds 60
+node native/cli.mjs steward-history --path "$HOME/.rnk-optimizer/history.jsonl"
+node native/cli.mjs steward-history --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --append '{"id":"preview-1","event":"preview","timestamp":0}'
+node native/cli.mjs steward-monitor --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --interval-seconds 900
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```

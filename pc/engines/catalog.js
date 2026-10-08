@@ -53,7 +53,8 @@ export const PC_ENGINE_IDS = Object.freeze([
   'safety-audit',
   'workstation-health',
   'workload-policy',
-  'download-guard'
+  'download-guard',
+  'workstation-steward'
 ]);
 
 const DEFINITIONS = Object.freeze(PC_ENGINE_IDS.map((id, index) => Object.freeze({

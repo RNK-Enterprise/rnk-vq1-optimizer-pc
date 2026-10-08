@@ -70,3 +70,9 @@ and can only act on safe categories that were explicitly enabled; it does not
 authorize Windows Update or abandoned-runtime cleanup. Every real cleanup
 returns an audit record containing the plan ID, estimated bytes, removed bytes,
 and measured before/after free-space recovery.
+
+The workstation steward also exposes an append-only history store and a
+cross-platform observation monitor. `steward-history` supports read, append,
+rollback-preview, and quarantine-preview operations; `steward-monitor` records
+periodic steward reports and delivers them to stdout. Neither command applies
+the planner's actions automatically.

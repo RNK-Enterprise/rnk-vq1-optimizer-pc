@@ -9,11 +9,11 @@ import {
 } from '../pc/engines/catalog.js';
 
 describe('PC optimizer engine catalog', () => {
-  test('publishes the canonical 37-engine inventory', () => {
-    expect(PC_ENGINE_IDS).toHaveLength(37);
-    expect(new Set(PC_ENGINE_IDS).size).toBe(37);
+  test('publishes the canonical 38-engine inventory', () => {
+    expect(PC_ENGINE_IDS).toHaveLength(38);
+    expect(new Set(PC_ENGINE_IDS).size).toBe(38);
     expect(PC_ENGINE_IDS[0]).toBe('system-facts');
-    expect(PC_ENGINE_IDS.at(-1)).toBe('download-guard');
+    expect(PC_ENGINE_IDS.at(-1)).toBe('workstation-steward');
     expect(PC_ENGINE_TRIGGERS).toEqual([
       'install.preflight',
       'system.facts.request',
@@ -28,9 +28,9 @@ describe('PC optimizer engine catalog', () => {
     const catalog = createPcEngineCatalog();
     expect(catalog.id).toBe(PC_ENGINE_CATALOG_ID);
     expect(catalog.version).toBe(PC_ENGINE_CATALOG_VERSION);
-    expect(catalog.count).toBe(37);
+    expect(catalog.count).toBe(38);
     expect(catalog.engines[0]).toMatchObject({ id: 'system-facts', ordinal: 1 });
-    expect(catalog.engines.at(-1)).toMatchObject({ id: 'download-guard', ordinal: 37 });
+    expect(catalog.engines.at(-1)).toMatchObject({ id: 'workstation-steward', ordinal: 38 });
     expect(catalog.engines.every((item) => item.execution === 'analysis-only-until-approved')).toBe(true);
     expect(Object.isFrozen(catalog)).toBe(true);
   });
