@@ -73,6 +73,8 @@ node native/cli.mjs assistant --question "Why is my C: drive full?"
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
 node native/cli.mjs power-apply --profile gaming --confirm
+node native/cli.mjs power-monitor --interval-seconds 300
+node native/cli.mjs power-monitor --auto-apply --confirm --allow-admin
 node native/cli.mjs process-overview --max-entries 128
 node native/cli.mjs process-stop-preview --pid 1234
 node native/cli.mjs process-stop-apply --pid 1234 --confirm --allow-admin
@@ -254,6 +256,11 @@ command.
 map to fixed documented adapter values and require confirmation for mutation;
 fan curves, firmware registers, and unsupported platform controls remain
 unavailable.
+
+`power-monitor` watches facts on a trigger interval and reports profile
+observed, continued, and changed events. It can apply only the documented
+profile mapping when `--auto-apply --confirm` is supplied; unsupported
+platforms and adapter failures remain visible in the report.
 
 `process-overview` joins bounded process and startup facts with role, usage,
 runtime, and stop-impact explanations. Stop preview selects an exact observed

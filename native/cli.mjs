@@ -51,6 +51,7 @@ import { buildNetworkContentionPlan } from './network-manager.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
+import { createPowerMonitor } from './power-monitor.js';
 import { applyProcessStop, buildProcessOverview, previewProcessStop } from './process-manager.js';
 
 function parseValue(raw) {
@@ -408,6 +409,29 @@ async function runPowerCommand(command, args) {
   return { facts, plan, result: await applyPowerProfile(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runPowerMonitorCommand(args) {
+  const autoApply = args['auto-apply'] === true;
+  if (autoApply && args.confirm !== true) throw new Error('power-monitor --auto-apply requires --confirm');
+  const monitor = createPowerMonitor({
+    adapter: createPlatformAdapter(),
+    platform: process.platform,
+    intervalMs: numberOption(args, 'interval-seconds', 300) * 1000,
+    autoApply,
+    approved: args.confirm === true,
+    allowAdmin: args['allow-admin'] === true,
+    onReport: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    onError: (error) => process.stderr.write(`power monitor: ${error.message}\n`)
+  });
+  await monitor.collect();
+  monitor.start();
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
 async function runProcessCommand(command, args) {
   const adapter = createPlatformAdapter();
   const facts = await adapter.collectFacts();
@@ -523,6 +547,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'network-overview') return runNetworkOverviewCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
+  if (command === 'power-monitor') return runPowerMonitorCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
   if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
   if (['media-scan', 'media-play', 'media-panel-open', 'media-metadata', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);

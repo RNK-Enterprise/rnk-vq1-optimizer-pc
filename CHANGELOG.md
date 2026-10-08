@@ -33,6 +33,8 @@
   caller samples, with transition history and no unsupported throttle claim.
 - Added bounded read-only file-insights scanning for incomplete downloads,
   stale installers, large files, protected paths, and hash-backed duplicates.
+- Added trigger-based battery/thermal/workload power-profile monitoring with
+  approval-gated optional application of documented profiles.
 - Added explicit cross-platform read-only filesystem-health evidence through
   fixed Windows, Linux, and macOS volume checkers.
 - Added an append-only native steward history store and cross-platform report

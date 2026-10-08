@@ -18,6 +18,8 @@
   caller samples, with transition history and no unsupported throttle claim.
 - Added bounded read-only file-insights scanning for incomplete downloads,
   stale installers, large files, protected paths, and hash-backed duplicates.
+- Added trigger-based battery/thermal/workload power-profile monitoring with
+  approval-gated optional application of documented profiles.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor

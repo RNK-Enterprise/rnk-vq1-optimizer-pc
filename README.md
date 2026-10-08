@@ -156,6 +156,8 @@ node native/cli.mjs assistant --question "Why is my C: drive full?"
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
 node native/cli.mjs power-apply --profile gaming --confirm
+node native/cli.mjs power-monitor --interval-seconds 300
+node native/cli.mjs power-monitor --auto-apply --confirm --allow-admin
 node native/cli.mjs process-overview --max-entries 128
 node native/cli.mjs process-stop-preview --pid 1234
 node native/cli.mjs process-stop-apply --pid 1234 --confirm --allow-admin
@@ -294,6 +296,11 @@ boundaries.
 Named power profiles map only to documented platform profiles; unsupported
 platforms remain unsupported and firmware or fan-register control is not
 attempted.
+
+`power-monitor` adds trigger-based observed, continued, and changed profile
+events around battery, thermal, and workload facts. Optional application
+requires `--auto-apply --confirm` and remains limited to documented adapter
+controls.
 
 `process-overview` combines bounded process and startup evidence with plain
 role, usage, runtime, and stop-impact explanations. `process-stop-preview`
