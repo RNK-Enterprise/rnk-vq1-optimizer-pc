@@ -85,6 +85,8 @@ node native/cli.mjs placement-policy-preview --scan '{"root":"/home/me/Downloads
   --target-roots '{"model":"/mnt/archive/models","archive":"/mnt/archive/archives"}' \
   --target-free-bytes '{"/mnt/archive/models":100000000000,"/mnt/archive/archives":100000000000}'
 node native/cli.mjs assistant --question "Why is my C: drive full?"
+node native/cli.mjs policy-preview --facts '{"memory":{"usedPercent":92}}'
+node native/cli.mjs policy-approve --plan '{"version":1,"phase":"recommend","actions":[]}' --approve-ids storage-pressure-review
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
 node native/cli.mjs power-apply --profile gaming --confirm
@@ -299,6 +301,12 @@ supported storage, memory/pagefile, thermal, battery, history, daily-priority,
 workload, and placement questions from supplied or locally collected facts. It
 refuses unknown operations and never turns natural-language text into a
 command.
+
+`policy-preview` combines local facts into bounded storage, memory/pagefile,
+thermal, gaming/build, battery, and process handoffs. `policy-approve` marks
+only exact recommendation IDs as approved; both commands remain non-mutating.
+The named authority still owns the delegated preview/apply action, and the
+audited native path owns before/after verification.
 `power-preview` and `power-apply` expose named cross-platform profiles. They
 map to fixed documented adapter values and require confirmation for mutation;
 fan curves, firmware registers, and unsupported platform controls remain

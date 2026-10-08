@@ -55,6 +55,7 @@ import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from 
 import { applyPlacementPolicy, previewPlacementPolicy, rollbackPlacementPolicy } from './file-placement-policy.js';
 import { applyQuarantine, previewQuarantine, rollbackQuarantine } from './quarantine.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
+import { approveWorkstationPolicy, buildWorkstationPolicyPlan } from './workstation-policy.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
 import { createPowerMonitor } from './power-monitor.js';
 import { applyProcessStop, buildProcessOverview, previewProcessStop } from './process-manager.js';
@@ -330,6 +331,12 @@ function listOption(args, name) {
   return [...new Set(values)];
 }
 
+function textListOption(args, name) {
+  if (args[name] === undefined) return [];
+  if (typeof args[name] !== 'string') throw new Error(`--${name} must be a comma-separated list`);
+  return [...new Set(args[name].split(',').map((value) => value.trim()).filter(Boolean))];
+}
+
 async function runWorkloadCommand(command, args) {
   const adapter = createPlatformAdapter();
   const facts = await adapter.collectFacts();
@@ -481,6 +488,13 @@ async function runAssistantCommand(args) {
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await createPlatformAdapter().collectFacts();
   const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
   return interpretWorkstationQuestion(requireOption(args, 'question'), facts, { report });
+}
+
+async function runWorkstationPolicyCommand(command, args) {
+  if (command === 'policy-approve') return approveWorkstationPolicy(jsonOption(args, 'plan'), { approvedIds: textListOption(args, 'approve-ids') });
+  const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await createPlatformAdapter().collectFacts();
+  const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
+  return buildWorkstationPolicyPlan(facts, { report, maxActions: numberOption(args, 'max-actions', 16) });
 }
 
 async function runPowerCommand(command, args) {
@@ -649,6 +663,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
+  if (['policy-preview', 'policy-approve'].includes(command)) return runWorkstationPolicyCommand(command, args);
   if (command === 'power-monitor') return runPowerMonitorCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
   if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);

@@ -10,6 +10,8 @@
 - Added explicit `workload-budget --hard` planning for bounded CPU and memory
   resource-limit actions, while preserving priority-only I/O and GPU evidence
   boundaries.
+- Added a deterministic workstation policy planner and exact-ID approval gate
+  for cross-domain handoffs without autonomous host mutation.
 - Added a reversible quarantine authority and cache-quarantine CLI workflow
   with separate-root, protected-path, symlink, same-volume, exact-receipt,
   and rollback boundaries.
