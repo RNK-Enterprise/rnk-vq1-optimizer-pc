@@ -48,6 +48,8 @@
   planning without decoder or download authority.
 - Added bounded multi-day workstation trend reporting for storage, battery,
   thermals, memory, and drive-failure evidence.
+- Corrected the public mesh inventory documentation to match the strict PC
+  completeness gate: 34 engines, 136 turbos, and 170 libraries.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

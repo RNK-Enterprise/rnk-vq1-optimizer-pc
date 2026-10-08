@@ -241,8 +241,8 @@ boundary.
 
 ## PC mesh and empirical proof
 
-`pc/mesh.js` registers 38 engines, 38 engine libraries, 152 turbos, and 152
-turbo libraries behind typed local command/event routes. Nodes are lazy-loaded
+`pc/mesh.js` registers 34 engines, 34 engine libraries, 136 turbos, and 136
+turbo libraries, or 170 libraries total, behind typed local command/event routes. Nodes are lazy-loaded
 and execution requires a declared trigger. The mesh is in-process only: it
 does not use HTTP, REST, sockets, public listeners, or network mutation.
 
