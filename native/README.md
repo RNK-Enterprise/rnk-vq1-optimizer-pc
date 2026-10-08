@@ -41,6 +41,8 @@ node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
 node native/cli.mjs steward-schedule --path "$HOME/.rnk-optimizer/history.jsonl" \
   --interval-seconds 900
+node native/cli.mjs steward-daemon --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --observation-interval-seconds 900 --report-interval-seconds 900
 node native/cli.mjs steward-trends --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-days 30 --max-entries 512
 node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
@@ -150,6 +152,11 @@ automatically.
 `steward-schedule` delivers one report per UTC day while its trigger loop is
 running. It writes through a caller-owned delivery callback and does not install
 an operating-system task or claim background service persistence.
+
+`steward-daemon` combines the observation and daily-report loops in one
+long-running process and stops cleanly on process signals. It does not install
+an operating-system service, tray process, scheduler task, or privileged daemon;
+the host application owns lifecycle installation.
 
 `steward-trends` reduces retained reports over a bounded multi-day window and
 reports storage fill rate, battery-health movement, thermal movement,

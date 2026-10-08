@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added the cross-platform `steward-daemon` runtime and `steward-daemon` CLI
+  command to coordinate bounded observation history and one-per-day reports in
+  one signal-aware process without installing an operating-system service.
 - Added explicit resource-limit preview/apply commands with approved-PID
   boundaries, Windows Job Object CPU/memory enforcement, Linux `prlimit`
   memory enforcement, and explicit unsupported results for Linux CPU and macOS.

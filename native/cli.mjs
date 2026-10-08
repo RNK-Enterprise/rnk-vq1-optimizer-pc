@@ -31,6 +31,7 @@ import { createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
 import { createDailyWorkstationScheduler } from './steward-scheduler.js';
+import { createStewardDaemon } from './steward-daemon.js';
 import { createDownloadGuard } from './download-guard.js';
 import { createDownloadMonitor } from './download-monitor.js';
 import { createAuditedNativeAgent } from './action-audit.js';
@@ -274,6 +275,27 @@ async function runStewardScheduleCommand(args) {
   scheduler.start();
   await new Promise((resolve) => {
     const stop = () => { scheduler.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
+async function runStewardDaemonCommand(args) {
+  const store = historyStoreFromArgs(args);
+  const daemon = createStewardDaemon({
+    adapter: createPlatformAdapter(),
+    store,
+    observationIntervalMs: numberOption(args, 'observation-interval-seconds', 900) * 1000,
+    reportIntervalMs: numberOption(args, 'report-interval-seconds', 900) * 1000,
+    onObservation: (report) => process.stdout.write(`${JSON.stringify({ type: 'observation', report })}\n`),
+    deliver: (report) => process.stdout.write(`${JSON.stringify({ type: 'daily-report', report })}\n`),
+    onError: (error) => process.stderr.write(`steward daemon: ${error.message}\n`)
+  });
+  await daemon.collect({ forceReport: args['force-report'] === true });
+  daemon.start();
+  await new Promise((resolve) => {
+    const stop = () => { daemon.stop(); resolve(); };
     process.once('SIGINT', stop);
     process.once('SIGTERM', stop);
   });
@@ -550,6 +572,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (command === 'steward-schedule') return runStewardScheduleCommand(args);
+  if (command === 'steward-daemon') return runStewardDaemonCommand(args);
   if (command === 'steward-report') return runStewardReportCommand(args);
   if (command === 'steward-trends') return runStewardTrendsCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
