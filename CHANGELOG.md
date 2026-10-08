@@ -46,6 +46,8 @@
   explicit per-process rates, with unavailable bandwidth evidence preserved.
 - Added local media queue/player state and HTTPS-only media-panel handoff
   planning without decoder or download authority.
+- Added bounded multi-day workstation trend reporting for storage, battery,
+  thermals, memory, and drive-failure evidence.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

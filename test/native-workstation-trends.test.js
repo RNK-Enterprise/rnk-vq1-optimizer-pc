@@ -1,0 +1,29 @@
+/**
+ * Native workstation trends tests.
+ * Copyright © 2026 Lisa's Dungeon.
+ */
+
+import { buildWorkstationTrends, WORKSTATION_TRENDS_VERSION } from '../native/workstation-trends.js';
+
+const DAY = 24 * 60 * 60 * 1000;
+const facts = (timestamp, freeBytes, healthPercent, thermal, memory, failed = 0) => ({ event: 'report', timestamp, facts: { storagePressure: { freeBytes }, battery: { batteries: [{ healthPercent }] }, thermals: { maxTemperatureC: thermal }, memory: { usedPercent: memory }, drives: { drives: Array.from({ length: failed }, () => ({ health: 'failed' })) } } });
+
+describe('workstation trends', () => {
+  test('reduces multi-day storage, battery, thermal, memory, and drive trends', () => {
+    const result = buildWorkstationTrends([facts(0, 100, 95, 60, 50), facts(DAY, 80, 90, 66, 57, 1)], { now: () => DAY, windowMs: 2 * DAY });
+    expect(result).toMatchObject({ version: WORKSTATION_TRENDS_VERSION, period: 'multi-day', sampleCount: 2, storage: { delta: -20, direction: 'falling' }, battery: { delta: -5 }, thermals: { delta: 6 }, memory: { delta: 7 }, drives: { latest: 1 }, recommendations: ['storage-is-filling', 'battery-health-is-declining', 'thermal-readings-are-rising', 'memory-pressure-is-rising', 'drive-failure-evidence-present'] });
+    expect(result.window.windowMs).toBe(2 * DAY);
+  });
+
+  test('preserves missing evidence and validates bounds', () => {
+    expect(buildWorkstationTrends([{ event: 'other', timestamp: 1, facts: {} }, { event: 'report', timestamp: DAY, facts: null }], { now: () => DAY })).toMatchObject({ sampleCount: 1, storage: { direction: 'unknown' }, recommendations: ['no-material-change-observed'] });
+    expect(buildWorkstationTrends([{ event: 'other', timestamp: 1, facts: {} }], { now: () => DAY })).toMatchObject({ sampleCount: 0, recommendations: ['collect-workstation-evidence'] });
+    expect(buildWorkstationTrends([facts(0, 10, 90, 50, 50), facts(DAY, 10, 90, 50, 50)], { now: () => DAY, windowMs: 2 * DAY })).toMatchObject({ recommendations: ['no-material-change-observed'], storage: { direction: 'stable' }, battery: { direction: 'stable' } });
+    expect(() => buildWorkstationTrends(null)).toThrow('entries');
+    expect(() => buildWorkstationTrends(Array.from({ length: 4097 }, () => ({})))).toThrow('exceed');
+    expect(() => buildWorkstationTrends([], { now: 1 })).toThrow('clock');
+    expect(() => buildWorkstationTrends([], { now: () => NaN })).toThrow('return');
+    expect(() => buildWorkstationTrends([], { now: () => DAY, windowMs: DAY - 1 })).toThrow('window');
+    expect(() => buildWorkstationTrends([], { now: () => DAY, windowMs: DAY, maxEntries: 0 })).toThrow('maxEntries');
+  });
+});

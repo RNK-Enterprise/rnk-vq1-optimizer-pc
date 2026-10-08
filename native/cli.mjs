@@ -35,6 +35,7 @@ import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildMediaPanelPlan, createMediaPlayer } from './media-player.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
+import { buildWorkstationTrends } from './workstation-trends.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
@@ -232,6 +233,11 @@ async function runStewardReportCommand(args) {
   });
 }
 
+async function runStewardTrendsCommand(args) {
+  const store = historyStoreFromArgs(args);
+  return buildWorkstationTrends(await store.read(), { windowMs: numberOption(args, 'window-days', 30) * 24 * 60 * 60 * 1000, maxEntries: numberOption(args, 'max-entries', 512) });
+}
+
 function downloadGuardFromArgs(args) {
   return createDownloadGuard({ hashFiles: args['hash-files'] === true });
 }
@@ -403,6 +409,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (command === 'steward-report') return runStewardReportCommand(args);
+  if (command === 'steward-trends') return runStewardTrendsCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);

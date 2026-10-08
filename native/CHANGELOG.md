@@ -45,6 +45,8 @@
   rates without claiming unavailable bandwidth authority.
 - Added deterministic local media queue/player state and HTTPS-only media-panel
   handoff plans without decoder or download authority.
+- Added bounded multi-day trend reduction for storage, battery, thermals,
+  memory, and drive-failure evidence.
 
 ## 2026-10-06
 
