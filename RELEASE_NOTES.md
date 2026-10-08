@@ -19,6 +19,10 @@ this repository is called release-certified.
 - Changed installers to the public repository and immutable refs.
 - Added signed-tag, checksum, provenance, and build-attestation release
   workflow policy.
+- Updated development tooling and added production/high-severity dependency
+  audit gates; the remaining moderate audit finding is confined to the
+  coverage toolchain and has no patched upstream release.
+- Added a native Windows CI parser check for the installer.
 
 ## Evidence boundary
 

@@ -8,3 +8,7 @@
 - Added full PC runtime coverage collection, host-observation benchmarking,
   immutable installer refs, CI, and release provenance policy.
 - Corrected public installer repository URLs.
+- Updated Jest, Babel, and ESLint tooling and added production/high-severity
+  dependency audit gates.
+- Added native Windows PowerShell parsing in CI and migrated ESLint to its
+  supported flat configuration.

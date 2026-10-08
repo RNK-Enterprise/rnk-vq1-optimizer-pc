@@ -22,7 +22,32 @@ jobs:
       - run: npm ci
       - run: npm test -- --runInBand
       - run: npm run lint
+      - run: npm run audit:prod
+      - run: npm run audit:high
       - run: npm run pc:vq1:check
       - run: npm run bench -- --json
       - run: bash -n install/linux/install.sh
       - run: git diff --check
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Parse Windows installer
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'install/windows/install.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Output 'PowerShell parse OK'

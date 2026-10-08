@@ -22,6 +22,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run audit:prod
+      - run: npm run audit:high
       - run: node scripts/verify-release-provenance.mjs
       - name: Import release signing key
         env:
