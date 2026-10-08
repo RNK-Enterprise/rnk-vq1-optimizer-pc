@@ -36,6 +36,8 @@ import { buildDailyWorkstationReport } from './workstation-report.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
+import { interpretWorkstationQuestion } from './workstation-assistant.js';
+import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -279,6 +281,23 @@ async function runPlacementCommand(command, args) {
   return { plan, result: await applyFilePlacement(plan, { approved: true, dryRun: false }) };
 }
 
+async function runAssistantCommand(args) {
+  const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await createPlatformAdapter().collectFacts();
+  const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
+  return interpretWorkstationQuestion(requireOption(args, 'question'), facts, { report });
+}
+
+async function runPowerCommand(command, args) {
+  const adapter = createPlatformAdapter();
+  const facts = await adapter.collectFacts();
+  if (command === 'power-recommend') return { facts, recommendation: recommendPowerProfile(facts) };
+  const profile = requireOption(args, 'profile');
+  const plan = previewPowerProfile(profile, { platform: process.platform, facts });
+  if (command === 'power-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('power-apply requires --confirm');
+  return { facts, plan, result: await applyPowerProfile(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
+}
+
 async function runDownloadCommand(command, args) {
   const guard = downloadGuardFromArgs(args);
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
@@ -339,6 +358,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
+  if (command === 'assistant') return runAssistantCommand(args);
+  if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);

@@ -33,6 +33,8 @@
   observation with fail-closed unavailable states.
 - Added explicit cross-volume file placement preview, copy verification,
   protected-root checks, approval, and rollback support.
+- Added deterministic facts-only workstation question routing and named power
+  profile preview/apply/recommendation controls with fixed platform mappings.
 
 ## 2026-10-06
 

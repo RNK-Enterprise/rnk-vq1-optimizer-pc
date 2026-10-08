@@ -50,6 +50,10 @@ node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
 node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
+node native/cli.mjs assistant --question "Why is my C: drive full?"
+node native/cli.mjs power-recommend
+node native/cli.mjs power-preview --profile gaming
+node native/cli.mjs power-apply --profile gaming --confirm
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -149,6 +153,15 @@ target root, protected-root list, and target free-space measurement. It never
 scans by size or moves files during preview. `placement-apply` requires
 `--confirm`; same-volume moves use rename, while cross-volume moves use
 copy-verify-delete and preserve the source if verification fails.
+
+`assistant` is a deterministic local facts-to-plan interface. It answers
+supported storage, memory/pagefile, thermal, battery, history, workload, and
+placement questions from supplied or locally collected facts. It refuses
+unknown operations and never turns natural-language text into a command.
+`power-preview` and `power-apply` expose named cross-platform profiles. They
+map to fixed documented adapter values and require confirmation for mutation;
+fan curves, firmware registers, and unsupported platform controls remain
+unavailable.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,

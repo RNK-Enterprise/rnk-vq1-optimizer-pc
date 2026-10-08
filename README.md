@@ -133,6 +133,10 @@ node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
 node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
+node native/cli.mjs assistant --question "Why is my C: drive full?"
+node native/cli.mjs power-recommend
+node native/cli.mjs power-preview --profile gaming
+node native/cli.mjs power-apply --profile gaming --confirm
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -197,6 +201,14 @@ caller-supplied file facts, source and target roots, protected roots, and free
 space. Apply requires confirmation, verifies cross-volume copies before source
 deletion, and exposes rollback evidence; it never sweeps arbitrary large
 directories.
+
+The local workstation assistant is deterministic and facts-only. It answers
+storage, memory/pagefile, thermal, battery, history, workload, and placement
+questions, but never executes natural-language commands. Cleanup and placement
+responses are preview plans that retain the existing approval boundaries.
+Named power profiles map only to documented platform profiles; unsupported
+platforms remain unsupported and firmware or fan-register control is not
+attempted.
 
 ## PC mesh and empirical proof
 
