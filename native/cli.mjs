@@ -44,6 +44,7 @@ import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.
 import { applyWorkloadBudget, previewWorkloadBudget } from './workload-budget.js';
 import { createGameSessionMonitor } from './game-session.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
+import { collectFilesystemHealth } from './filesystem-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
@@ -344,6 +345,10 @@ async function runDriveHealthCommand(args) {
   return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
 }
 
+async function runFilesystemHealthCommand(args) {
+  return collectFilesystemHealth(requireOption(args, 'root'), { platform: process.platform, commandRunner: createCommandRunner() });
+}
+
 async function runDriveBenchmarkCommand(args) {
   return benchmarkDrive({ root: requireOption(args, 'root'), bytes: numberOption(args, 'bytes', 1024 * 1024) });
 }
@@ -499,6 +504,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args);
   if (command === 'game-session-monitor') return runGameSessionCommand(args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
+  if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);

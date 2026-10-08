@@ -40,6 +40,8 @@
   approved background priority application, and exact-evidence restoration.
 - Extended the SMART observer to retain available drive temperature, percentage
   used, power-on hours, unsafe shutdowns, and critical-warning evidence.
+- Added the bounded filesystem-health observer for explicit roots with fixed
+  platform commands and fail-closed checker results.
 - Added bounded fact retention to steward report history and a daily report
   reducer with storage, memory, CPU/GPU, thermal, battery, pagefile, process,
   network, workload, gaming, and cleanup evidence.

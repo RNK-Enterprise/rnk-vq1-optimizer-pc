@@ -140,6 +140,7 @@ node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234 --approve-pids 1234 --auto-apply --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
@@ -260,6 +261,10 @@ device validation. It reports SMART health plus available temperature,
 percentage-used, power-on-hour, unsafe-shutdown, and critical-warning
 attributes. Missing attributes or tooling remain unavailable rather than being
 treated as healthy.
+
+`filesystem-health` performs a separate read-only filesystem check for one
+explicit root. Windows uses `Get-Volume`, Linux uses `findmnt`, and macOS uses
+`diskutil info`; unsupported checkers and malformed results remain unavailable.
 
 Cross-volume placement is a separate explicit workflow. The preview requires
 caller-supplied file facts, source and target roots, protected roots, and free

@@ -32,6 +32,7 @@
     "native:workload:budget:apply": "node native/cli.mjs workload-budget-apply",
     "native:game:session": "node native/cli.mjs game-session-monitor",
     "native:drive:health": "node native/cli.mjs drive-health",
+    "native:filesystem:health": "node native/cli.mjs filesystem-health",
     "native:drive:benchmark": "node native/cli.mjs drive-benchmark",
     "native:network:overview": "node native/cli.mjs network-overview",
     "native:placement:preview": "node native/cli.mjs placement-preview",
