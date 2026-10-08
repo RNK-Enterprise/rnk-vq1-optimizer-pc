@@ -17,6 +17,7 @@ function pid(value) { return Number.isInteger(value) && value > 0 ? value : null
 function rows(value) { return Array.isArray(value) ? value.filter(record).slice(0, 512) : []; }
 function list(value, limit = 32) { return Array.isArray(value) ? value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim().toLowerCase()).slice(0, limit) : []; }
 function priority(value, fallback = 'low') { return PRIORITIES.includes(value) ? value : fallback; }
+function observedPriority(value) { return PRIORITIES.includes(value) ? value : null; }
 function requireFacts(facts) { if (!record(facts)) throw new TypeError('Workload governor facts must be an object'); return facts; }
 function requireMode(mode) { if (!WORKLOAD_MODES.includes(mode)) throw new Error(`Unsupported workload mode: ${mode || 'unknown'}`); return mode; }
 function requireAdapter(adapter) { if (!adapter || typeof adapter.applyAction !== 'function') throw new TypeError('Workload governor requires a platform adapter'); return adapter; }
@@ -55,8 +56,8 @@ function candidates(facts, game, backgroundPids) {
   });
 }
 
-function operation(type, key, value, process, reason) {
-  return Object.freeze({ type, key, value, pid: pid(process.pid), name: text(process.name) || 'unknown', requiresApproval: true, reason });
+function operation(type, key, value, process, reason, previousValue) {
+  return Object.freeze({ type, key, value, previousValue, pid: pid(process.pid), name: text(process.name) || 'unknown', requiresApproval: true, reason });
 }
 
 export function previewWorkloadPolicy(facts, { mode = 'balanced', gameNames = [], backgroundPids = [], processPriority = 'low', ioPriority = 'low' } = {}) {
@@ -68,8 +69,8 @@ export function previewWorkloadPolicy(facts, { mode = 'balanced', gameNames = []
   const shouldProtectForeground = ['gaming', 'gaming-build'].includes(selectedMode) && game.detected;
   const selected = shouldProtectForeground ? candidates(source, game, pids) : [];
   const operations = selected.flatMap((process) => [
-    operation('set-process-priority', 'process.priority', priority(processPriority), process, 'background workload yields to the explicit foreground game'),
-    operation('set-process-io-priority', 'process.io', priority(ioPriority), process, 'background I/O yields to the explicit foreground game')
+    operation('set-process-priority', 'process.priority', priority(processPriority), process, 'background workload yields to the explicit foreground game', observedPriority(process.priority)),
+    operation('set-process-io-priority', 'process.io', priority(ioPriority), process, 'background I/O yields to the explicit foreground game', observedPriority(process.ioPriority))
   ]);
   return Object.freeze({
     version: WORKLOAD_GOVERNOR_VERSION,

@@ -42,6 +42,7 @@ import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { applyWorkloadBudget, previewWorkloadBudget } from './workload-budget.js';
+import { createGameSessionMonitor } from './game-session.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
@@ -309,6 +310,34 @@ async function runWorkloadBudgetCommand(command, args) {
   return { facts, plan, report: await applyWorkloadBudget(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runGameSessionCommand(args) {
+  const autoApply = args['auto-apply'] === true;
+  if (autoApply && args.confirm !== true) throw new Error('game-session-monitor --auto-apply requires --confirm');
+  const approvedPids = listOption(args, 'approve-pids');
+  if (autoApply && approvedPids.length === 0) throw new Error('game-session-monitor --auto-apply requires --approve-pids');
+  const monitor = createGameSessionMonitor({
+    adapter: createPlatformAdapter(),
+    gameNames: typeof args['game-names'] === 'string' ? args['game-names'].split(',').map((value) => value.trim()).filter(Boolean) : [],
+    backgroundPids: listOption(args, 'background-pids'),
+    processPriority: args['process-priority'] || 'low',
+    ioPriority: args['io-priority'] || 'low',
+    intervalMs: numberOption(args, 'interval-seconds', 10) * 1000,
+    autoApply,
+    approvedPids,
+    allowAdmin: args['allow-admin'] === true,
+    onEvent: (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
+    onError: (error) => process.stderr.write(`game session: ${error.message}\n`)
+  });
+  await monitor.collect();
+  monitor.start();
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
 async function runDriveHealthCommand(args) {
   const inventory = await collectDriveHealth({ platform: process.platform, commandRunner: createCommandRunner() });
   if (typeof args['smart-device'] !== 'string') return inventory;
@@ -468,6 +497,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args);
+  if (command === 'game-session-monitor') return runGameSessionCommand(args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);

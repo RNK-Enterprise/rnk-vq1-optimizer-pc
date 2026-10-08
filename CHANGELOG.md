@@ -23,6 +23,8 @@
   shell-free platform browser openers without fetching or downloading.
 - Added bounded local media metadata evidence for duration, format, codecs,
   audio channels, and video dimensions through fixed `ffprobe` invocation.
+- Added trigger-based game-session supervision with approved background
+  priority application and evidence-gated restoration.
 - Added an append-only native steward history store and cross-platform report
   monitor with explicit delivery callbacks and no automatic host mutation.
 - Added bounded cross-platform process, battery, thermal, and network telemetry

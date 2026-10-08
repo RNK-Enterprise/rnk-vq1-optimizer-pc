@@ -36,6 +36,8 @@
   shell-free platform default-browser openers.
 - Added bounded read-only local media metadata collection through fixed
   shell-free `ffprobe` invocation with explicit unavailable states.
+- Added the cross-platform `game-session` monitor for explicit game detection,
+  approved background priority application, and exact-evidence restoration.
 - Added bounded fact retention to steward report history and a daily report
   reducer with storage, memory, CPU/GPU, thermal, battery, pagefile, process,
   network, workload, gaming, and cleanup evidence.

@@ -51,6 +51,10 @@ node native/cli.mjs workload-budget-preview --budget '{"cpuPercent":50}' \
   --target-pids 1234,5678
 node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
   --target-pids 1234 --approve-pids 1234 --confirm
+node native/cli.mjs game-session-monitor --game-names game.exe \
+  --background-pids 1234,5678 --interval-seconds 10
+node native/cli.mjs game-session-monitor --game-names game.exe \
+  --background-pids 1234 --approve-pids 1234 --auto-apply --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
@@ -197,6 +201,12 @@ not claim an exact restore without pre-change priority evidence.
 with observed process facts. Apply can lower process priority and supported
 I/O priority for explicitly approved background PIDs. Memory and GPU hard caps
 remain unsupported; a plan never claims those dimensions were enforced.
+
+`game-session-monitor` watches explicit game process evidence on a trigger
+interval. It can apply only approved background priority/I/O operations when
+`--auto-apply --confirm` and `--approve-pids` are supplied. Session exit
+restoration uses exact captured priority evidence; without it, the result is
+review-required. Hard CPU, memory, GPU, and network caps remain unsupported.
 
 `drive-health` inventories physical drives with fixed platform commands. Windows
 uses `Get-PhysicalDisk`, Linux uses `lsblk`, and macOS uses `diskutil list`.

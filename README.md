@@ -134,6 +134,10 @@ node native/cli.mjs workload-budget-preview --budget \
   --target-pids 1234,5678
 node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
   --target-pids 1234 --approve-pids 1234 --confirm
+node native/cli.mjs game-session-monitor --game-names game.exe \
+  --background-pids 1234,5678 --interval-seconds 10
+node native/cli.mjs game-session-monitor --game-names game.exe \
+  --background-pids 1234 --approve-pids 1234 --auto-apply --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
@@ -242,6 +246,13 @@ GPU limits with observed facts. `workload-budget-apply` can apply only the
 supported soft responses—lower process priority and, on Linux, lower I/O
 priority—to explicitly approved background PIDs. Memory and GPU hard caps stay
 unsupported evidence; the command never claims those limits were enforced.
+
+`game-session-monitor` is a trigger-based gaming-session supervisor. It detects
+an explicitly named or role-labelled foreground game, previews background
+priority/I/O reductions, and can opt into approved-PID application. On session
+exit it restores only priority values captured before application; missing
+pre-change evidence remains review-required. It does not impose hard CPU,
+memory, GPU, or network caps.
 
 `drive-health` provides cross-platform physical-drive inventory and explicit
 SSD/HDD classification. Its optional SMART probe is separate and uses strict
