@@ -9,6 +9,12 @@ protects user ownership of files and storage layout.
 It is analysis-only. It does not delete, move, organize, repair, remount,
 modify files, or open transport.
 
+When native facts include a Storage Pressure Guard observation, the engine and
+library carry its bounded `normal`, `warning`, `critical`, `emergency`, or
+`unknown` level, target free-space floor, reclaimable byte requirement, and
+pagefile-independent evidence. This is review data only. The native authority
+remains the only component that can preview or execute a bounded cleanup plan.
+
 The dedicated `library.js` aggregates bounded capacity, compares headroom
 snapshots, and emits immutable local review envelopes without storage changes.
 

@@ -10,6 +10,7 @@ export const STORAGE_CAPACITY_LIBRARY_ID = 'storage-capacity-library';
 export const STORAGE_CAPACITY_LIBRARY_VERSION = 1;
 
 const ENVIRONMENTS = Object.freeze(['interactive', 'headless', 'unknown']);
+const PRESSURE_LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
 
 function isRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -21,6 +22,20 @@ function nonNegative(value) {
 
 function text(value) {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function normalizeStoragePressure(value) {
+  if (!isRecord(value)) return null;
+  return Object.freeze({
+    level: PRESSURE_LEVELS.includes(value.level) ? value.level : 'unknown',
+    totalBytes: nonNegative(value.totalBytes),
+    freeBytes: nonNegative(value.freeBytes),
+    freePercent: nonNegative(value.freePercent),
+    targetFreeBytes: nonNegative(value.targetFreeBytes),
+    belowTargetFreeFloor: value.belowTargetFreeFloor === true,
+    reclaimableBytesNeeded: nonNegative(value.reclaimableBytesNeeded),
+    policyVersion: Number.isInteger(value.policyVersion) && value.policyVersion > 0 ? value.policyVersion : null
+  });
 }
 
 function requireFacts(facts) {
@@ -84,6 +99,7 @@ export function classifyStorageCapacity(facts) {
   const free = sum(storage, (item) => item.free);
   const minimumFreePercent = minimum(storage, (item) => item.freePercent);
   const level = levelFor(minimumFreePercent);
+  const storagePressure = normalizeStoragePressure(source.storagePressure);
   return Object.freeze({
     library: STORAGE_CAPACITY_LIBRARY_ID,
     libraryVersion: STORAGE_CAPACITY_LIBRARY_VERSION,
@@ -94,6 +110,7 @@ export function classifyStorageCapacity(facts) {
     freeBytes: free,
     minimumFreePercent,
     level,
+    storagePressure,
     recommendations: recommendations(environment, storage.length, level)
   });
 }

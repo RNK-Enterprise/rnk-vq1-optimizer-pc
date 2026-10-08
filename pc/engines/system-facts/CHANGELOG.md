@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added bounded system-drive pressure, target-floor, and reclaimable-space
+  evidence normalization while keeping the engine side-effect free.
 - Added the side-effect-free system-facts engine.
 - Added the independent system-facts algorithm library.
 - Added normalization for CPU, memory, swap, GPU, storage, and network facts.

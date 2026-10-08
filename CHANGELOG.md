@@ -2,6 +2,12 @@
 
 ## 2026-10-08
 
+- Added the Storage Pressure Guard workflow for continuous system-drive
+  monitoring, exact bounded cleanup previews, safe-category opt-in cleanup,
+  separate pagefile evidence, protected paths, and measured cleanup audits.
+- Carried bounded storage-pressure and target-floor evidence through the
+  system-facts and storage-capacity analysis surfaces without granting them
+  filesystem authority.
 - Reduced the public repository to the PC optimizer surface only.
 - Added strict native plan expiry and gateway URL validation.
 - Scrubbed sensitive environment variables before native child processes.

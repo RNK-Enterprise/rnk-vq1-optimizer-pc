@@ -39,6 +39,16 @@ describe('system-facts engine', () => {
     expect(facts.gpus).toEqual([]);
     expect(facts.storage).toEqual([]);
     expect(facts.network).toEqual([]);
+    expect(facts.storagePressure).toEqual({
+      level: 'unknown',
+      totalBytes: null,
+      freeBytes: null,
+      freePercent: null,
+      targetFreeBytes: null,
+      belowTargetFreeFloor: false,
+      reclaimableBytesNeeded: null,
+      policyVersion: null
+    });
     expect(facts.pressure).toEqual({
       cpu: 'unknown',
       memory: 'unknown',
@@ -98,6 +108,16 @@ describe('system-facts engine', () => {
         freeBytes: 100,
         readOnly: false
       }],
+      storagePressure: {
+        level: 'critical',
+        totalBytes: 1000,
+        freeBytes: 20,
+        freePercent: 2,
+        targetFreeBytes: 100,
+        belowTargetFreeFloor: true,
+        reclaimableBytesNeeded: 80,
+        policyVersion: 1
+      },
       network: [null, {
         name: ' tailscale0 ',
         kind: ' mesh ',
@@ -135,6 +155,7 @@ describe('system-facts engine', () => {
     expect(facts.gpus[0].utilizationPercent).toBe(0);
     expect(facts.storage[0].freeBytes).toBe(100);
     expect(facts.storage[0].usedPercent).toBe(90);
+    expect(facts.storagePressure).toMatchObject({ level: 'critical', freeBytes: 20, belowTargetFreeFloor: true, policyVersion: 1 });
     expect(facts.network).toHaveLength(2);
     expect(facts.capabilities).toEqual({
       gpuObservation: true,
@@ -159,6 +180,16 @@ describe('system-facts engine', () => {
       .toBe('headless');
     expect(normalizeSystemFacts({ environment: 'headless', displayPresent: true }).environment)
       .toBe('headless');
+  });
+
+  test('bounds malformed storage pressure evidence', () => {
+    expect(normalizeSystemFacts({ storagePressure: {
+      level: 'not-a-level', totalBytes: -1, freeBytes: 'bad', freePercent: 120,
+      targetFreeBytes: -1, belowTargetFreeFloor: 'yes', reclaimableBytesNeeded: -1, policyVersion: 0
+    } }).storagePressure).toEqual({
+      level: 'unknown', totalBytes: null, freeBytes: null, freePercent: 100,
+      targetFreeBytes: null, belowTargetFreeFloor: false, reclaimableBytesNeeded: null, policyVersion: null
+    });
   });
 
   test('derives capability defaults from hardware and storage', () => {

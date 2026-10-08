@@ -22,9 +22,11 @@
 
 import { pathToFileURL } from 'url';
 import { createCacheCleaner } from './cache-cleaner.js';
+import { createCommandRunner } from './command-runner.js';
 import { NativeOptimizerAgent } from './agent.js';
 import { createPlatformAdapter } from './platform.js';
 import { applyOrganization, previewOrganization } from './organizer.js';
+import { createStoragePressureGuard } from './storage-pressure.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -65,6 +67,74 @@ function approvals(value) {
 function requireOption(args, name) {
   if (typeof args[name] !== 'string' || args[name].length === 0) throw new Error(`--${name} is required`);
   return args[name];
+}
+
+function storagePolicyFromArgs(args) {
+  return {
+    warningPercent: numberOption(args, 'warning-percent', 20),
+    criticalPercent: numberOption(args, 'critical-percent', 10),
+    emergencyPercent: numberOption(args, 'emergency-percent', 5),
+    targetFreeBytes: numberOption(args, 'target-free-gb', 5) * 1024 ** 3,
+    minAgeHours: numberOption(args, 'min-age-hours', 24),
+    maxEntries: numberOption(args, 'max-entries', 2000)
+  };
+}
+
+function storageGuardFromArgs(args) {
+  return createStoragePressureGuard({
+    platform: process.platform,
+    commandRunner: createCommandRunner(),
+    env: process.env,
+    policy: storagePolicyFromArgs(args)
+  });
+}
+
+function storageOptionsFromArgs(args) {
+  return {
+    enabledCategories: approvals(args.enable),
+    allowUnsafeCategories: args['allow-unsafe'] === true,
+    allowAdmin: args['allow-admin'] === true,
+    abandonedRuntimeRoots: args['abandoned-root'] ? [args['abandoned-root']] : []
+  };
+}
+
+async function runStorageCommand(command, args) {
+  const guard = storageGuardFromArgs(args);
+  const preview = await guard.preview(storageOptionsFromArgs(args));
+  if (command === 'storage-preview') return preview;
+  if (args.confirm !== true) throw new Error('storage-cleanup requires --confirm');
+  return { preview, result: await guard.cleanup(preview.plan, { approved: true, dryRun: false }) };
+}
+
+async function runStorageMonitorCommand(args) {
+  const guard = storageGuardFromArgs(args);
+  const options = storageOptionsFromArgs(args);
+  if (args['auto-clean'] === true && options.enabledCategories.length === 0) {
+    throw new Error('storage-monitor --auto-clean requires explicitly enabled categories');
+  }
+  if (args['auto-clean'] === true && (options.allowUnsafeCategories || options.allowAdmin)) {
+    throw new Error('storage-monitor --auto-clean only permits safe categories');
+  }
+  const monitor = guard.monitor({
+    intervalMs: numberOption(args, 'interval-seconds', 60) * 1000,
+    onChange: async (snapshot) => {
+      const preview = await guard.preview({ ...options, snapshot });
+      const result = args['auto-clean'] === true
+        && (snapshot.pressure?.level === 'critical' || snapshot.pressure?.level === 'emergency')
+        && preview.plan.selected.length > 0
+        ? await guard.cleanup(preview.plan, { approved: true, dryRun: false })
+        : null;
+      process.stdout.write(`${JSON.stringify({ snapshot, preview, result })}\n`);
+    },
+    onError: (error) => process.stderr.write(`storage monitor: ${error.message}\n`)
+  });
+  await monitor.start();
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
 }
 
 function agentFromArgs(args) {
@@ -115,6 +185,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
   if (['cache-preview', 'cache-clean'].includes(command)) return runCacheCommand(command, args);
   if (['organize-preview', 'organize-apply'].includes(command)) return runOrganizerCommand(command, args);
+  if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
+  if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);
 }
 

@@ -30,6 +30,8 @@ The current platform adapters provide documented controls for:
 - Windows power profile and process priority.
 - Linux power profile, process priority, and process I/O priority.
 - Optimizer-owned temporary-cache preview and explicit cleanup.
+- Storage Pressure Guard for bounded system-drive monitoring, preview, and
+  explicitly approved cleanup of regenerable categories.
 - Read-only CPU, memory, storage, process, network, and optional NVIDIA facts.
 
 GPU policy, CPU affinity, memory policy, network tuning, and frame-rate
@@ -79,6 +81,12 @@ node native/cli.mjs optimize --gateway URL --apply --approve=clear-cache
 node native/cli.mjs optimize --gateway URL --apply --allow-admin
 node native/cli.mjs cache-preview --target user-temp --max-age-hours 24
 node native/cli.mjs cache-clean --target user-temp --confirm
+node native/cli.mjs storage-preview --target-free-gb 5 \
+  --enable=temporary-files,package-cache,browser-automation-cache,gpu-shader-cache
+node native/cli.mjs storage-cleanup --target-free-gb 5 \
+  --enable=temporary-files,package-cache --confirm
+node native/cli.mjs storage-monitor --target-free-gb 5 \
+  --enable=temporary-files,package-cache --interval-seconds 60
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```
@@ -86,6 +94,21 @@ node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 The gateway supplies bounded data. The native adapter validates the protocol,
 action allow-list, numeric limits, expiry, approvals, and admin boundary
 before any action can run. No arbitrary command or setting path is accepted.
+
+Storage Pressure Guard monitors the system drive while `storage-monitor` is
+running. It classifies `normal`, `warning`, `critical`, and `emergency`
+pressure using configurable thresholds and a target free-space floor. Warning
+and higher events include a bounded reclaimable-space preview. `--auto-clean`
+is opt-in and only acts on explicitly enabled safe categories. Windows Update
+downloads and abandoned runtime remnants require separate approval and are not
+automatic-cleanup targets. Pagefiles, active runtimes, models, projects,
+repositories, credentials, WSL data, user files, and system-managed files are
+never cleanup targets.
+
+The guard distinguishes platform/driver shader caches from optimizer-owned
+temporary files, reports pagefile pressure separately, previews exact paths and
+byte counts, and records removed bytes plus measured post-cleanup recovery. It
+never recursively deletes a directory because it is large.
 
 ## PC mesh and empirical proof
 

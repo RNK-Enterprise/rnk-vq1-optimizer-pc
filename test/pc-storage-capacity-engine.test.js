@@ -52,6 +52,21 @@ describe('Storage-capacity engine', () => {
     expect(Object.isFrozen(result)).toBe(true);
   });
 
+  test('carries bounded native pressure evidence without authorizing actions', () => {
+    const result = runStorageCapacityEngine(facts({ storagePressure: {
+      level: 'critical', totalBytes: 1000, freeBytes: 20, freePercent: 2,
+      targetFreeBytes: 100, belowTargetFreeFloor: true, reclaimableBytesNeeded: 80, policyVersion: 1
+    } }), { trigger: 'system.facts.request', now: () => 0 });
+    expect(result.storagePressure).toEqual({
+      level: 'critical', totalBytes: 1000, freeBytes: 20, freePercent: 2,
+      targetFreeBytes: 100, belowTargetFreeFloor: true, reclaimableBytesNeeded: 80, policyVersion: 1
+    });
+    expect(runStorageCapacityEngine(facts({ storagePressure: {
+      level: 'invalid', totalBytes: -1, freeBytes: -1, freePercent: -1,
+      targetFreeBytes: -1, belowTargetFreeFloor: 'yes', reclaimableBytesNeeded: -1, policyVersion: 0
+    } }), { trigger: 'system.facts.request', now: () => 0 }).storagePressure).toMatchObject({ level: 'unknown', totalBytes: null, belowTargetFreeFloor: false, policyVersion: null });
+  });
+
   test('classifies elevated and high free-space pressure', () => {
     expect(runStorageCapacityEngine(facts({ storage: [
       { mount: '/', totalBytes: 1000, freeBytes: 200 }

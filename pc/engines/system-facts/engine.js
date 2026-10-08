@@ -24,6 +24,7 @@ export const SYSTEM_ENVIRONMENTS = Object.freeze([
   'unknown'
 ]);
 
+const STORAGE_PRESSURE_LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
 const EMPTY_ARRAY = Object.freeze([]);
 
 function isRecord(value) {
@@ -126,6 +127,20 @@ function normalizeStorage(storage) {
   });
 }
 
+function normalizeStoragePressure(storagePressure) {
+  const source = isRecord(storagePressure) ? storagePressure : {};
+  return Object.freeze({
+    level: STORAGE_PRESSURE_LEVELS.includes(source.level) ? source.level : 'unknown',
+    totalBytes: nonNegative(source.totalBytes),
+    freeBytes: nonNegative(source.freeBytes),
+    freePercent: boundedPercent(source.freePercent),
+    targetFreeBytes: nonNegative(source.targetFreeBytes),
+    belowTargetFreeFloor: source.belowTargetFreeFloor === true,
+    reclaimableBytesNeeded: nonNegative(source.reclaimableBytesNeeded),
+    policyVersion: positiveInteger(source.policyVersion)
+  });
+}
+
 function normalizeNetwork(network) {
   const source = network;
   return Object.freeze({
@@ -213,6 +228,7 @@ export function normalizeSystemFacts(input = {}) {
     memory,
     gpus,
     storage,
+    storagePressure: normalizeStoragePressure(source.storagePressure),
     network,
     capabilities: deriveCapabilities(source, environment, gpus, storage),
     pressure: derivePressure(cpu, memory, storage)

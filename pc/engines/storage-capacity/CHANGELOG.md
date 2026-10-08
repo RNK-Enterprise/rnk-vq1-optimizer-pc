@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added bounded native pressure/floor evidence to the analysis envelope while
+  retaining the engine and library as action-free review surfaces.
 - Added bounded total, free, and minimum-headroom aggregation.
 - Added normal, elevated, high, unknown, and empty capacity states.
 - Added free-space review guidance without storage mutation.

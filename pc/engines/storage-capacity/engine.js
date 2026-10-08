@@ -16,6 +16,7 @@ export const STORAGE_CAPACITY_TRIGGERS = Object.freeze([
 ]);
 
 const ENVIRONMENTS = Object.freeze(['interactive', 'headless', 'unknown']);
+const PRESSURE_LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
 const EMPTY_ARRAY = Object.freeze([]);
 
 function isRecord(value) {
@@ -28,6 +29,20 @@ function nonNegative(value) {
 
 function text(value) {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function normalizeStoragePressure(value) {
+  if (!isRecord(value)) return null;
+  return Object.freeze({
+    level: PRESSURE_LEVELS.includes(value.level) ? value.level : 'unknown',
+    totalBytes: nonNegative(value.totalBytes),
+    freeBytes: nonNegative(value.freeBytes),
+    freePercent: nonNegative(value.freePercent),
+    targetFreeBytes: nonNegative(value.targetFreeBytes),
+    belowTargetFreeFloor: value.belowTargetFreeFloor === true,
+    reclaimableBytesNeeded: nonNegative(value.reclaimableBytesNeeded),
+    policyVersion: Number.isInteger(value.policyVersion) && value.policyVersion > 0 ? value.policyVersion : null
+  });
 }
 
 function requireFacts(facts) {
@@ -121,6 +136,7 @@ export function runStorageCapacityEngine(facts, {
   const free = sum(storage, (item) => item.free);
   const minimumFreePercent = minimum(storage, (item) => item.freePercent);
   const level = levelFor(minimumFreePercent);
+  const storagePressure = normalizeStoragePressure(source.storagePressure);
   return Object.freeze({
     protocolVersion: 1,
     engine: STORAGE_CAPACITY_ENGINE_ID,
@@ -133,6 +149,7 @@ export function runStorageCapacityEngine(facts, {
     totalBytes: total,
     freeBytes: free,
     minimumFreePercent,
+    storagePressure,
     level,
     state: operatingState(environment, storage.length, level),
     confidence: confidence(environment, storage.length, total, free, minimumFreePercent),

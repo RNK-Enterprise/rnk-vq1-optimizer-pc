@@ -5,6 +5,16 @@ this repository is called release-certified.
 
 ## PC release surface
 
+- Added Storage Pressure Guard monitoring for system-drive free-space pressure
+  with configurable warning/critical/emergency thresholds and a default 5 GiB
+  free-space floor.
+- Added bounded previews for temporary, package, browser automation, shader,
+  Windows Update, and explicitly supplied abandoned-runtime categories. Only
+  explicitly enabled safe categories may be automatically cleaned; protected
+  paths, projects, credentials, repositories, models, WSL data, active
+  runtimes, pagefiles, and system-managed files remain outside its authority.
+- Added exact candidate byte counts and cleanup audit records with measured
+  post-cleanup free-space recovery.
 - Removed the non-PC module, relay, server, UI, templates, and test surface.
 - Added strict expiry validation with a bounded plan lifetime.
 - Restricted remote gateway URLs to HTTPS and loopback development URLs to

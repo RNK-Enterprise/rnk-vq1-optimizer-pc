@@ -37,6 +37,19 @@ describe('Storage-capacity library', () => {
     ] }))).toMatchObject({ freeBytes: 1000, minimumFreePercent: 100, level: 'normal' });
   });
 
+  test('carries bounded native pressure evidence as review data', () => {
+    const result = classifyStorageCapacity(facts({ storagePressure: {
+      level: 'emergency', totalBytes: 1000, freeBytes: 10, freePercent: 1,
+      targetFreeBytes: 100, belowTargetFreeFloor: true, reclaimableBytesNeeded: 90, policyVersion: 1
+    } }));
+    expect(result.storagePressure).toEqual({
+      level: 'emergency', totalBytes: 1000, freeBytes: 10, freePercent: 1,
+      targetFreeBytes: 100, belowTargetFreeFloor: true, reclaimableBytesNeeded: 90, policyVersion: 1
+    });
+    expect(classifyStorageCapacity(facts({ storagePressure: { level: 'invalid', totalBytes: -1 } })).storagePressure)
+      .toMatchObject({ level: 'unknown', totalBytes: null, policyVersion: null });
+  });
+
   test('preserves high, unknown, empty, and unknown-environment states', () => {
     expect(classifyStorageCapacity(facts({ storage: [
       { mount: '/', totalBytes: 1000, freeBytes: 100 }
