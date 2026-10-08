@@ -112,7 +112,7 @@ never recursively deletes a directory because it is large.
 
 ## PC mesh and empirical proof
 
-`pc/mesh.js` registers 35 engines, 35 engine libraries, 140 turbos, and 140
+`pc/mesh.js` registers 37 engines, 37 engine libraries, 148 turbos, and 148
 turbo libraries behind typed local command/event routes. Nodes are lazy-loaded
 and execution requires a declared trigger. The mesh is in-process only: it
 does not use HTTP, REST, sockets, public listeners, or network mutation.

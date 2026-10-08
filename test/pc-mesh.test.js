@@ -9,14 +9,14 @@ describe('PC-wide local mesh', () => {
     expect(PC_MESH_ID).toBe('optimizer.pc.mesh');
     expect(PC_MESH_VERSION).toBe(1);
     expect(PC_MESH_TRIGGERS).toEqual(['install.preflight', 'system.facts.request', 'workload.changed', 'health.interval']);
-    expect(nodes).toHaveLength(350);
-    expect(nodes.filter((node) => node.kind === 'engine')).toHaveLength(35);
-    expect(nodes.filter((node) => node.kind === 'library')).toHaveLength(35);
-    expect(nodes.filter((node) => node.kind === 'turbo')).toHaveLength(140);
-    expect(nodes.filter((node) => node.kind === 'turbo-library')).toHaveLength(140);
-    expect(bridges).toHaveLength(3010);
-    expect(bridges.filter((bridge) => bridge.type === 'command')).toHaveLength(1505);
-    expect(bridges.filter((bridge) => bridge.type === 'event')).toHaveLength(1505);
+    expect(nodes).toHaveLength(370);
+    expect(nodes.filter((node) => node.kind === 'engine')).toHaveLength(37);
+    expect(nodes.filter((node) => node.kind === 'library')).toHaveLength(37);
+    expect(nodes.filter((node) => node.kind === 'turbo')).toHaveLength(148);
+    expect(nodes.filter((node) => node.kind === 'turbo-library')).toHaveLength(148);
+    expect(bridges).toHaveLength(3330);
+    expect(bridges.filter((bridge) => bridge.type === 'command')).toHaveLength(1665);
+    expect(bridges.filter((bridge) => bridge.type === 'event')).toHaveLength(1665);
     expect(nodes.every((node) => node.lazy && node.triggers === PC_MESH_TRIGGERS)).toBe(true);
   });
 

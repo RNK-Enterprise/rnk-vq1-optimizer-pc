@@ -1,0 +1,18 @@
+/**
+ * RNK Vortex System Optimizer
+ * Contributor: Lisa's Dungeon
+ *
+ * Foreground-protection library for merging game foreground evidence.
+ */
+
+export const WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_ID = 'workload-policy.foreground-protection.library';
+export const WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_VERSION = 1;
+const STATES = Object.freeze(['foreground-protected', 'not-applicable', 'observation-required', 'insufficient-data']);
+function isRecord(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
+function requireReport(report) { if (!isRecord(report)) throw new TypeError('Foreground-protection library report must be an object'); if (report.turbo !== 'workload-policy.foreground-protection') throw new Error('Foreground-protection library requires a foreground-protection turbo report'); if (!STATES.includes(report.state)) throw new Error('Foreground-protection library report has an invalid state'); if (!Number.isInteger(report.gamingCount) || !Number.isInteger(report.protectedCount)) throw new TypeError('Foreground-protection library report requires counts'); return report; }
+function requireReports(reports) { if (!Array.isArray(reports)) throw new TypeError('Foreground-protection library reports must be an array'); if (reports.length > 64) throw new RangeError('Foreground-protection library accepts at most 64 reports'); return Object.freeze(reports.map(requireReport)); }
+function requireClock(now) { const timestamp = now(); if (!Number.isFinite(timestamp)) throw new TypeError('Foreground-protection library clock must return a number'); return timestamp; }
+export function mergeWorkloadPolicyForegroundProtectionReports(reports) { const validated = requireReports(reports); const state = validated.some((report) => report.state === 'observation-required') ? 'observation-required' : validated.some((report) => report.state === 'foreground-protected') ? 'foreground-protected' : validated.some((report) => report.state === 'not-applicable') ? 'not-applicable' : 'insufficient-data'; return Object.freeze({ library: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_ID, libraryVersion: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_VERSION, reportCount: validated.length, state, gamingCount: validated.reduce((sum, report) => sum + report.gamingCount, 0), protectedCount: validated.reduce((sum, report) => sum + report.protectedCount, 0) }); }
+export function buildWorkloadPolicyForegroundProtectionPlan(report, environment = 'unknown') { const validated = requireReport(report); const normalized = ['interactive', 'headless'].includes(environment) ? environment : 'unknown'; return Object.freeze({ library: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_ID, environment: normalized, mode: normalized === 'unknown' ? 'profile-required' : validated.state === 'foreground-protected' ? 'foreground-guard' : 'observation-only' }); }
+export function buildWorkloadPolicyForegroundProtectionEnvelope(report, { trigger, now = Date.now } = {}) { if (typeof trigger !== 'string' || !trigger) throw new TypeError('Foreground-protection library trigger is required'); return Object.freeze({ library: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_ID, libraryVersion: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_VERSION, trigger, generatedAt: new Date(requireClock(now)).toISOString(), report: requireReport(report) }); }
+export function createWorkloadPolicyForegroundProtectionLibrary() { return Object.freeze({ id: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_ID, version: WORKLOAD_POLICY_FOREGROUND_PROTECTION_LIBRARY_VERSION, merge: mergeWorkloadPolicyForegroundProtectionReports, plan: buildWorkloadPolicyForegroundProtectionPlan, envelope: buildWorkloadPolicyForegroundProtectionEnvelope }); }

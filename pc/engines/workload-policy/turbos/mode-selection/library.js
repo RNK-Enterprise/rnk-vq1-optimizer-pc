@@ -1,0 +1,20 @@
+/**
+ * RNK Vortex System Optimizer
+ * Contributor: Lisa's Dungeon
+ *
+ * Mode-selection library for merging bounded mode observations.
+ */
+
+export const WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_ID = 'workload-policy.mode-selection.library';
+export const WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_VERSION = 1;
+const STATES = Object.freeze(['stable-mode', 'mode-changed', 'observation-required', 'insufficient-data']);
+const MODES = Object.freeze(['developer', 'gaming', 'gaming-build', 'idle', 'unknown']);
+function isRecord(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
+function requireReport(report) { if (!isRecord(report)) throw new TypeError('Mode-selection library report must be an object'); if (report.turbo !== 'workload-policy.mode-selection') throw new Error('Mode-selection library requires a mode-selection turbo report'); if (!STATES.includes(report.state)) throw new Error('Mode-selection library report has an invalid state'); if (!MODES.includes(report.finalMode)) throw new Error('Mode-selection library finalMode is invalid'); if (!Number.isFinite(report.confidence) || report.confidence < 0 || report.confidence > 1) throw new RangeError('Mode-selection library confidence must be between 0 and 1'); return report; }
+function requireReports(reports) { if (!Array.isArray(reports)) throw new TypeError('Mode-selection library reports must be an array'); if (reports.length > 64) throw new RangeError('Mode-selection library accepts at most 64 reports'); return Object.freeze(reports.map(requireReport)); }
+function priority(mode) { return { 'gaming-build': 4, gaming: 3, developer: 2, idle: 1, unknown: 0 }[mode]; }
+function requireClock(now) { const timestamp = now(); if (!Number.isFinite(timestamp)) throw new TypeError('Mode-selection library clock must return a number'); return timestamp; }
+export function mergeWorkloadPolicyModeSelectionReports(reports) { const validated = requireReports(reports); const latest = validated.at(-1) || null; const mode = validated.reduce((winner, report) => priority(report.finalMode) > priority(winner) ? report.finalMode : winner, 'unknown'); const state = validated.some((report) => report.state === 'mode-changed') ? 'mode-changed' : validated.some((report) => report.state === 'observation-required') ? 'observation-required' : validated.some((report) => report.state === 'stable-mode') ? 'stable-mode' : 'insufficient-data'; return Object.freeze({ library: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_ID, libraryVersion: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_VERSION, reportCount: validated.length, mode, latestMode: latest?.finalMode || 'unknown', state, confidence: validated.length ? Math.round(validated.reduce((sum, report) => sum + report.confidence, 0) / validated.length * 10000) / 10000 : 0 }); }
+export function buildWorkloadPolicyModeSelectionPlan(report, environment = 'unknown') { const validated = requireReport(report); const normalized = ['interactive', 'headless'].includes(environment) ? environment : 'unknown'; return Object.freeze({ library: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_ID, environment: normalized, mode: normalized === 'unknown' ? 'profile-required' : validated.finalMode, intervalMs: validated.state === 'mode-changed' ? 300000 : 900000 }); }
+export function buildWorkloadPolicyModeSelectionEnvelope(report, { trigger, now = Date.now } = {}) { if (typeof trigger !== 'string' || !trigger) throw new TypeError('Mode-selection library trigger is required'); return Object.freeze({ library: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_ID, libraryVersion: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_VERSION, trigger, generatedAt: new Date(requireClock(now)).toISOString(), report: requireReport(report) }); }
+export function createWorkloadPolicyModeSelectionLibrary() { return Object.freeze({ id: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_ID, version: WORKLOAD_POLICY_MODE_SELECTION_LIBRARY_VERSION, merge: mergeWorkloadPolicyModeSelectionReports, plan: buildWorkloadPolicyModeSelectionPlan, envelope: buildWorkloadPolicyModeSelectionEnvelope }); }
