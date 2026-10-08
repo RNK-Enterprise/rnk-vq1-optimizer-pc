@@ -55,7 +55,7 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
     platform: 'win32',
 
     requiresAdmin(action) {
-      return action.type === 'stop-approved-process';
+      return action.type === 'stop-approved-process' || action.type === 'set-process-affinity';
     },
 
     collectFacts() {
@@ -74,6 +74,14 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
             '$p = Get-Process -Id ([int]$args[0]); $p.PriorityClass = $args[1]',
             '--', String(pid), PRIORITY_CLASSES[action.value]
           ]), 'set-process-priority');
+        case 'set-process-affinity':
+          if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
+          if (!['balanced', 'performance'].includes(action.value)) return { ok: false, reason: 'unsupported process affinity value' };
+          return resultFromCommand(await commandRunner.run('powershell.exe', [
+            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
+            '$p = Get-Process -Id ([int]$args[0]); $count = [Environment]::ProcessorCount; [Int64]$mask = 0; for ($i = 0; $i -lt $count -and $i -lt 63; $i++) { if ($args[1] -eq "performance" -or $i % 2 -eq 0) { $mask = $mask -bor ([Int64]1 -shl $i) } }; $p.ProcessorAffinity = [IntPtr]$mask',
+            '--', String(pid), action.value
+          ]), 'set-process-affinity');
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'win32' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });
@@ -84,7 +92,6 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
           }
           return resultFromCommand(await commandRunner.run('taskkill.exe', ['/PID', String(pid), '/T']), 'stop-approved-process');
         case 'set-process-io-priority':
-        case 'set-process-affinity':
         case 'set-gpu-policy':
         case 'set-memory-policy':
           return { ok: false, reason: `${action.type} is not supported by the Windows adapter` };

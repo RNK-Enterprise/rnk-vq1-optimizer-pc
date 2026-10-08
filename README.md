@@ -59,9 +59,10 @@ The current platform adapters provide documented controls for:
   returns explicit unavailable evidence when the platform or sensor does not
   provide it.
 
-GPU policy, CPU affinity, memory policy, network tuning, and frame-rate
-control remain explicit unsupported results until a platform-safe
-implementation is added and proven. NVIDIA facts are observational only. The
+GPU policy, memory policy, network tuning, and frame-rate control remain
+explicit unsupported results until a platform-safe implementation is added
+and proven. CPU affinity is supported only through fixed balanced/performance
+masks for explicitly approved processes. NVIDIA facts are observational only. The
 browser host under `scripts/pc-host.js` does not execute operating-system
 commands.
 

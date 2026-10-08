@@ -19,10 +19,21 @@
  */
 
 import { collectSystemFacts } from './system-facts.js';
+import os from 'os';
 
 const POWER_PROFILES = Object.freeze({ balanced: 'balanced', performance: 'performance', battery: 'power-saver' });
 const NICE_VALUES = Object.freeze({ low: '10', normal: '0', high: '-5' });
 const IONICE_VALUES = Object.freeze({ low: '7', normal: '4', high: '0' });
+
+function affinityMask(value, cpuCount) {
+  if (!['balanced', 'performance'].includes(value)) return null;
+  const count = Number.isInteger(cpuCount) && cpuCount > 0 ? Math.min(cpuCount, 63) : Math.min(os.cpus().length, 63);
+  let mask = 0n;
+  for (let index = 0; index < count; index += 1) {
+    if (value === 'performance' || index % 2 === 0) mask |= 1n << BigInt(index);
+  }
+  return `0x${mask.toString(16)}`;
+}
 
 function resultFromCommand(result, operation) {
   if (result?.code === 0) return { ok: true, operation };
@@ -38,7 +49,7 @@ function approvedPid(context, pid) {
   return Array.isArray(list) ? list.includes(pid) : list instanceof Set ? list.has(pid) : false;
 }
 
-export function createLinuxAdapter({ commandRunner, cacheCleaner } = {}) {
+export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') throw new TypeError('Linux adapter requires a command runner');
   if (!cacheCleaner || typeof cacheCleaner.preview !== 'function' || typeof cacheCleaner.clean !== 'function') {
     throw new TypeError('Linux adapter requires a cache cleaner');
@@ -50,6 +61,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner } = {}) {
     requiresAdmin(action) {
       return action.type === 'set-power-profile'
         || action.type === 'stop-approved-process'
+        || action.type === 'set-process-affinity'
         || (action.type === 'set-process-priority' && action.value === 'high')
         || (action.type === 'set-process-io-priority' && action.value === 'high');
     },
@@ -69,6 +81,12 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner } = {}) {
         case 'set-process-io-priority':
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
           return resultFromCommand(await commandRunner.run('ionice', ['-c', '2', '-n', IONICE_VALUES[action.value], '-p', String(pid)]), 'set-process-io-priority');
+        case 'set-process-affinity': {
+          if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
+          const mask = affinityMask(action.value, cpuCount);
+          if (!mask) return { ok: false, reason: 'unsupported process affinity value' };
+          return resultFromCommand(await commandRunner.run('taskset', ['-p', mask, String(pid)]), 'set-process-affinity');
+        }
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'linux' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });
@@ -78,7 +96,6 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner } = {}) {
             return { ok: false, reason: 'process stop requires an approved background process id' };
           }
           return resultFromCommand(await commandRunner.run('kill', ['-TERM', String(pid)]), 'stop-approved-process');
-        case 'set-process-affinity':
         case 'set-gpu-policy':
         case 'set-memory-policy':
           return { ok: false, reason: `${action.type} is not supported by the Linux adapter` };

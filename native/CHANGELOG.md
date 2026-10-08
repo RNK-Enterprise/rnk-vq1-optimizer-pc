@@ -20,6 +20,8 @@
   stale installers, large files, protected paths, and hash-backed duplicates.
 - Added trigger-based battery/thermal/workload power-profile monitoring with
   approval-gated optional application of documented profiles.
+- Added fixed balanced/performance CPU-affinity actions for approved Windows
+  and Linux process targets; memory/GPU hard policy remains unsupported.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor

@@ -98,10 +98,11 @@ is supplied. Cache cleanup and process stopping require explicit approval.
 File organization is never part of an optimization plan; it is a separate
 preview/confirm workflow and never overwrites an existing destination.
 
-Supported controls are Windows power profile/process priority and Linux power
-profile/process priority/process I/O priority. GPU policy, CPU affinity, and
-memory policy remain explicit unsupported results until safe implementations
-are added. NVIDIA facts are observational only.
+Supported controls are Windows power profile/process priority/process affinity
+and Linux power profile/process priority/process I/O priority/process affinity.
+Affinity is limited to fixed balanced/performance masks and requires admin
+approval. GPU policy and memory policy remain explicit unsupported results;
+NVIDIA facts are observational only.
 
 The `user-temp` target is optimizer-owned. D3D, NVIDIA, and Mesa shader
 caches are platform/driver-generated; the optimizer exposes only fixed,

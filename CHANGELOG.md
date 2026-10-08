@@ -35,6 +35,8 @@
   stale installers, large files, protected paths, and hash-backed duplicates.
 - Added trigger-based battery/thermal/workload power-profile monitoring with
   approval-gated optional application of documented profiles.
+- Added fixed balanced/performance CPU-affinity actions for approved Windows
+  and Linux process targets; memory/GPU hard policy remains unsupported.
 - Added explicit cross-platform read-only filesystem-health evidence through
   fixed Windows, Linux, and macOS volume checkers.
 - Added an append-only native steward history store and cross-platform report

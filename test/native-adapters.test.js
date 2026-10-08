@@ -35,9 +35,11 @@ describe('native adapters', () => {
     const adapter = createWindowsAdapter(h);
     expect(adapter.platform).toBe('win32');
     expect(adapter.requiresAdmin(valid.stop)).toBe(true);
+    expect(adapter.requiresAdmin(valid.affinity)).toBe(true);
     expect(adapter.requiresAdmin(valid.power)).toBe(false);
     expect((await adapter.applyAction(valid.power)).ok).toBe(true);
     expect((await adapter.applyAction(valid.priority, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: false, approvedBackgroundPids: [123] })).ok).toBe(false);
@@ -45,7 +47,7 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: {} })).ok).toBe(false);
     expect((await adapter.applyAction(valid.priority, { targetPid: null })).ok).toBe(false);
     expect((await adapter.applyAction({ type: 'unknown' })).ok).toBe(false);
-    for (const action of [valid.io, valid.affinity, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
+    for (const action of [valid.io, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect(h.calls[0]).toEqual(['powercfg.exe', ['/setactive', '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c']]);
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'win32' }));
   });
@@ -55,18 +57,22 @@ describe('native adapters', () => {
     const adapter = createLinuxAdapter(h);
     expect(adapter.requiresAdmin(valid.power)).toBe(true);
     expect(adapter.requiresAdmin(valid.priority)).toBe(true);
+    expect(adapter.requiresAdmin(valid.affinity)).toBe(true);
     expect(adapter.requiresAdmin(valid.io)).toBe(false);
     expect((await adapter.applyAction({ ...valid.power, value: 'battery' })).ok).toBe(true);
     expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.io, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.affinity, value: 'balanced' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: new Set([123]) })).ok).toBe(true);
     expect((await adapter.applyAction(valid.io, { targetPid: 0 })).ok).toBe(false);
-    for (const action of [valid.affinity, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
+    for (const action of [valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect(h.calls).toEqual(expect.arrayContaining([
       ['powerprofilesctl', ['set', 'power-saver']],
       ['renice', ['-n', '10', '-p', '123']],
       ['ionice', ['-c', '2', '-n', '7', '-p', '123']],
+      ['taskset', ['-p', expect.stringMatching(/^0x/), '123']],
       ['kill', ['-TERM', '123']]
     ]));
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'linux' }));
@@ -89,6 +95,14 @@ describe('native adapters', () => {
     expect((await linuxFailure.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true })).ok).toBe(false);
     expect((await linuxFailure.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(false);
     expect((await linuxFailure.applyAction(valid.priority, { targetPid: 0 })).ok).toBe(false);
+    expect((await linuxFailure.applyAction(valid.affinity, { targetPid: 0 })).ok).toBe(false);
+    await expect(linuxFailure.applyAction({ ...valid.affinity, value: 'unknown' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'unsupported process affinity value' });
+    const fallbackAffinity = createLinuxAdapter({ ...h, cpuCount: 0 });
+    await expect(fallbackAffinity.applyAction({ ...valid.affinity, value: 'balanced' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-affinity failed' });
+    const wideAffinity = createLinuxAdapter({ ...h, cpuCount: 64 });
+    await expect(wideAffinity.applyAction(valid.affinity, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-affinity failed' });
+    expect((await adapter.applyAction(valid.affinity, { targetPid: 0 })).ok).toBe(false);
+    await expect(adapter.applyAction({ ...valid.affinity, value: 'unknown' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'unsupported process affinity value' });
     expect((await linuxFailure.applyAction({ type: 'unknown' })).ok).toBe(false);
     const unsupported = createPlatformAdapter({ platform: 'freebsd', commandRunner: h.commandRunner, cacheCleaner: h.cacheCleaner });
     expect(unsupported.platform).toBe('freebsd');
