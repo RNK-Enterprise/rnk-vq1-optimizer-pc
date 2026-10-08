@@ -186,8 +186,9 @@ an operating-system service, tray process, scheduler task, or privileged daemon;
 the host application owns lifecycle installation.
 
 `steward-trends` reduces retained reports over a bounded multi-day window and
-reports storage fill rate, battery-health movement, thermal movement,
-memory-pressure movement, drive-failure evidence, and recommendations.
+reports storage fill rate, battery-health movement, CPU/GPU thermal movement,
+memory-pressure movement, pagefile growth, drive-failure evidence, and
+recommendations.
 
 `collectSystemFacts()` now includes bounded process, startup, battery, thermal,
 and network telemetry when the host exposes it. Windows uses fixed PowerShell

@@ -15,6 +15,18 @@ describe('workstation trends', () => {
     expect(result.window.windowMs).toBe(2 * DAY);
   });
 
+  test('tracks pagefile growth and GPU thermal drift independently', () => {
+    const first = facts(0, 100, 95, 60, 50);
+    first.facts.pagefile = { currentBytes: 100 };
+    first.facts.gpu = { temperatureC: 60 };
+    const second = facts(DAY, 80, 90, 60, 50);
+    second.facts.pagefile = { currentBytes: 200 };
+    second.facts.gpu = { temperature: 72 };
+    const result = buildWorkstationTrends([first, second], { now: () => DAY, windowMs: 2 * DAY });
+    expect(result).toMatchObject({ pagefile: { delta: 100, direction: 'rising' }, gpuThermals: { delta: 12, direction: 'rising' } });
+    expect(result.recommendations).toEqual(expect.arrayContaining(['gpu-thermal-readings-are-rising', 'pagefile-usage-is-rising']));
+  });
+
   test('preserves missing evidence and validates bounds', () => {
     expect(buildWorkstationTrends([{ event: 'other', timestamp: 1, facts: {} }, { event: 'report', timestamp: DAY, facts: null }], { now: () => DAY })).toMatchObject({ sampleCount: 1, storage: { direction: 'unknown' }, recommendations: ['no-material-change-observed'] });
     expect(buildWorkstationTrends([{ event: 'other', timestamp: 1, facts: {} }], { now: () => DAY })).toMatchObject({ sampleCount: 0, recommendations: ['collect-workstation-evidence'] });
