@@ -258,9 +258,11 @@ GPU hard caps remain explicit unsupported dimensions, and the governor does
 not claim an exact restore without pre-change priority evidence.
 
 `workload-budget-preview` compares explicit CPU, memory, I/O, and GPU limits
-with observed process facts. Apply can lower process priority and supported
-I/O priority for explicitly approved background PIDs. Memory and GPU hard caps
-remain unsupported; a plan never claims those dimensions were enforced.
+with observed process facts. The default priority mode can lower process and
+supported I/O priority for explicitly approved background PIDs. Pass `--hard`
+to route bounded CPU and memory breaches through the existing resource-limit
+authority; adapter support, admin requirements, and apply results remain
+explicit. Hard mode does not claim I/O byte shaping or GPU hard caps.
 
 `game-session-monitor` watches explicit game process evidence on a trigger
 interval. It can apply only approved background priority/I/O operations when

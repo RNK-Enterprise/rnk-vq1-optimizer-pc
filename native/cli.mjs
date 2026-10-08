@@ -356,7 +356,7 @@ async function runWorkloadBudgetCommand(command, args) {
     ioBytesPerSecond: args['io-bytes-per-second'] === undefined ? null : numberOption(args, 'io-bytes-per-second', null),
     gpuPercent: args['gpu-percent'] === undefined ? null : numberOption(args, 'gpu-percent', null)
   };
-  const plan = previewWorkloadBudget(facts, { budget, targetPids: listOption(args, 'target-pids') });
+  const plan = previewWorkloadBudget(facts, { budget, targetPids: listOption(args, 'target-pids'), enforcement: args.hard === true ? 'hard' : 'priority' });
   if (command === 'workload-budget-preview') return { facts, plan };
   if (args.confirm !== true) throw new Error('workload-budget-apply requires --confirm');
   const approvedPids = listOption(args, 'approve-pids');

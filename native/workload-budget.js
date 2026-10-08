@@ -3,16 +3,19 @@
  * Copyright © 2026 Lisa's Dungeon
  * Contributor: Lisa's Dungeon
  *
- * Cross-platform workload budget supervision. CPU and I/O budgets can produce
- * approved priority reductions through existing platform adapters. Memory and
- * GPU limits remain evidence-only because portable hard-cap authority is not
- * available in this native boundary.
+ * Cross-platform workload budget supervision. Priority mode produces approved
+ * priority reductions; hard mode routes bounded CPU and memory limits through
+ * the existing resource-limit adapter authority. GPU limits remain evidence
+ * only because portable hard-cap authority is not available here.
  */
+
+import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
 
 export const WORKLOAD_BUDGET_VERSION = 1;
 const DIMENSIONS = Object.freeze(['cpuPercent', 'memoryBytes', 'ioBytesPerSecond', 'gpuPercent']);
 const PROTECTED_ROLES = new Set(['system', 'runtime', 'model', 'credential', 'shell']);
 const PRIORITIES = new Set(['low', 'normal', 'high']);
+const ENFORCEMENTS = new Set(['priority', 'hard']);
 
 function record(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
@@ -20,6 +23,7 @@ function pid(value) { return Number.isInteger(value) && value > 0 && value <= 21
 function nonNegative(value) { return Number.isFinite(value) && value >= 0 ? value : null; }
 function rows(value) { return Array.isArray(value) ? value.filter(record).slice(0, 512) : []; }
 function priority(value) { return PRIORITIES.has(value) ? value : null; }
+function enforcement(value) { if (!ENFORCEMENTS.has(value)) throw new Error(`Unsupported workload budget enforcement: ${value || 'unknown'}`); return value; }
 function validLimit(dimension, value) {
   if (!Number.isFinite(value) || value < 0) return null;
   return ['cpuPercent', 'gpuPercent'].includes(dimension) && value > 100 ? null : value;
@@ -42,7 +46,16 @@ function breachFor(item, dimension, limit) {
   const usage = nonNegative(item[dimension]);
   return usage !== null && limit !== null && usage > limit ? Object.freeze({ dimension, usage, limit }) : null;
 }
-function operationFor(item, breach) {
+function hardLimitSupported(dimension, limit) {
+  return dimension === 'cpuPercent'
+    || (dimension === 'memoryBytes' && Number.isInteger(limit) && limit >= MIN_RESOURCE_MEMORY_BYTES && limit <= MAX_RESOURCE_MEMORY_BYTES);
+}
+
+function operationFor(item, breach, selectedEnforcement) {
+  if (selectedEnforcement === 'hard' && hardLimitSupported(breach.dimension, breach.limit)) {
+    const value = breach.dimension === 'cpuPercent' ? 'cpu-percent' : 'memory-bytes';
+    return Object.freeze({ type: 'set-process-resource-limit', key: 'process.resource-limit', value, limit: breach.limit, previousValue: null, pid: pid(item.pid), name: text(item.name) || 'unknown', requiresApproval: true, reason: `${breach.dimension} hard budget exceeded` });
+  }
   const io = breach.dimension === 'ioBytesPerSecond';
   const key = io ? 'process.io' : 'process.priority';
   const type = io ? 'set-process-io-priority' : 'set-process-priority';
@@ -53,8 +66,9 @@ function targetPidsOption(value) { return Array.isArray(value) ? [...new Set(val
 function requireAdapter(adapter) { if (!adapter || typeof adapter.applyAction !== 'function') throw new TypeError('Workload budget requires a platform adapter'); return adapter; }
 function approved(approvedPids, targetPid) { return approvedPids === true || (Array.isArray(approvedPids) && approvedPids.includes(targetPid)); }
 
-export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = [] } = {}) {
+export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = [], enforcement: requestedEnforcement = 'priority' } = {}) {
   if (!record(facts)) throw new TypeError('Workload budget facts must be an object');
+  const selectedEnforcement = enforcement(requestedEnforcement);
   const limits = normalizeBudget(budget);
   const selected = selectedProcesses(facts, targetPidsOption(targetPids));
   const breaches = [];
@@ -62,9 +76,12 @@ export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = []
   selected.forEach((item) => DIMENSIONS.forEach((dimension) => {
     const breach = breachFor(item, dimension, limits[dimension]);
     if (!breach) return;
-    const evidence = Object.freeze({ pid: pid(item.pid), name: text(item.name) || 'unknown', ...breach, supported: ['cpuPercent', 'ioBytesPerSecond'].includes(dimension) });
+    const supported = selectedEnforcement === 'hard'
+      ? dimension === 'ioBytesPerSecond' || hardLimitSupported(dimension, breach.limit)
+      : ['cpuPercent', 'ioBytesPerSecond'].includes(dimension);
+    const evidence = Object.freeze({ pid: pid(item.pid), name: text(item.name) || 'unknown', ...breach, enforcement: selectedEnforcement, supported });
     breaches.push(evidence);
-    if (evidence.supported) operations.push(operationFor(item, breach));
+    if (evidence.supported) operations.push(operationFor(item, breach, selectedEnforcement));
   }));
   const unsupportedBreaches = breaches.filter((item) => !item.supported);
   const state = !DIMENSIONS.some((dimension) => limits[dimension] !== null)
@@ -74,7 +91,7 @@ export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = []
       : unsupportedBreaches.length
         ? 'unsupported-limit'
         : 'within-budget';
-  return Object.freeze({ version: WORKLOAD_BUDGET_VERSION, state, budget: limits, targetPids: Object.freeze(targetPidsOption(targetPids)), breaches: Object.freeze(breaches), operations: Object.freeze(operations), restore: Object.freeze(operations.filter((item) => item.previousValue).map((item) => Object.freeze({ ...item, value: item.previousValue, previousValue: 'low' }))), unsupportedDimensions: Object.freeze(['memoryBytes', 'gpuPercent']), protectedProcessCount: rows(facts.processes).filter(protectedProcess).length });
+  return Object.freeze({ version: WORKLOAD_BUDGET_VERSION, state, enforcement: selectedEnforcement, budget: limits, targetPids: Object.freeze(targetPidsOption(targetPids)), breaches: Object.freeze(breaches), operations: Object.freeze(operations), restore: Object.freeze(operations.filter((item) => item.previousValue).map((item) => Object.freeze({ ...item, value: item.previousValue, previousValue: 'low' }))), unsupportedDimensions: Object.freeze(selectedEnforcement === 'hard' ? ['gpuPercent'] : ['memoryBytes', 'gpuPercent']), protectedProcessCount: rows(facts.processes).filter(protectedProcess).length });
 }
 
 export async function applyWorkloadBudget(plan, { adapter, approvedPids = [], allowAdmin = false, dryRun = true } = {}) {
@@ -84,7 +101,7 @@ export async function applyWorkloadBudget(plan, { adapter, approvedPids = [], al
   for (const operation of plan.operations.slice(0, 256)) {
     if (!pid(operation.pid)) { report.rejected.push({ operation, reason: 'operation PID is invalid' }); continue; }
     if (!approved(approvedPids, operation.pid)) { report.skipped.push({ operation, reason: 'explicit PID approval required' }); continue; }
-    const action = { type: operation.type, key: operation.key, value: operation.value };
+    const action = { type: operation.type, key: operation.key, value: operation.value, ...(Number.isFinite(operation.limit) ? { limit: operation.limit } : {}) };
     if (adapter.requiresAdmin?.(action) === true) {
       report.adminRequired.push({ operation, approved: allowAdmin });
       if (!allowAdmin) continue;
@@ -99,7 +116,7 @@ export async function applyWorkloadBudget(plan, { adapter, approvedPids = [], al
   return Object.freeze(report);
 }
 
-export function createWorkloadBudgetMonitor({ adapter, budget, targetPids = [], intervalMs = 10000, autoApply = false, approvedPids = [], allowAdmin = false, onPlan = () => {}, onError = () => {}, setIntervalImpl = setInterval, clearIntervalImpl = clearInterval } = {}) {
+export function createWorkloadBudgetMonitor({ adapter, budget, targetPids = [], enforcement: requestedEnforcement = 'priority', intervalMs = 10000, autoApply = false, approvedPids = [], allowAdmin = false, onPlan = () => {}, onError = () => {}, setIntervalImpl = setInterval, clearIntervalImpl = clearInterval } = {}) {
   requireAdapter(adapter);
   if (autoApply === true && approvedPids !== true && (!Array.isArray(approvedPids) || approvedPids.length === 0)) throw new Error('Automatic workload budget application requires approved PIDs');
   if (!Number.isInteger(intervalMs) || intervalMs < 1000 || intervalMs > 86400000) throw new RangeError('Workload budget monitor interval is out of range');
@@ -108,7 +125,7 @@ export function createWorkloadBudgetMonitor({ adapter, budget, targetPids = [], 
   let running = false;
   async function collect() {
     const facts = await adapter.collectFacts();
-    const plan = previewWorkloadBudget(facts, { budget, targetPids });
+    const plan = previewWorkloadBudget(facts, { budget, targetPids, enforcement: requestedEnforcement });
     const report = autoApply === true && plan.operations.length ? await applyWorkloadBudget(plan, { adapter, approvedPids, allowAdmin, dryRun: false }) : null;
     await onPlan(plan, report, facts);
     return Object.freeze({ plan, report, facts });

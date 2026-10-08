@@ -13,6 +13,8 @@ const facts = {
     { pid: 14, name: 'background', role: 'other', cpuPercent: 1 }
   ]
 };
+const HARD_MEMORY_LIMIT = 64 * 1024 * 1024;
+const hardFacts = { processes: [{ pid: 11, name: '', role: 'compiler', cpuPercent: 90, memoryBytes: HARD_MEMORY_LIMIT * 2, ioBytesPerSecond: 500, gpuPercent: 80, priority: 'normal', ioPriority: 'normal' }] };
 
 describe('native workload budget supervisor', () => {
   test('detects supported and unsupported budget breaches while protecting processes', () => {
@@ -27,6 +29,17 @@ describe('native workload budget supervisor', () => {
     expect(previewWorkloadBudget()).toMatchObject({ state: 'budget-required' });
     expect(previewWorkloadBudget({ processes: [null, { pid: 15, protected: true, cpuPercent: 99 }] }, { budget: { cpuPercent: 1 } })).toMatchObject({ state: 'within-budget', protectedProcessCount: 1 });
     expect(previewWorkloadBudget({ processes: [{ pid: 16, cpuPercent: 1 }] }, { budget: { cpuPercent: 100 } })).toMatchObject({ state: 'within-budget' });
+    const hard = previewWorkloadBudget(hardFacts, { budget: { cpuPercent: 50, memoryBytes: HARD_MEMORY_LIMIT, ioBytesPerSecond: 400, gpuPercent: 70 }, enforcement: 'hard' });
+    expect(hard).toMatchObject({ state: 'plan-ready', enforcement: 'hard', unsupportedDimensions: ['gpuPercent'] });
+    expect(hard.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'set-process-resource-limit', value: 'cpu-percent', limit: 50 }),
+      expect.objectContaining({ type: 'set-process-resource-limit', value: 'memory-bytes', limit: HARD_MEMORY_LIMIT }),
+      expect.objectContaining({ type: 'set-process-io-priority', value: 'low' })
+    ]));
+    expect(hard.restore).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'set-process-io-priority', value: 'normal' })]));
+    expect(previewWorkloadBudget(facts, { budget: { memoryBytes: 800 }, enforcement: 'hard', targetPids: [11] })).toMatchObject({ state: 'unsupported-limit', enforcement: 'hard', operations: [] });
+    expect(() => previewWorkloadBudget(facts, { enforcement: 'unsupported' })).toThrow('enforcement');
+    expect(() => previewWorkloadBudget(facts, { enforcement: null })).toThrow('unknown');
   });
 
   test('applies only approved operations and reports adapter outcomes', async () => {
@@ -44,6 +57,11 @@ describe('native workload budget supervisor', () => {
     const rejected = { applyAction: jest.fn().mockRejectedValueOnce(new Error('nope')).mockResolvedValueOnce({ ok: false }).mockResolvedValue({ ok: false, reason: 'denied' }) };
     expect(await applyWorkloadBudget(plan, { adapter: rejected, approvedPids: [11], dryRun: false })).toMatchObject({ rejected: expect.any(Array) });
     expect(await applyWorkloadBudget({ ...plan, operations: [{ pid: 0 }] }, { adapter: rejected, approvedPids: true, dryRun: false })).toMatchObject({ rejected: [{ reason: 'operation PID is invalid' }] });
+    const hardPlan = previewWorkloadBudget(hardFacts, { budget: { cpuPercent: 50, memoryBytes: HARD_MEMORY_LIMIT }, enforcement: 'hard' });
+    const hardCalls = [];
+    const hardAdapter = { applyAction: jest.fn(async (action) => { hardCalls.push(action); return { ok: true }; }) };
+    expect(await applyWorkloadBudget(hardPlan, { adapter: hardAdapter, approvedPids: [11], dryRun: false })).toMatchObject({ applied: expect.any(Array) });
+    expect(hardCalls).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'set-process-resource-limit', limit: HARD_MEMORY_LIMIT })]));
     await expect(applyWorkloadBudget(null, { adapter })).rejects.toThrow('invalid');
     await expect(applyWorkloadBudget(plan)).rejects.toThrow('platform adapter');
   });

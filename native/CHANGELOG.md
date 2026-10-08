@@ -7,6 +7,9 @@
   boundaries.
 - Added receive/send rate evidence, rate-ready sample counts, and counter-reset
   visibility to the retained daily workstation report.
+- Added explicit `workload-budget --hard` planning for bounded CPU and memory
+  resource-limit actions, while preserving priority-only I/O and GPU evidence
+  boundaries.
 - Added a reversible quarantine authority and cache-quarantine CLI workflow
   with separate-root, protected-path, symlink, same-volume, exact-receipt,
   and rollback boundaries.
