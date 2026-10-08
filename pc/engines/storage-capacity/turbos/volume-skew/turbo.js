@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Volume-skew turbo. It observes bounded differences between volume
  * headroom ratios without moving files, balancing volumes, or writing.

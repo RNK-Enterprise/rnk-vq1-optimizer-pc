@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-pressure OOM-margin turbo. It classifies bounded composite memory
  * margin without reclaiming memory, touching files, or opening transport.

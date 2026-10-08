@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU driver-drift turbo. It compares bounded driver evidence without
  * changing drivers, GPU policy, files, or opening transport.

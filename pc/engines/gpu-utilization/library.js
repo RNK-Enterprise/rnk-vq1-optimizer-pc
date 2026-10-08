@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU-utilization library. It aggregates bounded observations for review and
  * never changes drivers, clocks, fan policy, files, or transport.

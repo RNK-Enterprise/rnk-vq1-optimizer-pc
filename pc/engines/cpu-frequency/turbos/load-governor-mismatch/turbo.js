@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-frequency load-governor-mismatch turbo. It compares normalized load
  * with governor evidence without changing policy or writing system files.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated priority-drift library. It validates, aggregates, and plans
  * priority movement reports without importing the turbo or changing process

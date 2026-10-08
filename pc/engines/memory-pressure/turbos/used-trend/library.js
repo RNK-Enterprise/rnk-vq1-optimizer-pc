@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated used-trend turbo library. It validates, aggregates, and plans
  * trend reports without importing the turbo or operating-system API.

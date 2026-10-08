@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Throughput-skew turbo. It observes bounded read/write imbalance without
  * reprioritizing queues, changing services, or writing storage.

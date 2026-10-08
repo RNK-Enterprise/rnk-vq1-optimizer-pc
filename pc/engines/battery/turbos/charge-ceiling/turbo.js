@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Battery charge-ceiling turbo. It measures explicit ceiling persistence and
  * charge movement without imposing a charge limit or changing charging.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Interface-inventory turbo. It compares explicit interface identities without
  * changing interfaces, routes, or network settings.

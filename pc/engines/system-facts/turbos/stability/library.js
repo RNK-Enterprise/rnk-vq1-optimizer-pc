@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated stability-turbo library. It aggregates bounded stability reports
  * and builds an observation plan without importing the turbo or executing any

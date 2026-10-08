@@ -58,7 +58,7 @@ All files include:
 ```javascript
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

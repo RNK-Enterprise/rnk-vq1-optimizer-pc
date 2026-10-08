@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Wait-trend turbo. It observes bounded adjacent I/O-wait movement without
  * changing queues, services, mounts, files, or transport state.

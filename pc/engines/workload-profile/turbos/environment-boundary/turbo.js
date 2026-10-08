@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Workload-profile environment-boundary turbo. It tracks declared interactive
  * or headless context without changing services, sessions, or boot state.

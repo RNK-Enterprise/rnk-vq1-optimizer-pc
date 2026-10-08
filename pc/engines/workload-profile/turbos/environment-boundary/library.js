@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated workload-profile environment-boundary library. It validates
  * environment evidence and returns bounded review plans without mutation.

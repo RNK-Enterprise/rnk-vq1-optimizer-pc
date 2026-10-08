@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-policy swap-policy-alignment turbo. It compares swap pressure with
  * the observed policy without changing policy, reclaiming memory, or opening

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Capacity-drift turbo. It observes bounded storage occupancy samples
  * without deleting files, organizing paths, remounting volumes, or writing.

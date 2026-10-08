@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated thermal-margin library. It validates headroom evidence and builds
  * observation plans without importing fan, governor, or power controls.

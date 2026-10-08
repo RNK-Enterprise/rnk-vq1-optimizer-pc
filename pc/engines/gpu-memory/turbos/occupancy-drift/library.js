@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated occupancy-drift library. It validates, aggregates, and plans VRAM
  * movement reports without importing the turbo or changing memory policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * FPS refresh-headroom turbo. It measures unused display budget and detects
  * persistent collapse without applying a cap or opening transport.

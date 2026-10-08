@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated wait-burst library. It validates, aggregates, and plans wait
  * reports without importing the turbo or changing disk state.

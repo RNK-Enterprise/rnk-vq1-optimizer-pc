@@ -1,7 +1,7 @@
 /**
  * Native organizer tests.
- * Copyright © 2026 RNK Enterprise
- * Contributor: RNK Enterprise
+ * Copyright © 2026 Lisa's Dungeon
+ * Contributor: Lisa's Dungeon
  */
 
 import fs from 'fs/promises';

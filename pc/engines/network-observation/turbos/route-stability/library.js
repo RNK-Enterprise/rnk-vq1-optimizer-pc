@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated route-stability library. It validates, aggregates, and plans route
  * evidence without importing the turbo or changing network state.

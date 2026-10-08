@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-affinity mask-drift turbo. It measures bounded changes in normalized
  * affinity and isolation lists without applying masks or changing policy.

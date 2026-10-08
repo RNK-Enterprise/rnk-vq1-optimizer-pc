@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated contention-burst library. It validates, aggregates, and plans
  * I/O-wait reports without importing the turbo or changing process state.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated zombie-persistence library. It validates, aggregates, and plans
  * zombie evidence without importing the turbo or changing process state.

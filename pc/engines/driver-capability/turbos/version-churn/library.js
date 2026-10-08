@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated version-churn library. It validates, aggregates, and plans driver
  * version observations without importing the turbo or changing drivers.

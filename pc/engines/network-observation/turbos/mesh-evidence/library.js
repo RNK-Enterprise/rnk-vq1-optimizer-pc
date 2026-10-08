@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated mesh-evidence library. It validates, aggregates, and plans mesh
  * membership reports without importing the turbo or changing network state.

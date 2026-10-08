@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Background-services library. It classifies bounded service evidence without
  * disabling, stopping, starting, or changing service files.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * I/O-evidence turbo. It scores bounded read, write, and wait evidence
  * without probing devices, changing queues, or changing files.

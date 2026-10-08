@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Disk-I/O engine. It aggregates bounded device throughput and wait evidence
  * without changing mounts, queues, files, or transport state.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Frame drop-budget turbo. It measures bounded dropped-frame pressure without
  * changing display policy, FPS caps, files, or opening transport.

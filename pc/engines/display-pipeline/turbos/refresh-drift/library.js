@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated refresh-drift library. It validates, aggregates, and plans
  * refresh reports without importing the turbo or changing display policy.

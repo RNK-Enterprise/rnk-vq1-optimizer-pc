@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated environment-fit library. It validates, aggregates, and plans
  * posture reports without selecting a user-owned power profile.

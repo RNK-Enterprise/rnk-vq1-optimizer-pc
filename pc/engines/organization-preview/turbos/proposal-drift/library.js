@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated proposal-drift library. It validates, aggregates, and plans
  * proposal reports without importing the turbo or changing user files.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated priority-volatility library. It validates, aggregates, and plans
  * priority-state movement reports without importing the turbo or changing

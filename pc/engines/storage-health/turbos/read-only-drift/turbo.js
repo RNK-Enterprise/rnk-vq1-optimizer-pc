@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Read-only-drift turbo. It observes bounded read-only storage evidence
  * without remounting volumes, changing permissions, or writing files.

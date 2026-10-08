@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Battery library. It classifies bounded battery evidence without changing
  * charging, power policy, files, or transport state.

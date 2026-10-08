@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Shader-cache rebuild-evidence turbo. It reviews explicit stale-cache
  * evidence and never starts a rebuild or changes a cache.

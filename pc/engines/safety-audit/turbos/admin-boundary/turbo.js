@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Safety-audit admin-boundary turbo. It reports explicit privilege boundaries
  * without requesting elevation or executing an administrative action.

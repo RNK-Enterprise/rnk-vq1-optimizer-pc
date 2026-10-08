@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated capacity-drift library. It validates, aggregates, and plans
  * occupancy reports without importing the turbo or changing storage.

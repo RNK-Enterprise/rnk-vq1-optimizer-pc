@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  * Contributor: Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify

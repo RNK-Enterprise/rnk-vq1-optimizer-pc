@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Process-I/O contention-burst turbo. It observes bounded I/O wait bursts
  * without throttling processes, changing files, or opening transport.

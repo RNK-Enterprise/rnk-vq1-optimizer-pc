@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated safety-evidence library. It validates, aggregates, and plans risk
  * reports without importing the turbo or changing network state.

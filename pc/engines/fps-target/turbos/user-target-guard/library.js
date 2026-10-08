@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated user-target guard library. It validates, aggregates, and plans
  * explicit user-target reports without importing the turbo or changing policy.

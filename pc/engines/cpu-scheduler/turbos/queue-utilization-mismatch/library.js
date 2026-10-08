@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated queue-utilization-mismatch turbo library. It validates and
  * aggregates alignment reports without importing the turbo or engine.

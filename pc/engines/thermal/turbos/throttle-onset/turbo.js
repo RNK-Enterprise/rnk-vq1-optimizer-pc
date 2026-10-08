@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Throttle-onset turbo. It tracks normalized temperature-ratio bands and
  * threshold crossings without changing governors, fans, workloads, or power.

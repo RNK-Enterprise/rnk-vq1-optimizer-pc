@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Background-services criticality-boundary turbo. It reports explicit
  * critical-service evidence without changing service state.

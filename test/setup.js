@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ global.FormApplication = class FormApplication {
     this.object = object || {};
     this.options = options || {};
   }
-  
+
   static get defaultOptions() {
     return {
       classes: [],
@@ -67,19 +67,19 @@ global.FormApplication = class FormApplication {
       editable: true
     };
   }
-  
+
   async getData() {
     return {};
   }
-  
+
   activateListeners() {}
-  
+
   async _updateObject() {}
-  
+
   async render() {
     return this;
   }
-  
+
   async close() {
     return this;
   }

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1040,22 +1040,22 @@ describe('OptimizerUI reporting fallbacks (legacy paths)', () => {
     await ui._onRun();
     consoleSpy.mockRestore();
     expect(ui._logLines.join('\n')).toContain('Failed: plain string failure');
-
-    // Failure after a long session trims the log back to the cap
+
+    // Failure after a long session trims the log back to the cap
     ui._logLines = Array.from({ length: 305 }, (_, i) => `old ${i}`);
     const consoleSpy2 = jest.spyOn(console, 'error').mockImplementation();
     await ui._onRun();
     consoleSpy2.mockRestore();
     expect(ui._logLines.length).toBeLessThanOrEqual(300);
   });
-
+
   test('PerformanceTweaks.apply records non-Error failures as strings', async () => {
     const { PerformanceTweaks } = await import('../scripts/performance-tweaks.js');
     game.settings.settings.set('core.maxFPS', { type: Number });
     game.settings.get = jest.fn((ns, key) => (ns === 'core' && key === 'maxFPS' ? 60 : undefined));
     game.settings.set = jest.fn().mockRejectedValue('plain string failure');
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
+
     try {
       const tweaks = new PerformanceTweaks();
       const report = { performance: {} };

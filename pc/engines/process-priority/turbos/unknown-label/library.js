@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated unknown-label library. It validates, aggregates, and plans
  * undocumented priority-label reports without importing the turbo or changing

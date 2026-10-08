@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Thermal-margin turbo. It tracks critical-temperature headroom over bounded
  * samples and never changes fans, governors, workloads, or power state.

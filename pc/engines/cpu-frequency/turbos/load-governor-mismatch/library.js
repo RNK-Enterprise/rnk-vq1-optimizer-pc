@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated load-governor-mismatch turbo library. It validates and aggregates
  * load/policy reports without importing the turbo or engine implementation.

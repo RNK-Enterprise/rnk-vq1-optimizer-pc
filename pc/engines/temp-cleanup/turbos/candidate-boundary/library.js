@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated candidate-boundary library. It validates preview evidence and
  * builds review plans without reading paths or mutating files.

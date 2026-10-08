@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-utilization core-skew turbo. It measures per-core imbalance and
  * dominant-core migration from bounded snapshots without changing affinity.

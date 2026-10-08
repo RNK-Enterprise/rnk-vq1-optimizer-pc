@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * FPS user-target guard turbo. It audits explicit user targets against
  * documented refresh evidence without rewriting the target or opening transport.

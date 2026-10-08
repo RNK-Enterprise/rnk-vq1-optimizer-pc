@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Startup entry-drift turbo. It compares bounded startup inventory evidence
  * without disabling entries, changing boot configuration, or editing files.

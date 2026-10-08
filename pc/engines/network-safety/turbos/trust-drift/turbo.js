@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Trust-drift turbo. It compares explicit trust evidence without changing
  * links, routes, or network settings.

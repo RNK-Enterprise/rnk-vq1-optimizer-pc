@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-pressure engine. It classifies normalized RAM pressure and headroom
  * without reclaiming memory, clearing caches, touching files, or opening

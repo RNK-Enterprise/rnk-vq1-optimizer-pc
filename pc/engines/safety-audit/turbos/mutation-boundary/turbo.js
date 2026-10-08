@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Safety-audit mutation-boundary turbo. It observes explicit file and network
  * mutation claims without performing either mutation.

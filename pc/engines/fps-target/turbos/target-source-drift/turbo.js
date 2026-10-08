@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * FPS target-source drift turbo. It observes changes between user, display,
  * and measured FPS target provenance without applying a cap or opening transport.

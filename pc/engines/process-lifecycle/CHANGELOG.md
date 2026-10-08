@@ -8,7 +8,7 @@
 - Added trigger, fact, clock, process-list, and refusal-path validation.
 - Added a dedicated library for lifecycle classification, snapshot comparison,
   immutable envelopes, and local facade construction.
-- Added four RNK Enterprise turbo/library pairs: restart burst, zombie
+- Added four Lisa's Dungeon turbo/library pairs: restart burst, zombie
   persistence, uptime churn, and state coverage.
 - Added strict per-file tests for every turbo and library with bounded inputs,
   headless handling, trigger validation, immutable outputs, and 100% coverage

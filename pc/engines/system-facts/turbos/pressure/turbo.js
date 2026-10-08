@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * System-facts pressure turbo. It converts normalized resource observations
  * into a weighted pressure score. It is analysis-only and has no operating

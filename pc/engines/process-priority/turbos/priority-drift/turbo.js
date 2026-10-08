@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Process priority-drift turbo. It compares bounded, normalized process
  * priority observations without changing priorities, processes, files, or

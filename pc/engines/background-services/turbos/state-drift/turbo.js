@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Background-services state-drift turbo. It compares explicit service state
  * evidence without starting, stopping, disabling, or editing services.

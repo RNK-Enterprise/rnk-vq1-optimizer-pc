@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated validity-drift library. It validates cache validity evidence and
  * builds review plans without deleting or rebuilding cache files.

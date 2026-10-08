@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Link-health turbo. It compares documented interface state evidence without
  * changing interfaces, routes, or network settings.

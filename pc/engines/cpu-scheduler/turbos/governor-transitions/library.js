@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated governor-transitions turbo library. It validates and aggregates
  * governor reports without importing the turbo, engine, or operating-system API.

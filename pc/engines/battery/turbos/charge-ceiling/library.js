@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated charge-ceiling library. It validates ceiling evidence and builds
  * review plans without imposing limits or changing charging behavior.

@@ -106,21 +106,21 @@ Your module now has access to LISA Master Control:
 ```javascript
 // Check if LISA is available
 if (window.LISA && !window.LISA.offline) {
-    
+
     // Execute component command
     window.LISA.executeCommand('touch-engine', 'initialize', {
         sensitivity: 'high'
     });
-    
+
     // Get component status
     window.LISA.getComponentStatus('engines');
-    
+
     // Check security status
     window.LISA.getSecurityStatus();
-    
+
     // Get bridge statistics
     window.LISA.getBridgeStatus();
-    
+
     // Listen for LISA messages
     if (!window.lisaMessageHandlers) {
         window.lisaMessageHandlers = [];
@@ -169,4 +169,4 @@ Before releasing module to community:
 **Community Ready**: ✓ Safe for distribution (exclude proxy server)
 
 ---
-**Copyright © 2025 Asgard Innovations / RNK™. Licensed under the GNU General Public License v3; see [LICENSE](LICENSE) for the full text.**
+**Copyright © 2026 Lisa's Dungeon. Licensed under the GNU General Public License v3; see [LICENSE](LICENSE) for the full text.**

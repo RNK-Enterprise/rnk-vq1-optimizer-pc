@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated uptime-churn library. It validates, aggregates, and plans
  * short-lived uptime reports without importing the turbo or changing process

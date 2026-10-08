@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated target-source drift library. It validates, aggregates, and plans
  * target provenance reports without importing the turbo or applying FPS policy.

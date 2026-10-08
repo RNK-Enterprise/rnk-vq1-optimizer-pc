@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated sensor-stability library. It validates jitter evidence and builds
  * observation plans without importing sensor or thermal control APIs.

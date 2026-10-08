@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Background-services observation-boundary turbo. It reports explicit
  * observation capability without enabling or disabling service observation.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated safety-audit admin-boundary library. It validates privilege
  * evidence and exposes review-only plans with an explicit admin boundary.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated item-inventory library. It validates, aggregates, and plans item
  * identity reports without importing the turbo or changing user files.

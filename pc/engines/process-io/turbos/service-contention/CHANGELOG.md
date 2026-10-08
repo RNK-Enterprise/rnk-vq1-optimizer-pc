@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added the RNK Enterprise service-contention turbo with bounded service-role
+- Added the Lisa's Dungeon service-contention turbo with bounded service-role
   analysis, disabled-observation handling, immutable recommendations, and
   strict coverage tests.
 - Added the dedicated service-contention library with count/threshold

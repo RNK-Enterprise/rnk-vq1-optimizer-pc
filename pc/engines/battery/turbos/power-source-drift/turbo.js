@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Battery power-source-drift turbo. It measures explicit presence and
  * charging transitions without toggling charging or power policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Public-exposure turbo. It reports explicit public and unencrypted evidence
  * without changing links, routes, or network settings.

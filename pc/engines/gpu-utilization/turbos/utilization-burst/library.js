@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated utilization-burst library. It validates, aggregates, and plans
  * burst reports without importing the turbo or changing GPU policy.

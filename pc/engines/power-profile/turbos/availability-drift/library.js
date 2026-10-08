@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated availability-drift library. It validates, aggregates, and plans
  * advertised-profile reports without importing a system-control API.

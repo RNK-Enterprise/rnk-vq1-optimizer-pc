@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-utilization saturation-guard turbo. It detects sustained saturation and
  * recovery transitions from bounded snapshots without changing CPU policy.

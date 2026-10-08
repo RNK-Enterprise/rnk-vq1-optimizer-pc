@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated ownership-review library. It validates and plans service-owner
  * evidence without changing service ownership or importing a control API.

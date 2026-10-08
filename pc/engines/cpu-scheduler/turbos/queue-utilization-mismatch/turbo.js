@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-scheduler queue-utilization-mismatch turbo. It compares normalized
  * queue pressure with utilization evidence without changing scheduler state.

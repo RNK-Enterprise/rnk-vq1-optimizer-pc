@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated entry-drift library. It validates startup inventory evidence and
  * builds review plans without disabling entries or editing boot configuration.

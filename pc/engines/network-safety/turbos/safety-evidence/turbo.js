@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Safety-evidence turbo. It aggregates explicit review, observed, and unknown
  * risk evidence without changing links, routes, or network settings.

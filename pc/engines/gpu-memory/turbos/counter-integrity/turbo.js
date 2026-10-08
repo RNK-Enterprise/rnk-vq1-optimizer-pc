@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU counter-integrity turbo. It compares bounded capacity, used, and free
  * VRAM counters without changing allocation policy or opening transport.

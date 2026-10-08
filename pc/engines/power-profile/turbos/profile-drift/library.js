@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated profile-drift library. It validates, aggregates, and plans
  * profile-change reports without importing a system-control API.

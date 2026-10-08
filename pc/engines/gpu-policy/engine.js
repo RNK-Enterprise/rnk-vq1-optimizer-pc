@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU-policy engine. It classifies vendor, model, driver, and observation
  * evidence without changing GPU policy, drivers, files, or transport state.

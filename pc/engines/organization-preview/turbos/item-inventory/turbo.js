@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Item-inventory turbo. It compares explicit organization item identities
  * without moving, renaming, deleting, overwriting, or inspecting files.

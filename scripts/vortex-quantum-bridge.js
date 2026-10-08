@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ export class VQBridgeCore {
         clearInterval(checkInterval);
         this.optimizeLoadBalancing();
       }
-      
+
       if (!this.initTime) this.initTime = Date.now();
       if (Date.now() - this.initTime > 10000) {
         clearInterval(checkInterval);
@@ -103,7 +103,7 @@ export class VQBridgeCore {
       };
 
       this.vqInstances.push(instance);
-      
+
       console.log(`%c[Vortex Bridge] Connected to ${name} (v${instance.version})`, 'color: #00ff88; font-weight: bold;');
       this.logEvent('VQ_INSTANCE_CONNECTED', { name, version: instance.version });
 
@@ -126,7 +126,7 @@ export class VQBridgeCore {
 
   getNextInstance() {
     const healthyInstances = this.vqInstances.filter(i => i.healthy);
-    
+
     if (healthyInstances.length === 0) {
       console.error('%c[Vortex Bridge] No healthy VQ instances available!', 'color: #ff0044;');
       return null;
@@ -162,7 +162,7 @@ export class VQBridgeCore {
 
       const duration = Date.now() - startTime;
       this.updateMetrics(duration, true);
-      
+
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -176,7 +176,7 @@ export class VQBridgeCore {
     if (!instance) throw new Error('No VQ instances available');
 
     instance.requestCount++;
-    
+
     try {
       const result = await taskFn(instance.ref);
       return result;
@@ -238,7 +238,7 @@ export class VQBridgeCore {
   async executeSharded(taskFn, shards) {
     const instances = this.getHealthyInstances();
     if (instances.length === 0) throw new Error('No VQ instances available');
-    
+
     if (!shards || instances.length === 1) {
       return await taskFn(instances[0].ref, shards);
     }
@@ -259,7 +259,7 @@ export class VQBridgeCore {
 
   updateMetrics(duration, success) {
     this.performanceMetrics.requestsProcessed++;
-    
+
     const prevAvg = this.performanceMetrics.avgResponseTime;
     const count = this.performanceMetrics.requestsProcessed;
     this.performanceMetrics.avgResponseTime = ((prevAvg * (count - 1)) + duration) / count;
@@ -277,7 +277,7 @@ export class VQBridgeCore {
 
   optimizeLoadBalancing() {
     const instances = this.getHealthyInstances();
-    
+
     if (instances.length >= 2) {
       this.loadBalanceMode = 'parallel';
       console.log('%c[Vortex Bridge] Load balancing optimized: PARALLEL mode', 'color: #00ffff;');
@@ -388,7 +388,7 @@ export class VQBridgeCore {
         // Healthy only while the underlying ref is usable; null/removed refs mark the unit down.
         const isHealthy = !!(instance.ref && typeof instance.ref === 'object' && !instance.ref.offline);
         const wasHealthy = instance.healthy;
-        
+
         instance.healthy = isHealthy;
         instance.lastHealthCheck = Date.now();
 
@@ -410,7 +410,7 @@ export class VQBridgeCore {
 
   getStatus() {
     const healthyCount = this.vqInstances.filter(i => i.healthy).length;
-    
+
     return {
       clusterMode: this.vqInstances.length > 1,
       instanceCount: this.vqInstances.length,

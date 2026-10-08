@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Capacity-evidence turbo. It scores bounded mount, total, and free-byte
  * evidence without probing devices, changing files, or changing mounts.

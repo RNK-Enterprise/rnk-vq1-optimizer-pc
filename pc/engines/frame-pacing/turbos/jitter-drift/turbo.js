@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Frame jitter-drift turbo. It measures bounded frame-time variance movement
  * without changing display policy, FPS caps, files, or opening transport.

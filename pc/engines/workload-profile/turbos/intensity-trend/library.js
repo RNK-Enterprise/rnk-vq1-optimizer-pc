@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated workload-profile intensity-trend library. It validates intensity
  * reports and builds review plans without changing workload controls.

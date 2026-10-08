@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Headroom-trend turbo. It observes bounded adjacent free-space movement
  * without deleting files, moving paths, remounting volumes, or writing.

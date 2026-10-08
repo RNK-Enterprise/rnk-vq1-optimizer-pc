@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Power-profile environment-fit turbo. It compares explicit host posture with
  * documented profile observations without selecting or switching a profile.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Foreground-protection turbo. It evaluates foreground, elevated, and
  * protected process observations without changing process state or transport.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated health-boundary library. It validates health evidence and builds
  * review plans without changing charging, power policy, or battery state.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * System-facts stability turbo. It measures volatility across a bounded
  * sequence of normalized snapshots. It is analysis-only and never applies a

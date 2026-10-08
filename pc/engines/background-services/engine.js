@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Background-services engine. It reports service state and ownership evidence
  * without disabling, stopping, starting, or changing service files.

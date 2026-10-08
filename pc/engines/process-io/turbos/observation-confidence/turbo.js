@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Observation-confidence turbo. It measures process I/O metric completeness
  * without changing processes, files, or transport state.

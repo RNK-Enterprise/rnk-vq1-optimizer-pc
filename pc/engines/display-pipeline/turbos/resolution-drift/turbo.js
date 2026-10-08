@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Display resolution-drift turbo. It observes resolution movement and aspect
  * evidence without changing display settings or opening transport.

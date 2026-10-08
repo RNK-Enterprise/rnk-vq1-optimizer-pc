@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cache-cleanup ownership-boundary turbo. It classifies explicit ownership
  * evidence and never infers permission to remove or organize cache data.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated size-trend library. It validates preview-size evidence and builds
  * review plans without reading paths or mutating files.

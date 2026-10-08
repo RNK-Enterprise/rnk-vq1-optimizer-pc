@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated service-contention library. It validates, aggregates, and plans
  * service I/O-pressure reports without importing the turbo or changing

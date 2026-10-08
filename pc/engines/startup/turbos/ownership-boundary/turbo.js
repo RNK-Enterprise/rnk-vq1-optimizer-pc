@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Startup ownership-boundary turbo. It tracks explicit ownership evidence
  * without disabling entries, changing boot configuration, or editing files.

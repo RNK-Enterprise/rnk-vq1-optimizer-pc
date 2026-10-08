@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2026 RNK Enterprise
- * Contributor: RNK Enterprise
+ * Copyright © 2026 Lisa's Dungeon
+ * Contributor: Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

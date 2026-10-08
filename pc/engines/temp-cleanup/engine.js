@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Temp-cleanup engine. It previews explicitly temporary, system-owned
  * candidates without reading paths, deleting files, or changing storage.

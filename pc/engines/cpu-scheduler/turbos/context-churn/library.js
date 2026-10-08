@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated context-churn turbo library. It validates and aggregates churn
  * reports without importing the turbo, engine, or any operating-system API.

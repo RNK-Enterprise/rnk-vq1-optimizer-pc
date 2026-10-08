@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Safety-audit library. It classifies proposed action boundaries without
  * executing actions, changing files, or opening transport.

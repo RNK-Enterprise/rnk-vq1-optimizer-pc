@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated ownership-boundary library. It validates, aggregates, and plans
  * cache ownership reports without inferring file-operation permission.

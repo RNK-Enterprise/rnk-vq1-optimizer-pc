@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated link-health library. It validates, aggregates, and plans link-state
  * evidence without importing the turbo or changing network state.

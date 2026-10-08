@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cache-cleanup engine. It previews explicitly system-owned cache candidates
  * without reading paths, deleting files, or changing transport state.

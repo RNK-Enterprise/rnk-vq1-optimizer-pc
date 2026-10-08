@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Uptime-churn turbo. It observes bounded short-lived process evidence
  * without restarting, terminating, or changing a process.

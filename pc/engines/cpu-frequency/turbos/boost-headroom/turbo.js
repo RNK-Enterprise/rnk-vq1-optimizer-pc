@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-frequency boost-headroom turbo. It measures bounded requested versus
  * observed frequency headroom without changing policy or writing system data.

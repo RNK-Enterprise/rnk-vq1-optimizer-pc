@@ -2,7 +2,7 @@
 
 ## 2026-10-06
 
-- Kept the native PC surface and its validation files attributed to RNK Enterprise.
+- Kept the native PC surface and its validation files attributed to Lisa's Dungeon.
 
 ## 2026-10-05
 

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Display refresh-drift turbo. It observes refresh-rate movement without
  * changing refresh policy, display settings, or opening transport.

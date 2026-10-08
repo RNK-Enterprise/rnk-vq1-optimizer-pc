@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Temp-cleanup size-trend turbo. It compares bounded safe-candidate sizes
  * without reading paths, deleting files, or changing storage policy.

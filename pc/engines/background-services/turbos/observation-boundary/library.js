@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated observation-boundary library. It validates capability evidence
  * and plans observation without enabling, disabling, or controlling services.

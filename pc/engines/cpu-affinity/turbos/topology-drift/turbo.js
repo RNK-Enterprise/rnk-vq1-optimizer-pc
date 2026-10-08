@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-affinity topology-drift turbo. It observes bounded CPU topology changes
  * without pinning processes, applying masks, or changing system state.

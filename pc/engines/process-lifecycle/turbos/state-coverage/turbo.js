@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * State-coverage turbo. It measures documented process-state coverage
  * without terminating, restarting, or changing a process.

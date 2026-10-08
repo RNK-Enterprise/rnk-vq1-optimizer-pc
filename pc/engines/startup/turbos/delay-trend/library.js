@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated delay-trend library. It validates startup delay evidence and
  * builds observation plans without changing boot configuration or files.

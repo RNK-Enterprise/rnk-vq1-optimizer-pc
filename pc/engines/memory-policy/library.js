@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-policy library. It recommends a review posture from RAM and swap
  * evidence without changing swappiness, reclaiming memory, or editing files.

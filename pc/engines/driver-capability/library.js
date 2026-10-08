@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Driver-capability library. It classifies documented driver evidence without
  * installing, replacing, loading, or changing drivers.

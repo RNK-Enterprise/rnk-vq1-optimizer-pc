@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated ownership-drift library. It validates ownership evidence and
  * builds preview plans without reading paths or changing files.

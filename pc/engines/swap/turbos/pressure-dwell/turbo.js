@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Swap pressure-dwell turbo. It measures bounded pressure persistence without
  * creating swap, changing swappiness, or opening transport.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated health-degradation library. It validates, aggregates, and plans
  * storage health reports without importing the turbo or changing storage.

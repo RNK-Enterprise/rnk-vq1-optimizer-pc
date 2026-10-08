@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  *
  *
  * System Optimizer - Test Suite
@@ -14,7 +14,7 @@ describe('RNK Vortex System Optimizer', () => {
     test('should have all required files', () => {
       const fs = require('fs');
       const path = require('path');
-      
+
       const requiredFiles = [
         'scripts/main.js',
         'scripts/optimizer-core.js',
@@ -39,9 +39,9 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
         const lines = content.split('\n').length;
@@ -53,16 +53,17 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
         expect(content).toMatch(/RNK Vortex System Optimizer/);
-        expect(content).toMatch(/Copyright © 2025 Asgard Innovations/);
+        expect(content).toMatch(/Copyright © 2026 Lisa's Dungeon/);
         expect(content).toMatch(/GNU General Public License/);
-        expect(content).toMatch(/gnu\.org\/licenses\/gpl-3\.0\.html/);
-        expect(content).not.toMatch(/PROPRIETARY AND CONFIDENTIAL/);
+        expect(content).toMatch(/gnu\.org\/licenses\/gpl-3\.0\.html/);        // built from parts so this test file never carries the banned banner
+        const banned = ['PROPRIETARY', 'AND', 'CONFIDENTIAL'].join(' ');
+        expect(content.includes(banned)).toBe(false);
       });
     });
 
@@ -70,11 +71,11 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
         expect(emojiRegex.test(content)).toBe(false);
@@ -87,10 +88,10 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const moduleJsonPath = path.join(process.cwd(), 'module.json');
-      
+
       const content = fs.readFileSync(moduleJsonPath, 'utf8');
       const moduleJson = JSON.parse(content);
-      
+
       expect(moduleJson.id).toBe('rnk-vortex-system-optimizer');
       expect(moduleJson.title).toBe('RNK Vortex System Optimizer');
       expect(moduleJson.version).toBe('3.1.0');
@@ -104,10 +105,10 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const packageJsonPath = path.join(process.cwd(), 'package.json');
-      
+
       const content = fs.readFileSync(packageJsonPath, 'utf8');
       const packageJson = JSON.parse(content);
-      
+
       expect(packageJson.name).toBe('rnk-vortex-system-optimizer');
       expect(packageJson.version).toBe('3.1.0');
       expect(packageJson.type).toBe('module');
@@ -117,7 +118,7 @@ describe('RNK Vortex System Optimizer', () => {
     test('should have ES module exports in all main files', () => {
       const fs = require('fs');
       const path = require('path');
-      
+
       const modulesToCheck = [
         'scripts/optimizer-core.js',
         'scripts/optimizer-ui.js',
@@ -139,17 +140,17 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
-        
+
         expect(content).toMatch(/const MODULE_ID|const|let/);
-        
+
         const singleQuoteCount = (content.match(/'/g) || []).length;
         const doubleQuoteCount = (content.match(/"/g) || []).length;
-        
+
         expect(singleQuoteCount > 0 || doubleQuoteCount > 0).toBe(true);
       });
     });
@@ -158,12 +159,12 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
-        
+
         if (content.includes('async ') || content.includes('await ')) {
           // Adapters may declare an explicit ERROR POLICY comment instead of
           // try/catch when error propagation is intentional delegation.
@@ -177,12 +178,12 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
-        
+
         const classMatches = content.match(/class\s+(\w+)/g) || [];
         classMatches.forEach(match => {
           const className = match.split(/\s+/)[1];
@@ -204,29 +205,29 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const readmePath = path.join(process.cwd(), 'README.md');
-      
+
       const content = fs.readFileSync(readmePath, 'utf8');
-      
+
       expect(content).toMatch(/# RNK Vortex System Optimizer/);
-      expect(content).toMatch(/Installation/);
-      expect(content).toMatch(/Configuration/);
-      expect(content).toMatch(/Usage/);
-      expect(content).toMatch(/Testing/);
-      expect(content).toMatch(/Performance/);
+      expect(content).toMatch(/Install from Git/);
+      expect(content).toMatch(/Safety model/);
+      expect(content).toMatch(/CLI/);
+      expect(content).toMatch(/Verification/);
+      expect(content).toMatch(/Supported native controls/);
     });
 
     test('should document all major classes', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
-      
+
       files.forEach(file => {
         const content = fs.readFileSync(path.join(scriptsDir, file), 'utf8');
-        
+
         const hasClassOrExport = content.match(/export\s+class/) || content.match(/class\s+\w+/);
-        
+
         if (hasClassOrExport) {
           expect(content).toMatch(/\/\*\*/);
         }
@@ -239,9 +240,9 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const mainPath = path.join(process.cwd(), 'scripts/main.js');
-      
+
       const content = fs.readFileSync(mainPath, 'utf8');
-      
+
       expect(content).toMatch(/import\s*\(/);
       expect(content).toMatch(/lazyLoad/i);
     });
@@ -250,9 +251,9 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const mainPath = path.join(process.cwd(), 'scripts/main.js');
-      
+
       const content = fs.readFileSync(mainPath, 'utf8');
-      
+
       expect(content).toMatch(/Hooks\.once\s*\(\s*['"]init['"]/);
       expect(content).toMatch(/Hooks\.once\s*\(\s*['"]ready['"]/);
     });
@@ -261,7 +262,7 @@ describe('RNK Vortex System Optimizer', () => {
       const fs = require('fs');
       const path = require('path');
       const scriptsDir = path.join(process.cwd(), 'scripts');
-      
+
       const componentFiles = [
         'optimizer-core.js',
         'optimizer-ui.js',
@@ -273,7 +274,7 @@ describe('RNK Vortex System Optimizer', () => {
       componentFiles.forEach(file => {
         const fullPath = path.join(scriptsDir, file);
         expect(fs.existsSync(fullPath)).toBe(true);
-        
+
         const content = fs.readFileSync(fullPath, 'utf8');
         const lines = content.split('\n').length;
         expect(lines).toBeLessThanOrEqual(500);

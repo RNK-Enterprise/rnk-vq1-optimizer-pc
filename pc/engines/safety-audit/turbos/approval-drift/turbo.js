@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Safety-audit approval-drift turbo. It tracks explicit user approval without
  * executing, approving, or rejecting a proposed action.

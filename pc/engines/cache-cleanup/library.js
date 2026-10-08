@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cache-cleanup library. It classifies bounded cache observations for review
  * and never reads paths, deletes files, or changes storage policy.

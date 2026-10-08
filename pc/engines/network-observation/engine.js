@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Network-observation engine. It reports bounded link and route evidence
  * without changing network settings, routes, files, or transport state.

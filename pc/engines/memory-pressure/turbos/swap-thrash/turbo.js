@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-pressure swap-thrash turbo. It classifies bounded swap activity and
  * oscillation without reclaiming memory, changing swap policy, or opening transport.

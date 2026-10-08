@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated identity-completeness library. It validates, aggregates, and
  * plans driver identity reports without importing the turbo or changing data.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU utilization-burst turbo. It measures bounded utilization bursts without
  * changing GPU policy, drivers, files, or opening transport.

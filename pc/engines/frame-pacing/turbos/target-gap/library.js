@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated target-gap library. It validates, aggregates, and plans FPS
  * shortfall reports without importing the turbo or changing display policy.

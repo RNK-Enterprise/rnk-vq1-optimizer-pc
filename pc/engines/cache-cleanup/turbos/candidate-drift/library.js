@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated candidate-drift library. It validates, aggregates, and plans
  * safe-candidate preview reports without importing a file-management API.

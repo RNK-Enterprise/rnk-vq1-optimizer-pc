@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated vendor-mix library. It validates, aggregates, and plans adapter
  * composition reports without importing the turbo or changing GPU policy.

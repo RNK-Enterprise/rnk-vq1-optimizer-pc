@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Process-priority library. It classifies documented labels for review and
  * never renices, suspends, terminates, or otherwise changes a process.

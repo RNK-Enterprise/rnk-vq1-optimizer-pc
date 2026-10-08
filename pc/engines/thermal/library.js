@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Thermal library. It classifies bounded temperature and headroom evidence
  * without changing fans, governors, workloads, or transport state.

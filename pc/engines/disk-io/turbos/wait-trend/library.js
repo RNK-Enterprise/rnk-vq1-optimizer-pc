@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated wait-trend library. It validates, aggregates, and plans trend
  * reports without importing the turbo or changing disk state.

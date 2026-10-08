@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated workload-profile context-drift library. It validates and merges
  * context reports without importing process, application, or OS controls.

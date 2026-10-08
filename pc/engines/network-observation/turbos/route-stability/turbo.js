@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Route-stability turbo. It compares bounded default-route evidence without
  * changing routes, interfaces, or network settings.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated preview-safety library. It validates conservative preview
  * evidence and builds review plans without reading paths or mutating files.

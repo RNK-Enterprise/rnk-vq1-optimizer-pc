@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated saturation-guard turbo library. It validates and aggregates
  * saturation reports without importing the turbo or changing CPU policy.

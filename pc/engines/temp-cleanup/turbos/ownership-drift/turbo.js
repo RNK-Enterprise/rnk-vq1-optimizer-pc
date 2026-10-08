@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Temp-cleanup ownership-drift turbo. It compares explicit ownership without
  * reading paths, deleting files, or changing storage policy.

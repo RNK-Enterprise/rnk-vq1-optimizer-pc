@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated storage-confidence library. It validates, aggregates, and plans
  * completeness reports without importing the turbo or changing storage.

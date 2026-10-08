@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * FPS-target library. It derives a review candidate from user, display, or
  * observed evidence without applying a cap or changing display state.

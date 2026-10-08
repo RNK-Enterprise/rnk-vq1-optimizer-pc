@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Priority-volatility turbo. It compares bounded process priority and
  * protection signatures without changing process state, files, or transport.

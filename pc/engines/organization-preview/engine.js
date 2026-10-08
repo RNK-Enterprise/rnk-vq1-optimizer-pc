@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Organization-preview engine. It reports proposed user-file organization
  * without moving, renaming, deleting, or overwriting files.

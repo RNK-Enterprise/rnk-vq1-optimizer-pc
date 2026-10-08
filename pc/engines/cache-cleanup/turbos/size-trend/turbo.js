@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cache-cleanup size-trend turbo. It compares explicit cache-size metadata
  * without reading paths or making any deletion decision.

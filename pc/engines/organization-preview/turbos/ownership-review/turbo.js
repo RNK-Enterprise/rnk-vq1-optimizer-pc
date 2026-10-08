@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Ownership-review turbo. It reports explicit user-owned evidence without
  * moving, renaming, deleting, overwriting, or inspecting files.

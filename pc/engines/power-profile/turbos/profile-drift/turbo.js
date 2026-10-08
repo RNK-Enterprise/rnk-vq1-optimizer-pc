@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Power-profile profile-drift turbo. It compares explicit profile evidence
  * across a bounded sample window without switching a profile or changing

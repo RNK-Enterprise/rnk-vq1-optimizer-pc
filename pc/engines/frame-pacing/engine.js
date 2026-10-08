@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Frame-pacing engine. It classifies bounded display timing observations
  * without changing FPS caps, display settings, files, or transport state.

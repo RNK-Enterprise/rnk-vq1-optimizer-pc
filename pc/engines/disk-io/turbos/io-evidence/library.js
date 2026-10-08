@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated I/O-evidence library. It validates, aggregates, and plans fact
  * completeness reports without importing the turbo or changing disks.

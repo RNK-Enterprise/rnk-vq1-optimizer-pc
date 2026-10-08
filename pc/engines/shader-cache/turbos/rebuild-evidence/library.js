@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated rebuild-evidence library. It validates stale-cache evidence and
  * builds review plans without executing rebuilds or changing cache files.

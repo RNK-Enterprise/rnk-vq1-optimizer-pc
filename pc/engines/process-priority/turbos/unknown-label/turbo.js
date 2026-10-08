@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Unknown-label turbo. It measures undocumented process-priority labels in
  * bounded observations without changing processes, files, or transport.

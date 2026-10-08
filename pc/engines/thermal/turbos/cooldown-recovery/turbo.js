@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cooldown-recovery turbo. It measures bounded temperature recovery and
  * rebound without changing fans, governors, workloads, or power state.

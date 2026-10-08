@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated ownership-boundary library. It validates startup ownership
  * evidence and builds review plans without changing boot configuration.

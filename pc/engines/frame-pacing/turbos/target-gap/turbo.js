@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Frame target-gap turbo. It measures bounded FPS shortfall against an
  * explicit target without changing caps, display policy, files, or transport.

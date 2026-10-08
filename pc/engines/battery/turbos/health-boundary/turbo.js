@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Battery health-boundary turbo. It measures explicit health evidence and
  * refuses to infer health or permission to change a battery policy.

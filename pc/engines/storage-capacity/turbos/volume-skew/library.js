@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated volume-skew library. It validates, aggregates, and plans
  * volume headroom reports without importing the turbo or changing storage.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Frame cadence-stability turbo. It measures bounded frame-time movement
  * without changing display policy, FPS caps, files, or opening transport.

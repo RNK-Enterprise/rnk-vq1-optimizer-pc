@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated size-trend library. It validates, aggregates, and plans cache
  * size reports without importing a file-management API.

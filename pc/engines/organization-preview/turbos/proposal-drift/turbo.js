@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Proposal-drift turbo. It compares explicit organization proposals without
  * moving, renaming, deleting, overwriting, or inspecting files.

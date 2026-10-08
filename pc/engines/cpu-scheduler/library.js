@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-scheduler library. It classifies run-queue and context-switch evidence
  * and provides deterministic local envelopes without changing scheduling.

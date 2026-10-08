@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Safety-audit proposal-risk turbo. It classifies explicit action and
  * destructive-action counts without executing any proposed action.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-utilization trend-slope turbo. It measures bounded least-squares trend
  * and range volatility without changing frequency, scheduling, or affinity.

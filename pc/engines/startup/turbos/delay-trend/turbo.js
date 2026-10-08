@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Startup delay-trend turbo. It compares bounded maximum-delay evidence
  * without disabling entries, changing boot configuration, or editing files.

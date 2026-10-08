@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Service-contention turbo. It observes bounded service-process I/O pressure
  * without throttling, terminating, or changing processes or files.

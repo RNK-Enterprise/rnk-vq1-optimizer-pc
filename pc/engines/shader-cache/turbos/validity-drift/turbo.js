@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Shader-cache validity-drift turbo. It compares explicit validity evidence
  * without deleting caches, rebuilding files, changing drivers, or transport.

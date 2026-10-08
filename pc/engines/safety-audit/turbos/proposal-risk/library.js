@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated safety-audit proposal-risk library. It validates action evidence
  * and creates review-only plans without executing proposals.

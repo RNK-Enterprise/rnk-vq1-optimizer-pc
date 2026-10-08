@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Process-I/O library. It aggregates bounded observations for review and
  * never throttles, terminates, renices, or changes files.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Display VRR-stability turbo. It observes variable-refresh state movement
  * without enabling, disabling, or otherwise changing display policy.

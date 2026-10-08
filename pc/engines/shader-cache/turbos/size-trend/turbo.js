@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Shader-cache size-trend turbo. It compares explicit size evidence without
  * reading, deleting, rebuilding, or moving cache files.

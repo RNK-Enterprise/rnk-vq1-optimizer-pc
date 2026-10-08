@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated observation-boundary library. It validates, aggregates, and plans
  * capability reports without importing the turbo or enabling GPU observation.

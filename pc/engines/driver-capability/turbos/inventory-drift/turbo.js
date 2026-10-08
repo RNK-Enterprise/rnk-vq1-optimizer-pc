@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Inventory-drift turbo. It compares bounded driver identity sets without
  * installing, replacing, loading, or changing drivers.

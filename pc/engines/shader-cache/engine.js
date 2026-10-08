@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Shader-cache engine. It reports bounded shader-cache validity evidence
  * without deleting caches, changing drivers, or modifying files.

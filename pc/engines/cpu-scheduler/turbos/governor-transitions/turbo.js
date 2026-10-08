@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-scheduler governor-transitions turbo. It observes bounded governor
  * changes and load alignment without changing frequency or scheduler policy.

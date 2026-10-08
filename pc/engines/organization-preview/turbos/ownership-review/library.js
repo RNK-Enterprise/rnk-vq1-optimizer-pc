@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated ownership-review library. It validates, aggregates, and plans
  * ownership reports without importing the turbo or changing user files.

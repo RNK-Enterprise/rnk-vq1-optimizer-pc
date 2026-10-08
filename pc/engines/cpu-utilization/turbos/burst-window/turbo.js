@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-utilization burst-window turbo. It detects bounded short CPU bursts
  * from normalized snapshots. It never changes CPU policy or emits actions.

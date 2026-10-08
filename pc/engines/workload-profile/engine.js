@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Workload-profile engine. It classifies declared workload context without
  * changing processes, application settings, files, or transport state.

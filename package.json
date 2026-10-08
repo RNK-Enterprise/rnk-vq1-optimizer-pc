@@ -1,7 +1,7 @@
 {
   "name": "rnk-vortex-system-optimizer",
   "version": "3.1.0",
-  "description": "RNK Vortex System Optimizer - Advanced database optimization with LISA AI integration",
+  "description": "RNK Vortex System Optimizer - bounded whole-PC optimization with explicit local approvals",
   "type": "module",
   "scripts": {
     "test": "jest --coverage --verbose",
@@ -18,13 +18,16 @@
     "native:organize:preview": "node native/cli.mjs organize-preview"
   },
   "keywords": [
-    "foundry-vtt",
+    "pc-optimizer",
     "optimization",
     "performance",
     "rnk-vortex"
   ],
-  "author": "RNK Vortex",
+  "author": "Lisa's Dungeon",
   "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "ws": "^8.21.3"
   },

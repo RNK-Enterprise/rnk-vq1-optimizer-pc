@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-frequency library. It classifies observed governor and driver evidence
  * without changing frequency policy, writing files, or opening transport.

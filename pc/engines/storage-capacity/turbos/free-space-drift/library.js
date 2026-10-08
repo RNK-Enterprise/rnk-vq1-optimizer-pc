@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated free-space-drift library. It validates, aggregates, and plans
  * headroom reports without importing the turbo or changing storage.

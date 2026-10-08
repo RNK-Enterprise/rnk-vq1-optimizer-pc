@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated policy-shift turbo library. It validates and aggregates frequency
  * policy reports without importing the turbo, engine, or operating-system API.

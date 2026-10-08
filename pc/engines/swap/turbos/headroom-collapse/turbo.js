@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Swap headroom-collapse turbo. It measures bounded free-headroom movement
  * without creating swap, changing swappiness, or opening transport.

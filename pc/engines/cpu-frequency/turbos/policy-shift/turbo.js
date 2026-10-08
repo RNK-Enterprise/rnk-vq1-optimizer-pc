@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-frequency policy-shift turbo. It observes bounded governor and driver
  * changes without changing frequency policy or writing system files.

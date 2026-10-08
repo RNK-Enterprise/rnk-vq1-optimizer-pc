@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU-memory engine. It reports bounded VRAM capacity and usage evidence
  * without changing GPU policy, drivers, files, or transport state.

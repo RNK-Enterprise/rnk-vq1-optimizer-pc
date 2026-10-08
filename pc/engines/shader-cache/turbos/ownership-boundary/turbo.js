@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Shader-cache ownership-boundary turbo. It preserves explicit ownership and
  * never deletes, rebuilds, or moves a cache.

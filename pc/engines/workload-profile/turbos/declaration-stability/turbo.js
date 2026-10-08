@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Workload-profile declaration-stability turbo. It observes explicit workload
  * declarations and interactive flags without changing user preferences.

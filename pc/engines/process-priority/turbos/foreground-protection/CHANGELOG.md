@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added the RNK Enterprise foreground-protection turbo with bounded
+- Added the Lisa's Dungeon foreground-protection turbo with bounded
   persistence analysis, elevated and protected foreground classification,
   immutable recommendations, and strict coverage tests.
 - Added the dedicated foreground-protection library with sample/process count

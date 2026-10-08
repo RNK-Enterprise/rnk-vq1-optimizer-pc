@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Shader-cache library. It classifies bounded cache observations for review
  * and never deletes caches, changes drivers, or rebuilds files.

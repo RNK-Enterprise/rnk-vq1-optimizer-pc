@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated charge-trend library. It validates and plans charge evidence
  * without importing a charging or power-policy control API.

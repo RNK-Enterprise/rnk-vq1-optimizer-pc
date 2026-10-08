@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated power-source-drift library. It validates source evidence and
  * builds review plans without toggling charging or power policy.

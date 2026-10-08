@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Workload-profile intensity-trend turbo. It observes declared workload
  * intensity and reports movement without changing scheduling or process state.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-policy engine. It evaluates whether normalized RAM and swap evidence
  * supports a documented memory-policy review. It never changes policy,

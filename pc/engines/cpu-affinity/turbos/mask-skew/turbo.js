@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * CPU-affinity mask-skew turbo. It compares normalized affinity and isolation
  * coverage without applying masks, pinning processes, or changing policy.

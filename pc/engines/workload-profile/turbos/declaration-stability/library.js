@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated workload-profile declaration-stability library. It validates
  * declaration evidence and creates bounded review envelopes.

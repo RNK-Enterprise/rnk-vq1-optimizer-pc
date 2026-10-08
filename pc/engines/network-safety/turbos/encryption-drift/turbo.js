@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Encryption-drift turbo. It compares explicit encryption evidence without
  * changing links, routes, or network settings.

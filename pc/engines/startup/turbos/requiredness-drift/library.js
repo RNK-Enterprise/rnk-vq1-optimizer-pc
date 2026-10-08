@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated requiredness-drift library. It validates required-flag evidence
  * and builds review plans without changing boot configuration or files.

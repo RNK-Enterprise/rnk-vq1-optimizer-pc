@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated VRR-stability library. It validates, aggregates, and plans VRR
  * reports without importing the turbo or changing display policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Power-profile availability-drift turbo. It tracks the explicit advertised
  * profile set and active-profile membership without changing power policy.

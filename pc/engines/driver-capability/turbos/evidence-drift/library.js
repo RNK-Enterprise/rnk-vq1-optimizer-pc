@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated evidence-drift library. It validates immutable turbo reports,
  * merges driver evidence, and plans observation without changing drivers.

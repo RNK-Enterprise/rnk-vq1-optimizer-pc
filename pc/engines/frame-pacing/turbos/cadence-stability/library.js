@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated cadence-stability library. It validates, aggregates, and plans
  * frame-time movement reports without importing the turbo or changing policy.

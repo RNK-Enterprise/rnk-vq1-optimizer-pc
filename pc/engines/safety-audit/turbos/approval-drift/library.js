@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated safety-audit approval-drift library. It validates explicit
  * approval evidence and builds review-only plans.

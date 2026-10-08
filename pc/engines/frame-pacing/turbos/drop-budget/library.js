@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated drop-budget library. It validates, aggregates, and plans dropped
  * frame reports without importing the turbo or changing display policy.

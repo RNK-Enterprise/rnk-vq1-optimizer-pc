@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Memory-pressure library. It turns normalized RAM evidence into an immutable
  * review object; it never reclaims memory, clears caches, or changes policy.

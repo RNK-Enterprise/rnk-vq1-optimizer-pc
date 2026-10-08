@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Startup requiredness-drift turbo. It compares required-flag evidence
  * without disabling entries, changing boot configuration, or editing files.

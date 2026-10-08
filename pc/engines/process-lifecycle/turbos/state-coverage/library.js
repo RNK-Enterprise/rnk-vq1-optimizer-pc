@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated state-coverage library. It validates, aggregates, and plans
  * documented process-state reports without importing the turbo or changing

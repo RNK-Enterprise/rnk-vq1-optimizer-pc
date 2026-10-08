@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Category-drift turbo. It compares bounded organization categories without
  * moving, renaming, deleting, overwriting, or inspecting files.

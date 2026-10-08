@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated observation-confidence library. It validates, aggregates, and
  * plans metric-completeness reports without importing the turbo or changing

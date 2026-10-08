@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Battery charge-trend turbo. It measures bounded charge movement and never
  * changes charging, power policy, files, or transport state.

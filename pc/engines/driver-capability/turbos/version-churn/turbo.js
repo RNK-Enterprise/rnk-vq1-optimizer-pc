@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Version-churn turbo. It compares bounded driver version observations without
  * installing, replacing, loading, or changing drivers.

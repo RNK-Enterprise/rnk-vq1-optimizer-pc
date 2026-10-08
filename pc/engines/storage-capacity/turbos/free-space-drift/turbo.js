@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Free-space-drift turbo. It observes bounded minimum free-space headroom
  * without deleting files, moving paths, remounting volumes, or writing.

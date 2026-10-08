@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Identity-completeness turbo. It observes missing bounded driver identity
  * fields without installing, replacing, loading, or changing drivers.

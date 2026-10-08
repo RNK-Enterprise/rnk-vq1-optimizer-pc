@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated public-exposure library. It validates, aggregates, and plans
  * exposure reports without importing the turbo or changing network state.

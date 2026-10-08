@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * PC-wide local mesh. It registers every engine, dedicated library, turbo,
  * and turbo library behind typed in-process command/event routes. Loading is

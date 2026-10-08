@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Zombie-persistence turbo. It observes bounded zombie-process evidence
  * without terminating, reparenting, or changing a process.

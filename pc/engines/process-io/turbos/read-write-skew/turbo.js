@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Read-write-skew turbo. It compares bounded process I/O direction without
  * throttling processes, changing files, or opening transport.

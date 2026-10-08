@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Storage-confidence turbo. It scores bounded storage fact completeness
  * without probing devices, changing mounts, or writing files.

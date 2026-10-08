@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cache-cleanup evidence-completeness turbo. It measures whether explicit
  * cache metadata is complete enough for preview review, without reading paths.

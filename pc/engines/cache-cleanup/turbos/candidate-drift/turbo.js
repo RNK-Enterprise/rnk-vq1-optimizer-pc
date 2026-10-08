@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Cache-cleanup candidate-drift turbo. It compares explicitly named,
  * system-owned, safe candidates without reading, deleting, or moving files.

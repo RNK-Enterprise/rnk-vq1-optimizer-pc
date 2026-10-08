@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Sensor-stability turbo. It measures bounded thermal sensor jitter and
  * completeness without changing sensors, fans, governors, or power state.

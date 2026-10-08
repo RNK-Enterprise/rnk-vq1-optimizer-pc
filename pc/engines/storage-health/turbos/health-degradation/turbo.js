@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Health-degradation turbo. It observes bounded storage health labels
  * without repairing devices, remounting volumes, or changing files.

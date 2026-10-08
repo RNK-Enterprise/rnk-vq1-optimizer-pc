@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * FPS observation-confidence turbo. It scores evidence completeness without
  * applying a target, changing display policy, or opening transport.

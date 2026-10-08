@@ -8,7 +8,7 @@
 - Added trigger, fact, clock, process-list, and refusal-path validation.
 - Added a dedicated library for I/O aggregation, snapshot comparison,
   immutable envelopes, and local facade construction.
-- Added four RNK Enterprise turbo/library pairs: contention burst, read-write
+- Added four Lisa's Dungeon turbo/library pairs: contention burst, read-write
   skew, service contention, and observation confidence.
 - Added strict per-file tests for every turbo and library with bounded inputs,
   disabled-observation and headless handling, trigger validation, immutable

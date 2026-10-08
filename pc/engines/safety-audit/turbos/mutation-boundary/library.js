@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated safety-audit mutation-boundary library. It validates mutation
  * evidence and produces review-only plans without changing files or network.

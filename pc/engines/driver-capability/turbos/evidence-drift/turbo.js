@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Evidence-drift turbo. It observes bounded documented/unverified driver
  * evidence without installing, replacing, loading, or changing drivers.

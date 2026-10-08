@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated cooldown-recovery library. It validates temperature movement and
  * builds observation plans without importing thermal control APIs.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * GPU multi-gpu-skew turbo. It measures bounded adapter utilization imbalance
  * without changing GPU policy, drivers, files, or opening transport.

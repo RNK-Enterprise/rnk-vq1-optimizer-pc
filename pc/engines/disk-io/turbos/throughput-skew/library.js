@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated throughput-skew library. It validates, aggregates, and plans
  * read/write balance reports without importing the turbo or changing disks.

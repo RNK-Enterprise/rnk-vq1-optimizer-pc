@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Temp-cleanup preview-safety turbo. It validates explicit evidence for a
  * preview without reading paths, deleting files, or changing storage policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated inventory-drift library. It validates, aggregates, and plans
  * driver identity-set reports without importing the turbo or changing data.

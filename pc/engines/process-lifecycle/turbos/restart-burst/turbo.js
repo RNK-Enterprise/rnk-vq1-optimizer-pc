@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Restart-burst turbo. It observes bounded restart evidence without
  * restarting, terminating, or otherwise changing a process.

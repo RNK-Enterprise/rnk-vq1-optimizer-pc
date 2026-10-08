@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated read-only-drift library. It validates, aggregates, and plans
  * read-only reports without importing the turbo or changing storage.

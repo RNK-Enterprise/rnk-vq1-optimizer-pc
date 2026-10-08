@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated interface-inventory library. It validates, aggregates, and plans
  * interface identity reports without importing the turbo or changing state.

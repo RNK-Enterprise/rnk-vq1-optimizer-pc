@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Copyright © 2025 Asgard Innovations / RNK™
+ * Copyright © 2026 Lisa's Dungeon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ describe('OptimizerCore', () => {
       logFn: mockLogFn,
       ...createFoundryCoreDependencies({ logFn: mockLogFn })
     });
-    
+
     game.messages = { contents: [] };
     game.combats = { contents: [] };
     game.packs = { values: () => [] };
@@ -79,7 +79,7 @@ describe('OptimizerCore', () => {
     };
 
     const report = await optimizer.dryRun(options);
-    
+
     expect(report.cleanup.chat.enabled).toBe(false);
     expect(report.cleanup.combats.enabled).toBe(false);
     expect(report.compendiums.enabled).toBe(false);
@@ -100,7 +100,7 @@ describe('OptimizerCore', () => {
     ];
 
     const report = await optimizer.dryRun(options);
-    
+
     expect(report.cleanup.chat.enabled).toBe(true);
     expect(report.cleanup.chat.wouldDelete).toBe(1);
   });
@@ -120,7 +120,7 @@ describe('OptimizerCore', () => {
     ];
 
     const report = await optimizer.dryRun(options);
-    
+
     expect(report.cleanup.combats.enabled).toBe(true);
     expect(report.cleanup.combats.wouldDelete).toBe(1);
   });
@@ -137,7 +137,7 @@ describe('OptimizerCore', () => {
     game.packs.values = () => [{}, {}, {}];
 
     const report = await optimizer.dryRun(options);
-    
+
     expect(report.compendiums.enabled).toBe(true);
     expect(report.compendiums.packs).toBe(3);
   });
@@ -183,7 +183,7 @@ describe('OptimizerCore', () => {
     };
 
     const report = await optimizer.optimize(options, { dryRun: true });
-    
+
     expect(report).toHaveProperty('cleanup');
   });
 
@@ -201,7 +201,7 @@ describe('OptimizerCore', () => {
     game.packs.values = () => [];
 
     const report = await optimizer.optimize(options);
-    
+
     expect(report).toHaveProperty('performance');
     expect(report.performance.rafFPS).toBeDefined();
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('Optimization started'));
@@ -210,7 +210,7 @@ describe('OptimizerCore', () => {
 
   test('_measureRAFFPS returns valid FPS', async () => {
     const fps = await optimizer._measureRAFFPS(100);
-    
+
     expect(fps).toBeGreaterThan(0);
     expect(fps).toBeLessThan(200);
   });
@@ -218,24 +218,24 @@ describe('OptimizerCore', () => {
   test('_measureRAFFPS handles no RAF', async () => {
     const oldRAF = global.requestAnimationFrame;
     delete global.requestAnimationFrame;
-    
+
     const fps = await optimizer._measureRAFFPS(100);
-    
+
     expect(fps).toBeNull();
-    
+
     global.requestAnimationFrame = oldRAF;
   });
 
   test('_cleanupChat with messages to delete', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     game.messages.contents = [
       { id: 'msg1', timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) }
     ];
 
     await optimizer._cleanupChat(options, report);
-    
+
     expect(ChatMessage.deleteDocuments).toHaveBeenCalled();
     expect(report.cleanup.chat.deleted).toBe(1);
   });
@@ -243,95 +243,95 @@ describe('OptimizerCore', () => {
   test('_cleanupChat with no messages to delete', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     game.messages.contents = [];
 
     await optimizer._cleanupChat(options, report);
-    
+
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('No old chat messages'));
   });
 
   test('_cleanupChat handles deletion errors', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     game.messages.contents = [
       { id: 'msg1', timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) }
     ];
-    
+
     ChatMessage.deleteDocuments = jest.fn(() => Promise.reject(new Error('Delete failed')));
 
     await optimizer._cleanupChat(options, report);
-    
+
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('Failed'));
   });
 
   test('_cleanupCombats with combats to delete', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [
       { id: 'combat1', started: false, turns: [] }
     ];
 
     await optimizer._cleanupCombats(report);
-    
+
     expect(Combat.deleteDocuments).toHaveBeenCalled();
     expect(report.cleanup.combats.deleted).toBe(1);
   });
 
   test('_cleanupCombats with no combats to delete', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [];
 
     await optimizer._cleanupCombats(report);
-    
+
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('No inactive combats'));
   });
 
   test('_cleanupCombats handles deletion errors', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [{ id: 'combat1', started: false, turns: [] }];
-    
+
     Combat.deleteDocuments = jest.fn(() => Promise.reject(new Error('Delete failed')));
 
     await optimizer._cleanupCombats(report);
-    
+
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('Failed'));
   });
 
   test('_rebuildCompendiumIndexes processes packs', async () => {
     const report = { compendiums: {} };
-    
+
     game.packs.values = () => [
       { collection: 'pack1', getIndex: jest.fn().mockResolvedValue([{}, {}]) },
       { collection: 'pack2', getIndex: jest.fn().mockResolvedValue([{}]) }
     ];
 
     await optimizer._rebuildCompendiumIndexes(report);
-    
+
     expect(report.compendiums.indexedPacks).toBe(2);
     expect(report.compendiums.indexedDocs).toBe(3);
   });
 
   test('_rebuildCompendiumIndexes handles pack errors', async () => {
     const report = { compendiums: {} };
-    
+
     game.packs.values = () => [
       { collection: 'pack1', getIndex: jest.fn().mockRejectedValue(new Error('Pack error')) }
     ];
 
     await optimizer._rebuildCompendiumIndexes(report);
-    
+
     expect(mockLogFn).toHaveBeenCalledWith(expect.stringContaining('Failed index'));
   });
 
   test('_applyPerformanceTweaks', async () => {
     const report = { performance: {} };
-    
+
     await optimizer._applyPerformanceTweaks(report);
-    
+
     expect(report.performance).toBeDefined();
   });
 
@@ -347,7 +347,7 @@ describe('OptimizerCore', () => {
     game.packs.values = undefined;
 
     const report = await optimizer.dryRun(options);
-    
+
     expect(report.compendiums.enabled).toBe(true);
     expect(report.compendiums.packs).toBe(0);
   });
@@ -355,18 +355,18 @@ describe('OptimizerCore', () => {
   test('_measureRAFFPS handles invalid duration', async () => {
     const fps1 = await optimizer._measureRAFFPS(-100);
     expect(fps1).toBeGreaterThan(0);
-    
+
     const fps2 = await optimizer._measureRAFFPS('invalid');
     expect(fps2).toBeGreaterThan(0);
   });
 
   test('_rebuildCompendiumIndexes handles packs.values undefined', async () => {
     const report = { compendiums: {} };
-    
+
     game.packs.values = undefined;
 
     await optimizer._rebuildCompendiumIndexes(report);
-    
+
     expect(report.compendiums.indexedPacks).toBe(0);
     expect(report.compendiums.indexedDocs).toBe(0);
   });
@@ -377,16 +377,16 @@ describe('PerformanceTweaks', () => {
 
   beforeEach(() => {
     tweaks = new PerformanceTweaks();
-    
+
     game.settings.settings.set('core.maxFPS', { range: { max: 60 }, type: { options: {} }, choices: {} });
     game.settings.settings.set('core.softShadows', {});
-    
+
     game.settings.get = jest.fn((ns, key) => {
       if (key === 'maxFPS') return 60;
       if (key === 'softShadows') return true;
       return null;
     });
-    
+
     game.settings.set = jest.fn().mockResolvedValue(true);
   });
 
@@ -401,7 +401,7 @@ describe('PerformanceTweaks', () => {
   });
 
   test('raiseCoreMaxFPSCeiling with valid setting', () => {
-    game.settings.settings.get = jest.fn().mockReturnValue({ 
+    game.settings.settings.get = jest.fn().mockReturnValue({
       range: { max: 60 },
       type: { options: { max: 80 } }
     });
@@ -432,13 +432,13 @@ describe('PerformanceTweaks', () => {
       if (key === 'core.softShadows') return {};
       return null;
     });
-    
+
     game.settings.get = jest.fn((ns, key) => {
       if (key === 'maxFPS') return 60;
       if (key === 'softShadows') return true;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.length).toBe(2);
   });
@@ -451,22 +451,22 @@ describe('PerformanceTweaks', () => {
 
   test('apply with ticker update', async () => {
     const report = { performance: {} };
-    
+
     global.canvas.app.ticker.maxFPS = 60;
-    
+
     await tweaks.apply(report);
-    
+
     expect(global.canvas.app.ticker.maxFPS).toBe(120);
     expect(report.performance.tickerMaxFPS).toBe(120);
   });
 
   test('apply handles ticker error gracefully', async () => {
     const report = { performance: {} };
-    
+
     global.canvas = null;
-    
+
     await tweaks.apply(report);
-    
+
     expect(report.performance).toBeDefined();
   });
 
@@ -476,25 +476,25 @@ describe('PerformanceTweaks', () => {
       if (key === 'maxFPS') return 60;
       return null;
     });
-    
+
     global.canvas = {
       app: {
         ticker: { maxFPS: 60 }
       }
     };
-    
+
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    
+
     await tweaks.applyOnReady();
-    
+
     consoleSpy.mockRestore();
   });
 
   test('applyOnReady with performance tweaks disabled', async () => {
     game.settings.get = jest.fn().mockReturnValue(false);
-    
+
     await tweaks.applyOnReady();
-    
+
     expect(game.settings.set).not.toHaveBeenCalled();
   });
 
@@ -502,7 +502,7 @@ describe('PerformanceTweaks', () => {
     game.settings.get = jest.fn().mockImplementation(() => {
       throw new Error('Settings error');
     });
-    
+
     await expect(tweaks.applyOnReady()).resolves.not.toThrow();
   });
 
@@ -514,9 +514,9 @@ describe('PerformanceTweaks', () => {
       set maxFPS(val) {}
     };
     globalThis.canvas = { app: { ticker: mockTicker } };
-    
+
     expect(() => tweaks.raiseCoreMaxFPSCeiling(150)).not.toThrow();
-    
+
     globalThis.canvas = null;
   });
 
@@ -530,15 +530,15 @@ describe('PerformanceTweaks', () => {
       }
     };
     globalThis.canvas = { app: { ticker: mockTicker } };
-    
+
     expect(() => tweaks.raiseCoreMaxFPSCeiling(150)).not.toThrow();
-    
+
     globalThis.canvas = null;
   });
 
   test('raiseCoreMaxFPSCeiling with no ticker available (line 150 conditional false)', () => {
     globalThis.canvas = null;
-    
+
     expect(() => tweaks.raiseCoreMaxFPSCeiling(150)).not.toThrow();
   });
 });
@@ -588,20 +588,20 @@ describe('SettingsManager', () => {
   test('registerAll registers menu when not already registered', async () => {
     game.settings.menus.has = jest.fn().mockReturnValue(false);
     game.settings.settings.has = jest.fn().mockReturnValue(false);
-    
+
     const MockApp = class {};
     await SettingsManager.registerAll(MockApp);
-    
+
     expect(game.settings.registerMenu).toHaveBeenCalled();
   });
 
   test('registerAll skips menu when already registered', async () => {
     game.settings.menus.has = jest.fn().mockReturnValue(true);
     game.settings.settings.has = jest.fn().mockReturnValue(true);
-    
+
     const MockApp = class {};
     await SettingsManager.registerAll(MockApp);
-    
+
     expect(game.settings.registerMenu).not.toHaveBeenCalled();
   });
 
@@ -611,22 +611,22 @@ describe('SettingsManager', () => {
     game.settings.registerMenu = jest.fn().mockImplementation(() => {
       throw new Error('Menu error');
     });
-    
+
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
     const MockApp = class {};
-    
+
     await SettingsManager.registerAll(MockApp);
-    
+
     consoleSpy.mockRestore();
   });
 
   test('registerAll registers all settings', async () => {
     game.settings.menus.has = jest.fn().mockReturnValue(true);
     game.settings.settings.has = jest.fn().mockReturnValue(false);
-    
+
     const MockApp = class {};
     await SettingsManager.registerAll(MockApp);
-    
+
     expect(game.settings.register).toHaveBeenCalledWith('rnk-vortex-system-optimizer', 'doCleanupChat', expect.any(Object));
     expect(game.settings.register).toHaveBeenCalledWith('rnk-vortex-system-optimizer', 'chatRetentionDays', expect.any(Object));
   });
@@ -634,7 +634,7 @@ describe('SettingsManager', () => {
   test('registerAll handles no game.settings', async () => {
     game.settings = null;
     const MockApp = class {};
-    
+
     await expect(SettingsManager.registerAll(MockApp)).resolves.not.toThrow();
   });
 
@@ -659,9 +659,9 @@ describe('SettingsManager', () => {
       };
       return defaults[key];
     });
-    
+
     const options = SettingsManager.getOptionsFromSettings();
-    
+
     expect(options.doCleanupChat).toBe(true);
     expect(options.chatRetentionDays).toBe(30);
   });
@@ -743,7 +743,7 @@ describe('OptimizerUI', () => {
       };
       return defaults[key];
     });
-    
+
     SettingsManager.getOptionsFromSettings = jest.fn(() => ({
       doCleanupChat: true,
       chatRetentionDays: 30,
@@ -751,7 +751,7 @@ describe('OptimizerUI', () => {
       doRebuildCompendiumIndexes: true,
       doCorePerformanceTweaks: true
     }));
-    
+
     ui = new OptimizerUI();
     ui.element = [{ querySelector: jest.fn().mockReturnValue(null) }];
   });
@@ -766,10 +766,10 @@ describe('OptimizerUI', () => {
     globalThis.foundry = undefined;
     const oldMergeObject = globalThis.mergeObject;
     globalThis.mergeObject = (a, b) => ({ ...a, ...b });
-    
+
     const options = OptimizerUI.defaultOptions;
     expect(options.id).toBe('rnk-system-optimizer-app');
-    
+
     globalThis.foundry = oldFoundry;
     globalThis.mergeObject = oldMergeObject;
   });
@@ -793,7 +793,7 @@ describe('OptimizerUI', () => {
 
   test('getData returns settings data', async () => {
     const data = await ui.getData();
-    
+
     expect(data.doCleanupChat).toBe(true);
     expect(data.chatRetentionDays).toBe(30);
   });
@@ -804,18 +804,18 @@ describe('OptimizerUI', () => {
 
   test('_setSetting calls SettingsManager', async () => {
     game.settings.set = jest.fn().mockResolvedValue(true);
-    
+
     await ui._setSetting('doCleanupChat', false);
-    
+
     expect(game.settings.set).toHaveBeenCalled();
   });
 
   test('_setSetting handles errors with notification', async () => {
     game.settings.set = jest.fn(() => Promise.reject(new Error('Save failed')));
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    
+
     await ui._setSetting('doCleanupChat', false);
-    
+
     expect(global.ui.notifications.error).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
@@ -824,9 +824,9 @@ describe('OptimizerUI', () => {
     ui._logLines = ['line1', 'line2'];
     const mockLogElement = { textContent: '' };
     ui.element = [{ querySelector: jest.fn().mockReturnValue(mockLogElement) }];
-    
+
     ui._renderLog();
-    
+
     expect(mockLogElement.textContent).toBe('line1\nline2');
   });
 
@@ -852,9 +852,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
-    
+
     expect(ui._service.dryRun).toHaveBeenCalled();
     expect(ui._logLines.some(line => line.includes('chat would delete 5'))).toBe(true);
     expect(ui._logLines.some(line => line.includes('combats would delete 2'))).toBe(true);
@@ -873,7 +873,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._service.dryRun).toHaveBeenCalled();
   });
@@ -889,7 +889,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('would index'))).toBe(false);
   });
@@ -905,7 +905,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('test'))).toBe(false);
   });
@@ -920,9 +920,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
-    
+
     expect(ui._logLines.some(line => line.includes('core.maxFPS'))).toBe(true);
   });
 
@@ -937,9 +937,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
-    
+
     expect(ui._logLines.some(line => line.includes('Note: Test note'))).toBe(true);
   });
 
@@ -950,9 +950,9 @@ describe('OptimizerUI', () => {
     };
     ui._renderLog = jest.fn();
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    
+
     await ui._onDryRun();
-    
+
     expect(ui._logLines.some(line => line.includes('Dry Run failed'))).toBe(true);
     consoleSpy.mockRestore();
   });
@@ -969,9 +969,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
-    
+
     expect(ui._logLines.length).toBeLessThanOrEqual(300);
   });
 
@@ -1054,11 +1054,11 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     Dialog.confirm = jest.fn().mockResolvedValue(true);
-    
+
     await ui._onRun();
-    
+
     expect(Dialog.confirm).toHaveBeenCalled();
     expect(ui._service.optimize).toHaveBeenCalled();
   });
@@ -1072,11 +1072,11 @@ describe('OptimizerUI', () => {
       optimize: jest.fn()
     };
     ui._renderLog = jest.fn();
-    
+
     Dialog.confirm = jest.fn().mockResolvedValue(false);
-    
+
     await ui._onRun();
-    
+
     expect(ui._service.optimize).not.toHaveBeenCalled();
     expect(ui._logLines.some(line => line.includes('Canceled'))).toBe(true);
   });
@@ -1091,17 +1091,17 @@ describe('OptimizerUI', () => {
       compendiums: { indexedPacks: 3, indexedDocs: 50 },
       performance: { applied: [{ setting: 'maxFPS', to: 120 }], rafFPS: 115 }
     };
-    
+
     ui._service = {
       dryRun: jest.fn().mockResolvedValue(mockDryRunReport),
       optimize: jest.fn().mockResolvedValue(mockOptimizeReport)
     };
     ui._renderLog = jest.fn();
-    
+
     global.performance.memory = { usedJSHeapSize: 10000000 };
-    
+
     await ui._onRun();
-    
+
     expect(ui._service.optimize).toHaveBeenCalled();
     expect(global.ui.notifications.info).toHaveBeenCalledWith('System optimization completed');
     expect(ui._logLines.some(line => line.includes('deleted chat=5'))).toBe(true);
@@ -1120,9 +1120,9 @@ describe('OptimizerUI', () => {
     };
     ui._renderLog = jest.fn();
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    
+
     await ui._onRun();
-    
+
     expect(global.ui.notifications.error).toHaveBeenCalled();
     expect(ui._logLines.some(line => line.includes('Failed'))).toBe(true);
     consoleSpy.mockRestore();
@@ -1148,9 +1148,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('Heap'))).toBe(true);
     expect(ui._logLines.some(line => line.includes('indexed packs'))).toBe(true);
     expect(ui._logLines.some(line => line.includes('Applied'))).toBe(true);
@@ -1172,9 +1172,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._service.optimize).toHaveBeenCalled();
   });
 
@@ -1191,9 +1191,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('indexed packs'))).toBe(false);
   });
 
@@ -1210,9 +1210,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('Applied'))).toBe(false);
   });
 
@@ -1229,9 +1229,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('RAF FPS'))).toBe(false);
   });
 
@@ -1249,9 +1249,9 @@ describe('OptimizerUI', () => {
     };
     ui._renderLog = jest.fn();
     ui.element = { find: jest.fn().mockReturnValue([{ querySelector: jest.fn().mockReturnValue(null) }]) };
-    
+
     await ui._onRun();
-    
+
     expect(ui._service.optimize).toHaveBeenCalled();
   });
 
@@ -1269,9 +1269,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.length).toBeLessThanOrEqual(300);
   });
 
@@ -1290,9 +1290,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(mockButton.disabled).toBe(false);
   });
 
@@ -1306,7 +1306,7 @@ describe('OptimizerUI', () => {
       optimize: jest.fn().mockRejectedValue(new Error('Test error'))
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
     expect(ui._logLines.some(line => line.includes('Failed: Test error'))).toBe(true);
     expect(ui.element[0].querySelector).toHaveBeenCalledWith('[data-action="run"]');
@@ -1327,9 +1327,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.length).toBeLessThanOrEqual(300);
   });
 
@@ -1339,9 +1339,9 @@ describe('OptimizerUI', () => {
       querySelector: jest.fn().mockReturnValue(null)
     };
     const html = [root];
-    
+
     ui.activateListeners(html);
-    
+
     expect(root.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
     expect(root.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
   });
@@ -1360,12 +1360,12 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._setSetting = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = { target: { name: 'doCleanupChat', checked: true } };
     changeHandler(mockEvent);
-    
+
     expect(ui._setSetting).toHaveBeenCalledWith('doCleanupChat', true);
   });
 
@@ -1378,12 +1378,12 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._setSetting = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = { target: { name: 'chatRetentionDays', value: '60' } };
     changeHandler(mockEvent);
-    
+
     expect(ui._setSetting).toHaveBeenCalledWith('chatRetentionDays', 60);
   });
 
@@ -1396,13 +1396,13 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._setSetting = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     changeHandler({ target: { name: 'doCleanupInactiveCombats', checked: false } });
     changeHandler({ target: { name: 'doRebuildCompendiumIndexes', checked: true } });
     changeHandler({ target: { name: 'doCorePerformanceTweaks', checked: false } });
-    
+
     expect(ui._setSetting).toHaveBeenCalledWith('doCleanupInactiveCombats', false);
     expect(ui._setSetting).toHaveBeenCalledWith('doRebuildCompendiumIndexes', true);
     expect(ui._setSetting).toHaveBeenCalledWith('doCorePerformanceTweaks', false);
@@ -1417,16 +1417,16 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._onDryRun = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = {
       target: {
         closest: jest.fn().mockReturnValue({ dataset: { action: 'dryRun' } })
       }
     };
     clickHandler(mockEvent);
-    
+
     expect(ui._onDryRun).toHaveBeenCalled();
   });
 
@@ -1439,16 +1439,16 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._onRun = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = {
       target: {
         closest: jest.fn().mockReturnValue({ dataset: { action: 'run' } })
       }
     };
     clickHandler(mockEvent);
-    
+
     expect(ui._onRun).toHaveBeenCalled();
   });
 
@@ -1461,16 +1461,16 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui.close = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = {
       target: {
         closest: jest.fn().mockReturnValue({ dataset: { action: 'close' } })
       }
     };
     clickHandler(mockEvent);
-    
+
     expect(ui.close).toHaveBeenCalled();
   });
 
@@ -1701,9 +1701,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('indexed packs'))).toBe(false);
   });
 
@@ -1720,9 +1720,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('Applied:'))).toBe(false);
   });
 
@@ -1739,9 +1739,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('RAF FPS'))).toBe(false);
   });
 
@@ -1759,9 +1759,9 @@ describe('OptimizerUI', () => {
     };
     ui._renderLog = jest.fn();
     ui.element = { 0: { querySelector: () => null }, find: jest.fn().mockReturnValue([{ querySelector: () => null }]) };
-    
+
     await ui._onRun();
-    
+
     expect(ui._service.optimize).toHaveBeenCalled();
   });
 
@@ -1771,7 +1771,7 @@ describe('OptimizerUI', () => {
       dryRun: jest.fn().mockRejectedValue(new Error('Service error'))
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('Dry Run failed: Service error'))).toBe(true);
   });
@@ -1789,7 +1789,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
     expect(ui._logLines.some(line => line.includes('indexed packs='))).toBe(false);
   });
@@ -1807,7 +1807,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
     expect(ui._logLines.some(line => line.includes('Applied:'))).toBe(false);
   });
@@ -1825,7 +1825,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
     expect(ui._logLines.some(line => line.includes('RAF FPS'))).toBe(false);
   });
@@ -1841,7 +1841,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('would index'))).toBe(false);
   });
@@ -1857,7 +1857,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('test'))).toBe(false);
   });
@@ -1873,7 +1873,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('Note:'))).toBe(false);
   });
@@ -1889,9 +1889,9 @@ describe('OptimizerUI', () => {
     };
     const html = [null];
     html.addEventListener = mockRoot.addEventListener;
-    
+
     ui.activateListeners(html);
-    
+
     expect(mockRoot.addEventListener).toHaveBeenCalled();
   });
 
@@ -1904,12 +1904,12 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._setSetting = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = { target: null };
     changeHandler(mockEvent);
-    
+
     expect(ui._setSetting).not.toHaveBeenCalled();
   });
 
@@ -1922,12 +1922,12 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._setSetting = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = { target: { name: '', value: 'test' } };
     changeHandler(mockEvent);
-    
+
     expect(ui._setSetting).not.toHaveBeenCalled();
   });
 
@@ -1942,7 +1942,7 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onDryRun();
     expect(ui._logLines.some(line => line.includes('no core performance changes needed'))).toBe(true);
   });
@@ -1960,9 +1960,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._service.optimize).toHaveBeenCalled();
   });
 
@@ -1979,9 +1979,9 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('RAF FPS'))).toBe(false);
   });
 
@@ -1994,12 +1994,12 @@ describe('OptimizerUI', () => {
     };
     const html = [root];
     ui._setSetting = jest.fn();
-    
+
     ui.activateListeners(html);
-    
+
     const mockEvent = { target: { name: 'unknownSetting', value: 'test' } };
     changeHandler(mockEvent);
-    
+
     expect(ui._setSetting).not.toHaveBeenCalled();
   });
 
@@ -2007,7 +2007,7 @@ describe('OptimizerUI', () => {
     game.user.isGM = true;
     const originalMemory = performance.memory;
     delete performance.memory;
-    
+
     ui._service = {
       dryRun: jest.fn().mockResolvedValue({
         cleanup: { chat: { wouldDelete: 0 }, combats: { wouldDelete: 0 } }
@@ -2019,11 +2019,11 @@ describe('OptimizerUI', () => {
       })
     };
     ui._renderLog = jest.fn();
-    
+
     await ui._onRun();
-    
+
     expect(ui._logLines.some(line => line.includes('Heap'))).toBe(false);
-    
+
     if (originalMemory) {
       Object.defineProperty(performance, 'memory', { value: originalMemory, configurable: true });
     }
@@ -2048,7 +2048,7 @@ describe('VQ3DBridge', () => {
       }),
       loadBalanceMode: 'round-robin'
     };
-    
+
     bridge = new VQ3DBridge(mockVQBridge);
   });
 
@@ -2067,9 +2067,9 @@ describe('VQ3DBridge', () => {
       physics: true,
       lighting: true
     };
-    
+
     const result = await bridge.render3DModel('model.glb', options);
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ renderId: '123' });
     consoleSpy.mockRestore();
@@ -2078,7 +2078,7 @@ describe('VQ3DBridge', () => {
   test('render3DModel with vqBridge and default options', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.render3DModel('model.glb', {});
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ renderId: '123' });
     consoleSpy.mockRestore();
@@ -2087,7 +2087,7 @@ describe('VQ3DBridge', () => {
   test('render3DModel with physics disabled', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.render3DModel('model.glb', { physics: false });
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ renderId: '123' });
     consoleSpy.mockRestore();
@@ -2096,7 +2096,7 @@ describe('VQ3DBridge', () => {
   test('render3DModel with lighting disabled', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.render3DModel('model.glb', { lighting: false });
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ renderId: '123' });
     consoleSpy.mockRestore();
@@ -2105,9 +2105,9 @@ describe('VQ3DBridge', () => {
   test('render3DModel without vqBridge', async () => {
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
     bridge.vqBridge = null;
-    
+
     const result = await bridge.render3DModel('model.glb');
-    
+
     expect(result).toBeNull();
     consoleSpy.mockRestore();
   });
@@ -2115,7 +2115,7 @@ describe('VQ3DBridge', () => {
   test('load3DModel with vqBridge', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.load3DModel('model.glb');
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ modelId: 'model-456' });
     consoleSpy.mockRestore();
@@ -2131,7 +2131,7 @@ describe('VQ3DBridge', () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const options = { loop: true, speed: 1.5, blendTime: 0.5 };
     const result = await bridge.animate3DModel('token1', 'walk', options);
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ animationId: 'anim-789' });
     consoleSpy.mockRestore();
@@ -2140,7 +2140,7 @@ describe('VQ3DBridge', () => {
   test('animate3DModel with default options', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.animate3DModel('token1', 'walk', {});
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ animationId: 'anim-789' });
     consoleSpy.mockRestore();
@@ -2149,7 +2149,7 @@ describe('VQ3DBridge', () => {
   test('animate3DModel with loop disabled', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.animate3DModel('token1', 'walk', { loop: false });
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ animationId: 'anim-789' });
     consoleSpy.mockRestore();
@@ -2164,7 +2164,7 @@ describe('VQ3DBridge', () => {
   test('update3DPhysics with vqBridge', async () => {
     const physicsData = { mass: 10, friction: 0.5 };
     const result = await bridge.update3DPhysics('token1', physicsData);
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ physicsId: 'phys-101' });
   });
@@ -2182,9 +2182,9 @@ describe('VQ3DBridge', () => {
       parameters: { intensity: 0.8, color: '#ff0000' },
       duration: 3000
     };
-    
+
     const result = await bridge.apply3DEffect('explosion', config);
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ effectId: 'effect-202' });
     consoleSpy.mockRestore();
@@ -2193,7 +2193,7 @@ describe('VQ3DBridge', () => {
   test('apply3DEffect with default config', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const result = await bridge.apply3DEffect('explosion', {});
-    
+
     expect(mockVQBridge.executeOnVQ).toHaveBeenCalled();
     expect(result).toEqual({ effectId: 'effect-202' });
     consoleSpy.mockRestore();
@@ -2211,9 +2211,9 @@ describe('VQ3DBridge', () => {
       { path: 'model1.glb', options: {} },
       { path: 'model2.glb', options: { quality: 'low' } }
     ];
-    
+
     const result = await bridge.batchRender3DModels(models);
-    
+
     expect(result).toHaveLength(2);
     expect(mockVQBridge.loadBalanceMode).toBe('round-robin');
     consoleSpy.mockRestore();
@@ -2228,9 +2228,9 @@ describe('VQ3DBridge', () => {
   test('batchRender3DModels restores loadBalanceMode', async () => {
     mockVQBridge.loadBalanceMode = 'sequential';
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    
+
     await bridge.batchRender3DModels([{ path: 'model.glb', options: {} }]);
-    
+
     expect(mockVQBridge.loadBalanceMode).toBe('sequential');
     consoleSpy.mockRestore();
   });
@@ -2246,7 +2246,7 @@ describe('OptimizerCore Edge Cases', () => {
       logFn: mockLogFn,
       ...createFoundryCoreDependencies({ logFn: mockLogFn })
     });
-    
+
     game.messages = { contents: [] };
     game.combats = { contents: [] };
     game.packs = { values: () => [] };
@@ -2263,7 +2263,7 @@ describe('OptimizerCore Edge Cases', () => {
     };
 
     const report = await optimizer.dryRun(options);
-    
+
     expect(report.performance.enabled).toBe(true);
   });
 
@@ -2402,11 +2402,11 @@ describe('OptimizerCore Edge Cases', () => {
     game.messages.contents = [
       { id: 'msg1', timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) }
     ];
-    
+
     ChatMessage.deleteDocuments = jest.fn(() => Promise.reject(new Error('Delete failed')));
 
     const report = await optimizer.optimize(options);
-    
+
     expect(report.cleanup.chat.error).toBe('Delete failed');
   });
 
@@ -2420,18 +2420,18 @@ describe('OptimizerCore Edge Cases', () => {
     };
 
     game.combats.contents = [{ id: 'combat1', started: false, turns: [] }];
-    
+
     Combat.deleteDocuments = jest.fn(() => Promise.reject(new Error('Delete failed')));
 
     const report = await optimizer.optimize(options);
-    
+
     expect(report.cleanup.combats.error).toBe('Delete failed');
   });
 
   test('_cleanupChat handles messages with undefined id (filter Boolean)', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     game.messages.contents = [
       { id: 'msg1', timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) },
       { id: null, timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) },
@@ -2445,7 +2445,7 @@ describe('OptimizerCore Edge Cases', () => {
 
   test('_cleanupCombats handles undefined id (filter Boolean)', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [
       { id: 'combat1', started: false, turns: [] },
       { id: null, started: false, turns: [] },
@@ -2613,11 +2613,11 @@ describe('OptimizerCore Edge Cases', () => {
   test('_nowISO pads single-digit values correctly', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2025-01-05 03:07:09'));
-    
+
     const iso = optimizer._nowISO();
     expect(iso).toContain('2025-01-05');
     expect(iso).toContain('03:07:09');
-    
+
     jest.useRealTimers();
   });
 
@@ -2696,7 +2696,7 @@ describe('OptimizerCore Edge Cases', () => {
   test('_cleanupChat with messages at exact batch boundary', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     const oldMessages = Array.from({ length: 100 }, (_, i) => ({
       id: `msg${i}`,
       timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000)
@@ -2711,7 +2711,7 @@ describe('OptimizerCore Edge Cases', () => {
 
   test('_cleanupCombats with exact batch boundary', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     const inactiveCombats = Array.from({ length: 100 }, (_, i) => ({
       id: `combat${i}`,
       started: false,
@@ -2854,7 +2854,7 @@ describe('OptimizerCore Edge Cases', () => {
   test('_cleanupChat filter with recent message (timestamp > 0 but >= cutoff)', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     const recentTimestamp = Date.now() - (15 * 24 * 60 * 60 * 1000);
     game.messages.contents = [
       { id: 'recent', timestamp: recentTimestamp }
@@ -2867,7 +2867,7 @@ describe('OptimizerCore Edge Cases', () => {
 
   test('_cleanupCombats filter with active combat (started=true)', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [
       { id: 'active', started: true, turns: [] }
     ];
@@ -2879,7 +2879,7 @@ describe('OptimizerCore Edge Cases', () => {
 
   test('_cleanupCombats filter with combat having turns', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [
       { id: 'withturns', started: false, turns: [{ id: 'turn1' }] }
     ];
@@ -2893,7 +2893,7 @@ describe('OptimizerCore Edge Cases', () => {
     game.user.isGM = true;
     const oldRAF = global.requestAnimationFrame;
     global.requestAnimationFrame = undefined;
-    
+
     const options = {
       doCleanupChat: false,
       chatRetentionDays: 30,
@@ -2904,14 +2904,14 @@ describe('OptimizerCore Edge Cases', () => {
 
     const report = await optimizer.optimize(options, { dryRun: false });
     expect(report.performance.rafFPS).toBeNull();
-    
+
     global.requestAnimationFrame = oldRAF;
   });
 
   test('_cleanupChat handles message with null id in filter Boolean', async () => {
     const options = { chatRetentionDays: 30 };
     const report = { cleanup: { chat: {} } };
-    
+
     game.messages.contents = [
       { id: null, timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) },
       { id: '', timestamp: Date.now() - (40 * 24 * 60 * 60 * 1000) },
@@ -2925,7 +2925,7 @@ describe('OptimizerCore Edge Cases', () => {
 
   test('_cleanupCombats handles combat with null id in filter Boolean', async () => {
     const report = { cleanup: { combats: {} } };
-    
+
     game.combats.contents = [
       { id: null, started: false, turns: [] },
       { id: '', started: false, turns: [] },
@@ -3003,7 +3003,7 @@ describe('OptimizerCore Edge Cases', () => {
 
   test('log method with _logFn being null (line 19 conditional check)', () => {
     optimizer._logFn = null;
-    
+
     expect(() => optimizer.log('test message')).not.toThrow();
   });
 
@@ -3076,9 +3076,9 @@ describe('OptimizerCore Edge Cases', () => {
 
     const now = Date.now();
     const cutoff = now - (30 * 24 * 60 * 60 * 1000);
-    
+
     jest.spyOn(Date, 'now').mockReturnValue(now);
-    
+
     game.messages.contents = [
       { id: 'exact', timestamp: cutoff },
       { id: 'old', timestamp: cutoff - 1000 }
@@ -3088,7 +3088,7 @@ describe('OptimizerCore Edge Cases', () => {
     await optimizer.optimize(options);
     expect(ChatMessage.deleteDocuments).toHaveBeenCalledTimes(1);
     expect(ChatMessage.deleteDocuments).toHaveBeenCalledWith(['old']);
-    
+
     Date.now.mockRestore();
   });
 
@@ -3301,7 +3301,7 @@ describe('OptimizerCore Edge Cases', () => {
 
     game.packs = {
       values: jest.fn(function* () {
-        yield { 
+        yield {
           collection: 'test.pack',
           getIndex: jest.fn().mockRejectedValue(new Error('Index error'))
         };
@@ -3325,7 +3325,7 @@ describe('OptimizerCore Edge Cases', () => {
 
     game.packs = {
       values: jest.fn(function* () {
-        yield { 
+        yield {
           collection: 'test.pack',
           getIndex: jest.fn().mockRejectedValue('String error')
         };
@@ -3349,7 +3349,7 @@ describe('OptimizerCore Edge Cases', () => {
 
     game.packs = {
       values: jest.fn(function* () {
-        yield { 
+        yield {
           collection: 'test.pack',
           getIndex: jest.fn().mockResolvedValue({notAnArray: true})
         };
@@ -3371,7 +3371,7 @@ describe('OptimizerCore Edge Cases', () => {
 
     game.packs = {
       values: jest.fn(function* () {
-        yield { 
+        yield {
           collection: 'test.pack',
           getIndex: jest.fn().mockResolvedValue(null)
         };
@@ -3811,7 +3811,7 @@ describe('OptimizerCore Edge Cases', () => {
     game.messages = null;
 
     await optimizer.optimize(options);
-    
+
     game.messages = { contents: [] };
   });
 
@@ -3827,7 +3827,7 @@ describe('OptimizerCore Edge Cases', () => {
     game.messages.contents = null;
 
     await optimizer.optimize(options);
-    
+
     game.messages.contents = [];
   });
 
@@ -3843,7 +3843,7 @@ describe('OptimizerCore Edge Cases', () => {
     game.combats = null;
 
     await optimizer.optimize(options);
-    
+
     game.combats = { contents: [] };
   });
 
@@ -3859,7 +3859,7 @@ describe('OptimizerCore Edge Cases', () => {
     game.combats.contents = null;
 
     await optimizer.optimize(options);
-    
+
     game.combats.contents = [];
   });
 
@@ -3965,7 +3965,7 @@ describe('OptimizerCore Edge Cases', () => {
 
     game.packs = {
       values: jest.fn(function* () {
-        yield { 
+        yield {
           collection: 'test.pack',
           getIndex: jest.fn().mockResolvedValue(undefined)
         };
@@ -4002,16 +4002,16 @@ describe('PerformanceTweaks Edge Cases', () => {
 
   beforeEach(() => {
     tweaks = new PerformanceTweaks();
-    
+
     game.settings.settings.set('core.maxFPS', { range: { max: 60 }, type: { options: {} }, choices: {} });
     game.settings.settings.set('core.softShadows', {});
-    
+
     game.settings.get = jest.fn((ns, key) => {
       if (key === 'maxFPS') return 60;
       if (key === 'softShadows') return true;
       return null;
     });
-    
+
     game.settings.set = jest.fn().mockResolvedValue(true);
   });
 
@@ -4033,7 +4033,7 @@ describe('PerformanceTweaks Edge Cases', () => {
 
     const report = { performance: { enabled: true } };
     await tweaks.apply(report);
-    
+
     expect(report.performance.failed).toBeDefined();
   });
 
@@ -4051,7 +4051,7 @@ describe('PerformanceTweaks Edge Cases', () => {
 
     const report = { performance: { enabled: true } };
     await tweaks.apply(report);
-    
+
     expect(report.performance.failed).toBeDefined();
     expect(report.performance.failed.length).toBeGreaterThan(0);
   });
@@ -4072,7 +4072,7 @@ describe('PerformanceTweaks Edge Cases', () => {
     globalThis.canvas = { app: { ticker: mockTicker } };
 
     await tweaks.applyOnReady();
-    
+
     globalThis.canvas = null;
   });
 
@@ -4094,7 +4094,7 @@ describe('PerformanceTweaks Edge Cases', () => {
     globalThis.canvas = { app: { ticker: mockTicker } };
 
     await tweaks.applyOnReady();
-    
+
     globalThis.canvas = null;
   });
 
@@ -4116,7 +4116,7 @@ describe('PerformanceTweaks Edge Cases', () => {
   });
 
   test('raiseCoreMaxFPSCeiling handles opts without max', () => {
-    game.settings.settings.get = jest.fn().mockReturnValue({ 
+    game.settings.settings.get = jest.fn().mockReturnValue({
       range: { max: 60 },
       type: { options: {} }
     });
@@ -4125,7 +4125,7 @@ describe('PerformanceTweaks Edge Cases', () => {
   });
 
   test('raiseCoreMaxFPSCeiling with opts.max already high enough', () => {
-    game.settings.settings.get = jest.fn().mockReturnValue({ 
+    game.settings.settings.get = jest.fn().mockReturnValue({
       range: { max: 60 },
       type: { options: { max: 200 } }
     });
@@ -4139,7 +4139,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'core.softShadows') return {};
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(Array.isArray(changes)).toBe(true);
   });
@@ -4148,9 +4148,9 @@ describe('PerformanceTweaks Edge Cases', () => {
     const report = { performance: {} };
     const oldCanvas = global.canvas;
     global.canvas = undefined;
-    
+
     await tweaks.apply(report);
-    
+
     expect(report.performance).toBeDefined();
     global.canvas = oldCanvas;
   });
@@ -4159,9 +4159,9 @@ describe('PerformanceTweaks Edge Cases', () => {
     const report = { performance: {} };
     const oldCanvas = global.canvas;
     global.canvas = { app: {} };
-    
+
     await tweaks.apply(report);
-    
+
     expect(report.performance).toBeDefined();
     global.canvas = oldCanvas;
   });
@@ -4169,17 +4169,17 @@ describe('PerformanceTweaks Edge Cases', () => {
   test('apply handles ticker assignment error', async () => {
     const report = { performance: {} };
     const oldCanvas = global.canvas;
-    global.canvas = { 
-      app: { 
-        ticker: { 
+    global.canvas = {
+      app: {
+        ticker: {
           set minFPS(v) { throw new Error('Ticker error'); },
           set maxFPS(v) { throw new Error('Ticker error'); }
-        } 
-      } 
+        }
+      }
     };
-    
+
     await tweaks.apply(report);
-    
+
     expect(report.performance).toBeDefined();
     global.canvas = oldCanvas;
   });
@@ -4191,9 +4191,9 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'core.maxFPS') return { range: { max: 120 }, type: { options: {} }, choices: { 60: '60', 120: '120' } };
       return null;
     });
-    
+
     await tweaks.apply(report);
-    
+
     expect(report.performance.failed).toBeDefined();
     expect(report.performance.failed.length).toBeGreaterThan(0);
   });
@@ -4214,7 +4214,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'maxFPS') return 60;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.maxFPS')).toBe(true);
   });
@@ -4228,7 +4228,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'maxFPS') return 60;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.maxFPS')).toBe(true);
   });
@@ -4242,7 +4242,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'maxFPS') return 60;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.maxFPS')).toBe(true);
   });
@@ -4256,7 +4256,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'maxFPS') return 60;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.maxFPS')).toBe(true);
   });
@@ -4270,7 +4270,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'maxFPS') return 60;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.maxFPS')).toBe(true);
   });
@@ -4286,7 +4286,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'softShadows') return false;
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.softShadows')).toBe(false);
   });
@@ -4302,7 +4302,7 @@ describe('PerformanceTweaks Edge Cases', () => {
       if (key === 'softShadows') return 'enabled';
       return null;
     });
-    
+
     const changes = tweaks.previewChanges();
     expect(changes.some(c => c.setting === 'core.softShadows')).toBe(false);
   });
@@ -4316,7 +4316,7 @@ describe('PerformanceTweaks Edge Cases', () => {
     game.settings.get = jest.fn(() => 120);
     game.settings.set = jest.fn().mockResolvedValue(true);
     global.canvas = { app: {} };
-    
+
     await tweaks.apply(report);
     expect(report.performance.tickerMaxFPS).toBeUndefined();
   });
@@ -4331,7 +4331,7 @@ describe('PerformanceTweaks Edge Cases', () => {
     });
     game.settings.get = jest.fn((ns, key) => (key === 'maxFPS' ? 120 : false));
     global.canvas = { app: { ticker: { maxFPS: 120 } } };
-    
+
     await tweaks.apply(report);
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('No core settings changes needed'));
   });
@@ -4358,9 +4358,9 @@ describe('PerformanceTweaks Edge Cases', () => {
       return null;
     });
     game.settings.set = jest.fn().mockResolvedValue(true);
-    
+
     await tweaks.apply(report);
-    
+
     expect(minFPS).toBe(10);
   });
 
@@ -4377,9 +4377,9 @@ describe('PerformanceTweaks Edge Cases', () => {
         }
       }
     };
-    
+
     await tweaks.apply(report);
-    
+
     expect(report.performance).toBeDefined();
     errorSpy.mockRestore();
   });
@@ -4390,9 +4390,9 @@ describe('PerformanceTweaks Edge Cases', () => {
       return null;
     });
     global.canvas = { app: { ticker: { maxFPS: 60 } } };
-    
+
     await tweaks.applyOnReady();
-    
+
     expect(game.settings.set).not.toHaveBeenCalled();
   });
 
@@ -4403,9 +4403,9 @@ describe('PerformanceTweaks Edge Cases', () => {
       return null;
     });
     global.canvas = { app: {} };
-    
+
     await tweaks.applyOnReady();
-    
+
     expect(game.settings.set).not.toHaveBeenCalled();
   });
 
@@ -4417,9 +4417,9 @@ describe('PerformanceTweaks Edge Cases', () => {
     });
     game.settings.set = jest.fn().mockResolvedValue(true);
     global.canvas = { app: { ticker: { maxFPS: 60 } } };
-    
+
     await tweaks.applyOnReady();
-    
+
     expect(game.settings.set).not.toHaveBeenCalledWith('core', 'maxFPS', 120);
   });
 
@@ -4431,7 +4431,7 @@ describe('PerformanceTweaks Edge Cases', () => {
     });
     game.settings.set = jest.fn(() => Promise.reject(new Error('Settings error')));
     global.canvas = { app: { ticker: { maxFPS: 60 } } };
-    
+
     await expect(tweaks.applyOnReady()).resolves.not.toThrow();
   });
 
@@ -4443,10 +4443,10 @@ describe('PerformanceTweaks Edge Cases', () => {
     });
     game.settings.set = jest.fn().mockResolvedValue(true);
     global.canvas = { app: { ticker: { maxFPS: 120 } } };
-    
+
     const originalMaxFPS = global.canvas.app.ticker.maxFPS;
     await tweaks.applyOnReady();
-    
+
     expect(global.canvas.app.ticker.maxFPS).toBe(originalMaxFPS);
   });
 
@@ -4458,9 +4458,9 @@ describe('PerformanceTweaks Edge Cases', () => {
     });
     game.settings.set = jest.fn().mockResolvedValue(true);
     global.canvas = { app: { ticker: { maxFPS: 'not-a-number' } } };
-    
+
     await tweaks.applyOnReady();
-    
+
     expect(global.canvas.app.ticker.maxFPS).toBe(120);
   });
 
@@ -4474,9 +4474,9 @@ describe('PerformanceTweaks Edge Cases', () => {
     });
     game.settings.get = jest.fn((ns, key) => (key === 'maxFPS' ? 120 : false));
     global.canvas = { app: { ticker: { maxFPS: 60 } } };
-    
+
     await tweaks.apply(report);
-    
+
     expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Ticker maxFPS is 0'));
   });
 });
@@ -4508,10 +4508,10 @@ describe('SettingsManager Edge Cases', () => {
   test('registerAll registers all settings', async () => {
     game.settings.menus.has = jest.fn().mockReturnValue(true);
     game.settings.settings.has = jest.fn().mockReturnValue(false);
-    
+
     const MockApp = class {};
     await SettingsManager.registerAll(MockApp);
-    
+
     expect(game.settings.register).toHaveBeenCalledWith('rnk-vortex-system-optimizer', 'doCleanupChat', expect.any(Object));
     expect(game.settings.register).toHaveBeenCalledWith('rnk-vortex-system-optimizer', 'chatRetentionDays', expect.any(Object));
   });
@@ -4527,17 +4527,17 @@ describe('SettingsManager Edge Cases', () => {
     game.settings.menus.has = jest.fn().mockReturnValue(false);
     game.settings.settings.has = jest.fn().mockReturnValue(false);
     globalThis.__RNK_OPTIMIZER_MENU_LOGGED = false;
-    
+
     const MockApp = class {};
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    
+
     await SettingsManager.registerAll(MockApp);
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Settings menu registered'));
     consoleSpy.mockClear();
-    
+
     await SettingsManager.registerAll(MockApp);
     expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('Settings menu registered'));
-    
+
     consoleSpy.mockRestore();
     globalThis.__RNK_OPTIMIZER_MENU_LOGGED = false;
   });
@@ -4552,7 +4552,7 @@ describe('VQ3DBridge Edge Cases', () => {
       executeOnVQ: jest.fn().mockResolvedValue({ success: true }),
       loadBalanceMode: 'round-robin'
     };
-    
+
     bridge = new VQ3DBridge(mockVQBridge);
   });
 
@@ -4636,9 +4636,9 @@ describe('VQ3DBridge Edge Cases', () => {
 
   test('batchRender3DModels changes loadBalanceMode to parallel', async () => {
     mockVQBridge.loadBalanceMode = 'round-robin';
-    
+
     await bridge.batchRender3DModels([{ path: 'model.glb', options: {} }]);
-    
+
     expect(mockVQBridge.loadBalanceMode).toBe('round-robin');
   });
 });

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Battery engine. It classifies bounded battery presence and health evidence
  * without changing charging, power, files, or transport state.

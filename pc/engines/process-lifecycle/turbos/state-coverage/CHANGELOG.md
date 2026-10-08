@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added the RNK Enterprise state-coverage turbo with bounded documented-state
+- Added the Lisa's Dungeon state-coverage turbo with bounded documented-state
   analysis, incomplete-evidence handling, immutable recommendations, and
   strict coverage tests.
 - Added the dedicated state-coverage library with ratio/count validation,

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated throttle-onset library. It validates ratio-band evidence and
  * builds observation plans without importing thermal control APIs.

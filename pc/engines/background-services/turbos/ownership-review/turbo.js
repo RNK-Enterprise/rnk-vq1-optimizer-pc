@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Background-services ownership-review turbo. It preserves explicit
  * user-owned evidence and refuses to infer service ownership.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Temp-cleanup candidate-boundary turbo. It compares safe-preview evidence
  * without reading paths, deleting files, or changing storage policy.

@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Dedicated category-drift library. It validates, aggregates, and plans
  * category reports without importing the turbo or changing user files.

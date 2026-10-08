@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Workload-profile context-drift turbo. It compares declared workload context
  * and reports movement without changing process, application, or user state.

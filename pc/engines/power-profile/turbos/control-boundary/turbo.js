@@ -1,6 +1,6 @@
 /**
  * RNK Vortex System Optimizer
- * Contributor: RNK Enterprise
+ * Contributor: Lisa's Dungeon
  *
  * Power-profile control-boundary turbo. It tracks explicit capability evidence
  * and refuses to infer permission when a host does not report the boundary.
