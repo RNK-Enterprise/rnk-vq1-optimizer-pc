@@ -29,6 +29,7 @@ import { applyOrganization, previewOrganization } from './organizer.js';
 import { createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
+import { createDownloadGuard } from './download-guard.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -210,6 +211,19 @@ async function runStewardMonitorCommand(args) {
   return { stopped: true };
 }
 
+function downloadGuardFromArgs(args) {
+  return createDownloadGuard({ hashFiles: args['hash-files'] === true });
+}
+
+async function runDownloadCommand(command, args) {
+  const guard = downloadGuardFromArgs(args);
+  if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
+  if (command === 'download-verify') return guard.verify(requireOption(args, 'file'), requireOption(args, 'sha256'));
+  let volumes = [];
+  if (typeof args.volumes === 'string') volumes = JSON.parse(args.volumes);
+  return guard.preflight({ sizeBytes: numberOption(args, 'size-bytes', null), destinationMount: args.destination || null, volumes });
+}
+
 export async function runCli(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
@@ -229,6 +243,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
+  if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);
 }

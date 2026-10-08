@@ -22,7 +22,10 @@
     "native:storage:cleanup": "node native/cli.mjs storage-cleanup",
     "native:storage:monitor": "node native/cli.mjs storage-monitor",
     "native:steward:history": "node native/cli.mjs steward-history",
-    "native:steward:monitor": "node native/cli.mjs steward-monitor"
+    "native:steward:monitor": "node native/cli.mjs steward-monitor",
+    "native:download:preflight": "node native/cli.mjs download-preflight",
+    "native:download:scan": "node native/cli.mjs download-scan",
+    "native:download:verify": "node native/cli.mjs download-verify"
   },
   "keywords": [
     "pc-optimizer",

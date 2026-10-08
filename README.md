@@ -117,6 +117,10 @@ node native/cli.mjs steward-history --path "$HOME/.rnk-optimizer/history.jsonl" 
   --append '{"id":"preview-1","event":"preview","timestamp":0}'
 node native/cli.mjs steward-monitor --path "$HOME/.rnk-optimizer/history.jsonl" \
   --interval-seconds 900
+node native/cli.mjs download-preflight --size-bytes 12800000000 \
+  --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
+node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
+node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```

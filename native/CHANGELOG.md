@@ -13,6 +13,8 @@
   monitor with explicit callback delivery.
 - Added cross-platform process, battery, thermal, and network telemetry with
   fixed commands, bounded output, and fail-closed unavailable states.
+- Added bounded download preflight, incomplete/duplicate scanning, and
+  SHA-256 verification commands with no downloader or filesystem mutation.
 
 ## 2026-10-06
 

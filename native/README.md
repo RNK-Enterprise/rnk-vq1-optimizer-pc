@@ -30,6 +30,10 @@ node native/cli.mjs storage-monitor --target-free-gb 5 \
   --enable=temporary-files,package-cache --interval-seconds 60
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
+node native/cli.mjs download-preflight --size-bytes 12800000000 \
+  --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
+node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
+node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
 ```
 
 Remote gateways require HTTPS. Plain HTTP is accepted only for exact
@@ -83,3 +87,8 @@ queries, Linux uses fixed `ps` plus read-only `/sys` and `/proc` files, and
 macOS uses fixed `ps`, `pmset`, and `netstat` queries. Missing sensors and
 unsupported platforms remain `available: false`; no telemetry path grants
 process-stop, file-delete, or network-control authority.
+
+The download guard provides explicit preflight, bounded scanning, incomplete
+download review, duplicate groups, and SHA-256 verification. It requires an
+explicit root or volume fact set, does not start or intercept downloads, and
+does not move or delete files.
