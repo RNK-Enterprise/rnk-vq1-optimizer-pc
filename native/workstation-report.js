@@ -7,10 +7,13 @@
  * as healthy.
  */
 
+import { compareNetworkRates } from './network-rate.js';
+
 export const WORKSTATION_REPORT_VERSION = 1;
 const LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
 const MAX_HISTORY_ENTRIES = 4096;
 const DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_NETWORK_INTERVAL_MS = 1000;
 
 function record(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
 function nonNegative(value) { return Number.isFinite(value) && value >= 0 ? value : null; }
@@ -114,6 +117,21 @@ function networkSample(facts) {
   };
 }
 
+function networkRateSamples(entries) {
+  let previous = null;
+  let previousTimestamp = null;
+  return entries.map((entry) => {
+    const current = record(entry.facts?.network) ? entry.facts.network : {};
+    const intervalMs = previousTimestamp === null
+      ? DEFAULT_NETWORK_INTERVAL_MS
+      : Math.min(24 * 60 * 60 * 1000, Math.max(1, entry.timestamp - previousTimestamp));
+    const result = compareNetworkRates(previous, current, { intervalMs });
+    previous = current;
+    previousTimestamp = entry.timestamp;
+    return result;
+  });
+}
+
 function workloadSample(entry, facts) {
   const workload = record(facts.workload) ? facts.workload : {};
   const activeClasses = Array.isArray(workload.activeClasses) ? workload.activeClasses.filter((item) => typeof item === 'string').map((item) => item.toLowerCase()).slice(0, 16) : [];
@@ -142,6 +160,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const drives = samples.map((entry) => driveSample(entry.facts));
   const processes = samples.map((entry) => processSample(entry.facts));
   const network = samples.map((entry) => networkSample(entry.facts));
+  const networkRates = networkRateSamples(samples);
   const workloads = samples.map((entry) => workloadSample(entry, entry.facts));
   const cleanup = samples.map((entry) => cleanupSample(entry, entry.facts));
   const storageFree = finiteValues(storage.map((item) => item.freeBytes));
@@ -152,6 +171,8 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const temperatures = finiteValues(thermals.map((item) => item.temperatureC));
   const batteryHealth = finiteValues(batteries.map((item) => item.healthPercent));
   const pagefilePressure = finiteValues(pagefile.map((item) => item.pressurePercent));
+  const receivedRates = finiteValues(networkRates.map((item) => item.receivedBytesPerSecond));
+  const sentRates = finiteValues(networkRates.map((item) => item.sentBytesPerSecond));
   const storageEvents = count(storage, (item) => ['warning', 'critical', 'emergency'].includes(item.level) || item.belowTarget);
   const memoryEvents = count(memory, (item) => ['warning', 'critical', 'emergency'].includes(item.pressure));
   const throttleEvents = count(thermals, (item) => item.throttling);
@@ -178,7 +199,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), systemManaged: true, cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
-    network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)) }),
+    network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),
     development: Object.freeze({ activeClasses, contentionEvents: count(workloads, (item) => item.contention) }),
     gaming: Object.freeze({ detectedEvents: count(workloads, (item) => item.gameDetected), contentionEvents: count(workloads, (item) => item.contention) }),
     cleanup: Object.freeze({ performedSamples: count(cleanup, (item) => item.performed), recoveredBytes: cleanup.reduce((sum, item) => sum + item.recoveredBytes, 0), actionCount: cleanup.reduce((sum, item) => sum + item.actionCount, 0) }),
