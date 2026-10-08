@@ -26,6 +26,8 @@
   approved process stop; unsupported macOS controls remain explicit.
 - Added normalized macOS `df` collection to the cross-platform Storage
   Pressure Guard; pagefile cleanup remains permanently disabled.
+- Hardened Windows process telemetry against protected-process CPU and start
+  time access failures by retaining rows with unavailable fields.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor

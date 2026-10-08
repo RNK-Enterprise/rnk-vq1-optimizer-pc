@@ -41,6 +41,8 @@
   approved process stop; unsupported macOS controls remain explicit.
 - Added normalized macOS `df` collection to the cross-platform Storage
   Pressure Guard; pagefile cleanup remains permanently disabled.
+- Hardened Windows process telemetry against protected-process CPU and start
+  time access failures by retaining rows with unavailable fields.
 - Added explicit cross-platform read-only filesystem-health evidence through
   fixed Windows, Linux, and macOS volume checkers.
 - Added an append-only native steward history store and cross-platform report
