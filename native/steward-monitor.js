@@ -32,7 +32,7 @@ export function createStewardMonitor({ adapter, store, intervalMs = 900000, trig
     if (!Number.isFinite(collectedAt)) throw new TypeError('Steward monitor clock must return a number');
     const facts = await adapter.collectFacts();
     const report = runWorkstationStewardEngine({ ...(facts || {}), engine: facts?.engine || 'system-facts' }, { trigger, now: () => collectedAt });
-    const entry = await store.append({ id: `steward-${collectedAt}`, event: 'report', timestamp: collectedAt, platform: report.platform, reversible: false, report });
+    const entry = await store.append({ id: `steward-${collectedAt}`, event: 'report', timestamp: collectedAt, platform: report.platform, reversible: false, facts, report });
     await onReport(report, entry);
     return Object.freeze({ report, entry });
   }

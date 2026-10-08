@@ -36,6 +36,8 @@ node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
+node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --window-hours 24 --max-samples 96
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -87,8 +89,11 @@ and measured before/after free-space recovery.
 The workstation steward also exposes an append-only history store and a
 cross-platform observation monitor. `steward-history` supports read, append,
 rollback-preview, and quarantine-preview operations; `steward-monitor` records
-periodic steward reports and delivers them to stdout. Neither command applies
-the planner's actions automatically.
+periodic steward reports and delivers them to stdout. `steward-report` reduces
+the retained facts into a daily report with storage, memory, CPU/GPU, thermal,
+battery, pagefile, process, network, workload, gaming, and cleanup evidence.
+Missing sensors remain missing. Neither command applies the planner's actions
+automatically.
 
 `collectSystemFacts()` now includes bounded process, startup, battery, thermal,
 and network telemetry when the host exposes it. Windows uses fixed PowerShell

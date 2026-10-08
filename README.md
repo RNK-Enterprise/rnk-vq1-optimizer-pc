@@ -119,6 +119,8 @@ node native/cli.mjs steward-history --path "$HOME/.rnk-optimizer/history.jsonl" 
   --append '{"id":"preview-1","event":"preview","timestamp":0}'
 node native/cli.mjs steward-monitor --path "$HOME/.rnk-optimizer/history.jsonl" \
   --interval-seconds 900
+node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --window-hours 24 --max-samples 96
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -158,6 +160,13 @@ audio, video, and image files. It supports duplicate evidence, favorites,
 recently played entries, playlists, import/export, and an explicit
 player-host handoff plan. It never plays, downloads, moves, copies, or deletes
 media; actual playback remains an application-owned host responsibility.
+
+`steward-report` reduces the bounded facts retained by `steward-monitor` into a
+daily workstation report. It reports observed storage/free-space movement,
+memory and pagefile pressure, CPU/GPU load, thermals and throttling, battery
+condition, abnormal processes, network counters, development/gaming
+contention, and cleanup evidence. It reports unavailable dimensions as missing
+evidence and never infers health from silence.
 
 ## PC mesh and empirical proof
 

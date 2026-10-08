@@ -23,6 +23,9 @@
   discovery, duplicate evidence, favorites, recent history, playlists,
   import/export, and explicit player-host handoff plans without media-file
   mutation.
+- Added bounded fact retention to steward report history and a daily report
+  reducer with storage, memory, CPU/GPU, thermal, battery, pagefile, process,
+  network, workload, gaming, and cleanup evidence.
 
 ## 2026-10-06
 

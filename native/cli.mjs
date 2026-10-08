@@ -32,6 +32,7 @@ import { createStewardMonitor } from './steward-monitor.js';
 import { createDownloadGuard } from './download-guard.js';
 import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
+import { buildDailyWorkstationReport } from './workstation-report.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -213,6 +214,14 @@ async function runStewardMonitorCommand(args) {
   return { stopped: true };
 }
 
+async function runStewardReportCommand(args) {
+  const store = historyStoreFromArgs(args);
+  return buildDailyWorkstationReport(await store.read(), {
+    windowMs: numberOption(args, 'window-hours', 24) * 60 * 60 * 1000,
+    maxSamples: numberOption(args, 'max-samples', 96)
+  });
+}
+
 function downloadGuardFromArgs(args) {
   return createDownloadGuard({ hashFiles: args['hash-files'] === true });
 }
@@ -272,6 +281,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
+  if (command === 'steward-report') return runStewardReportCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);

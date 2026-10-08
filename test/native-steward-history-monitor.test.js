@@ -64,7 +64,7 @@ describe('native workstation steward monitor', () => {
     expect(monitor.start()).toMatchObject({ started: false });
     const collected = await monitor.collect();
     expect(collected.report).toMatchObject({ engine: 'workstation-steward', platform: 'linux' });
-    expect(entries[0]).toMatchObject({ event: 'report', platform: 'linux' });
+    expect(entries[0]).toMatchObject({ event: 'report', platform: 'linux', facts: { platform: 'linux', storage: [{ mount: '/', freeBytes: 10, totalBytes: 20 }] } });
     expect(reports).toHaveLength(1);
     timerCalls[0].callback();
     await new Promise((resolve) => setImmediate(resolve));
