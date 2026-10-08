@@ -39,6 +39,10 @@
   protected-role, foreground, and admin boundaries.
 - Added bounded trigger-based download progress observation with active,
   stalled, incomplete, completed, and throughput evidence.
+- Added explicit-root read/write benchmark evidence with verified temporary
+  samples and bounded cleanup.
+- Added network contention review from interface facts and explicit per-process
+  rates without claiming unavailable bandwidth authority.
 
 ## 2026-10-06
 

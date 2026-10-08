@@ -127,6 +127,9 @@ node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs drive-benchmark --root "$HOME/.cache"
+node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
+  --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'

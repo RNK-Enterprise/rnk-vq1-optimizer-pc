@@ -45,6 +45,9 @@ node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs drive-benchmark --root "$HOME/.cache"
+node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
+  --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
@@ -133,6 +136,11 @@ active, stalled, incomplete, and completed entries with measured byte rate.
 It is trigger-based observation only; it does not intercept downloads or
 change destination, bandwidth, or file state.
 
+`network-overview` combines interface facts with optional explicit per-process
+rates and latency to identify gaming/download contention. Per-process
+bandwidth remains unavailable when the host does not provide counters, and no
+network throttle is claimed or applied.
+
 The media library provides a bounded read-only catalogue for local audio,
 video, and image files, plus explicit favorites, recently played entries,
 playlists, import/export, and a player-host handoff plan. It skips symlinks,
@@ -156,6 +164,11 @@ The optional `--smart-device` probe invokes only `smartctl -H` after strict
 device-path validation. Inventory metadata is not SMART proof; missing
 `smartctl`, unsupported devices, and command failures are reported as
 unavailable.
+
+`drive-benchmark` writes one bounded temporary sample under an explicit root,
+reads it back, verifies the byte count, reports write/read throughput, and
+removes only its own sample. It is evidence, not a claim of sustained device
+performance.
 
 `placement-preview` accepts explicit file facts and an explicit source root,
 target root, protected-root list, and target free-space measurement. It never

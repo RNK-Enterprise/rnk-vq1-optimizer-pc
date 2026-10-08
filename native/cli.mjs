@@ -36,6 +36,8 @@ import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
+import { benchmarkDrive } from './drive-benchmark.js';
+import { buildNetworkContentionPlan } from './network-manager.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
@@ -264,6 +266,16 @@ async function runDriveHealthCommand(args) {
   return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
 }
 
+async function runDriveBenchmarkCommand(args) {
+  return benchmarkDrive({ root: requireOption(args, 'root'), bytes: numberOption(args, 'bytes', 1024 * 1024) });
+}
+
+async function runNetworkOverviewCommand(args) {
+  const facts = await createPlatformAdapter().collectFacts();
+  const samples = typeof args.samples === 'string' ? jsonOption(args, 'samples') : [];
+  return { facts, plan: buildNetworkContentionPlan({ samples, gamePid: args['game-pid'] === undefined ? null : numberOption(args, 'game-pid', null), latencyMs: args['latency-ms'] === undefined ? null : numberOption(args, 'latency-ms', null) }) };
+}
+
 function jsonOption(args, name) {
   try { return JSON.parse(requireOption(args, name)); } catch (error) { throw new Error(`--${name} must contain valid JSON: ${error.message}`); }
 }
@@ -385,6 +397,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
+  if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
+  if (command === 'network-overview') return runNetworkOverviewCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);

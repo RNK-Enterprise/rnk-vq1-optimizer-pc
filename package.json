@@ -27,6 +27,8 @@
     "native:workload:preview": "node native/cli.mjs workload-preview",
     "native:workload:apply": "node native/cli.mjs workload-apply",
     "native:drive:health": "node native/cli.mjs drive-health",
+    "native:drive:benchmark": "node native/cli.mjs drive-benchmark",
+    "native:network:overview": "node native/cli.mjs network-overview",
     "native:placement:preview": "node native/cli.mjs placement-preview",
     "native:placement:apply": "node native/cli.mjs placement-apply",
     "native:placement:rollback": "node native/cli.mjs placement-rollback",
