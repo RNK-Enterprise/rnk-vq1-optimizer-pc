@@ -34,6 +34,8 @@
   default-player openers with symlink and extension refusal.
 - Added confirmed opening of allow-listed HTTPS media panels through fixed
   shell-free platform default-browser openers.
+- Added bounded read-only local media metadata collection through fixed
+  shell-free `ffprobe` invocation with explicit unavailable states.
 - Added bounded fact retention to steward report history and a daily report
   reducer with storage, memory, CPU/GPU, thermal, battery, pagefile, process,
   network, workload, gaming, and cleanup evidence.

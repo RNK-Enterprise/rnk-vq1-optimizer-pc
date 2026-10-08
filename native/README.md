@@ -80,6 +80,7 @@ node native/cli.mjs media-play --file "$HOME/Music/track-a.mp3" --confirm
 node native/cli.mjs media-player --tracks '["/music/track-a.mp3","/music/track-b.mp3"]' --action next
 node native/cli.mjs media-panel --url "https://www.youtube.com/playlist?list=EXAMPLE"
 node native/cli.mjs media-panel-open --url "https://www.youtube.com/playlist?list=EXAMPLE" --confirm
+node native/cli.mjs media-metadata --file "$HOME/Videos/example.mp4"
 ```
 
 Remote gateways require HTTPS. Plain HTTP is accepted only for exact
@@ -178,6 +179,10 @@ extensions. `media-panel` accepts only HTTPS URLs on its explicit allow-list
 and returns an approval-gated embed plan; it does not fetch or download media.
 `media-panel-open` can open the approved URL in the fixed platform default
 browser after confirmation, without arbitrary URL execution or downloads.
+
+`media-metadata` uses one fixed, shell-free `ffprobe` call to collect bounded
+duration, format, codec, audio-channel, and video-dimension facts. Missing
+`ffprobe`, invalid output, symlinks, and unsupported files stay unavailable.
 
 `workload-preview` detects only declared game evidence, a foreground process
 with an explicit game role, or a caller-supplied exact process name. It plans
