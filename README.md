@@ -121,6 +121,10 @@ node native/cli.mjs steward-monitor --path "$HOME/.rnk-optimizer/history.jsonl" 
   --interval-seconds 900
 node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
+node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
+  --background-pids 1234,5678
+node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
+  --approve-pids 1234 --confirm
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -167,6 +171,13 @@ memory and pagefile pressure, CPU/GPU load, thermals and throttling, battery
 condition, abnormal processes, network counters, development/gaming
 contention, and cleanup evidence. It reports unavailable dimensions as missing
 evidence and never infers health from silence.
+
+The workload governor connects gaming/build coexistence policy to the native
+priority authority. It detects only explicit game evidence, excludes protected
+and system processes, previews exact PID operations, and requires explicit
+approval before applying them. Hard CPU, RAM, and GPU caps remain unsupported
+until platform-safe implementations are proven; unsupported results are
+reported rather than presented as enforcement.
 
 ## PC mesh and empirical proof
 

@@ -33,6 +33,7 @@ import { createDownloadGuard } from './download-guard.js';
 import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
+import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -226,6 +227,31 @@ function downloadGuardFromArgs(args) {
   return createDownloadGuard({ hashFiles: args['hash-files'] === true });
 }
 
+function listOption(args, name) {
+  if (args[name] === undefined) return [];
+  if (typeof args[name] !== 'string') throw new Error(`--${name} must be a comma-separated list`);
+  const values = args[name].split(',').map((value) => Number(value.trim()));
+  if (values.some((value) => !Number.isInteger(value) || value < 1)) throw new Error(`--${name} contains an invalid PID`);
+  return [...new Set(values)];
+}
+
+async function runWorkloadCommand(command, args) {
+  const adapter = createPlatformAdapter();
+  const facts = await adapter.collectFacts();
+  const plan = previewWorkloadPolicy(facts, {
+    mode: args.mode || 'balanced',
+    gameNames: typeof args['game-names'] === 'string' ? args['game-names'].split(',').map((value) => value.trim()).filter(Boolean) : [],
+    backgroundPids: listOption(args, 'background-pids'),
+    processPriority: args['process-priority'] || 'low',
+    ioPriority: args['io-priority'] || 'low'
+  });
+  if (command === 'workload-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('workload-apply requires --confirm');
+  const approvedPids = listOption(args, 'approve-pids');
+  if (approvedPids.length === 0) throw new Error('workload-apply requires --approve-pids');
+  return { facts, plan, report: await applyWorkloadPolicy(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
+}
+
 async function runDownloadCommand(command, args) {
   const guard = downloadGuardFromArgs(args);
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
@@ -283,6 +309,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (command === 'steward-report') return runStewardReportCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
+  if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);

@@ -26,6 +26,9 @@
 - Added persistent bounded telemetry facts to steward history and a
   cross-platform daily workstation report command with explicit missing-data
   states and no host mutation.
+- Added the native workload governor bridge for previewed and explicitly
+  approved gaming/build process-priority policies across supported adapters;
+  hard CPU/RAM/GPU caps remain fail-closed unsupported outcomes.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

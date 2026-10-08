@@ -26,6 +26,9 @@
 - Added bounded fact retention to steward report history and a daily report
   reducer with storage, memory, CPU/GPU, thermal, battery, pagefile, process,
   network, workload, gaming, and cleanup evidence.
+- Added a bounded workload governor for explicit gaming/build coexistence,
+  approved-PID process and I/O priority application, protected-process
+  exclusion, and explicit unsupported hard-cap dimensions.
 
 ## 2026-10-06
 

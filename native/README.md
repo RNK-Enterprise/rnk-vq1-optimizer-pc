@@ -38,6 +38,10 @@ node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
 node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
+node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
+  --background-pids 1234,5678
+node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
+  --approve-pids 1234 --confirm
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -115,6 +119,15 @@ limits depth and entries, optionally hashes within a byte budget, and stores
 only metadata in a caller-selected state file. It does not play, move, copy,
 download, or delete media; an application-owned player host remains required
 for playback.
+
+`workload-preview` detects only declared game evidence, a foreground process
+with an explicit game role, or a caller-supplied exact process name. It plans
+low/normal process and I/O priorities only for non-foreground, non-protected,
+non-system background PIDs. `workload-apply` requires `--confirm` and an
+explicit `--approve-pids` list. The Linux adapter can apply both priority
+types; Windows currently reports I/O priority as unsupported. CPU, memory, and
+GPU hard caps remain explicit unsupported dimensions, and the governor does
+not claim an exact restore without pre-change priority evidence.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,
