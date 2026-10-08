@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added cross-platform interface bandwidth-rate derivation and a trigger-based
+  `network-rate-monitor` command with counter-reset and per-process authority
+  boundaries.
 - Added a reversible quarantine authority and cache-quarantine CLI workflow
   with separate-root, protected-path, symlink, same-volume, exact-receipt,
   and rollback boundaries.

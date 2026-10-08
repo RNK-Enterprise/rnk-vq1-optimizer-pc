@@ -72,6 +72,7 @@ node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
+node native/cli.mjs network-rate-monitor --interval-seconds 5
 node native/cli.mjs file-inspect --root "$HOME/Downloads" \
   --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
@@ -206,6 +207,11 @@ network throttle is claimed or applied.
 platform sampler. It emits stable, started, continued, and stopped contention
 events, preserves the sample source, and remains observation-only. It does not
 intercept traffic or claim bandwidth enforcement.
+
+`network-rate-monitor` derives interface receive/send rates from consecutive
+platform counters. The first sample, missing counters, and counter resets stay
+explicitly unavailable. Interface rates do not identify a process; per-process
+bandwidth remains available only when the host supplies that evidence.
 
 `file-inspect` scans one explicit root for incomplete downloads, stale
 installers, large files, models, archives, ISO files, protected paths, and

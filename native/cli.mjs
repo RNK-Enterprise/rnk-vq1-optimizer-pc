@@ -50,6 +50,7 @@ import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { collectFilesystemHealth } from './filesystem-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
+import { createNetworkRateMonitor } from './network-rate.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { applyPlacementPolicy, previewPlacementPolicy, rollbackPlacementPolicy } from './file-placement-policy.js';
 import { applyQuarantine, previewQuarantine, rollbackQuarantine } from './quarantine.js';
@@ -426,6 +427,23 @@ async function runNetworkOverviewCommand(args) {
   return { facts, plan: buildNetworkContentionPlan({ samples, gamePid: args['game-pid'] === undefined ? null : numberOption(args, 'game-pid', null), latencyMs: args['latency-ms'] === undefined ? null : numberOption(args, 'latency-ms', null) }) };
 }
 
+async function runNetworkRateMonitorCommand(args) {
+  const monitor = createNetworkRateMonitor({
+    collectSample: async () => (await createPlatformAdapter().collectFacts()).network,
+    intervalMs: numberOption(args, 'interval-seconds', 5) * 1000,
+    onReport: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    onError: (error) => process.stderr.write(`network rate monitor: ${error.message}\n`)
+  });
+  await monitor.collect();
+  monitor.start();
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
 function jsonOption(args, name) {
   try { return JSON.parse(requireOption(args, name)); } catch (error) { throw new Error(`--${name} must contain valid JSON: ${error.message}`); }
 }
@@ -627,6 +645,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);
+  if (command === 'network-rate-monitor') return runNetworkRateMonitorCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
