@@ -44,6 +44,12 @@ node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
+  --target-root /mnt/archive --target-free-bytes 100000000000 \
+  --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
+node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
+  --target-root /mnt/archive --target-free-bytes 100000000000 \
+  --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -137,6 +143,12 @@ The optional `--smart-device` probe invokes only `smartctl -H` after strict
 device-path validation. Inventory metadata is not SMART proof; missing
 `smartctl`, unsupported devices, and command failures are reported as
 unavailable.
+
+`placement-preview` accepts explicit file facts and an explicit source root,
+target root, protected-root list, and target free-space measurement. It never
+scans by size or moves files during preview. `placement-apply` requires
+`--confirm`; same-volume moves use rename, while cross-volume moves use
+copy-verify-delete and preserve the source if verification fails.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,

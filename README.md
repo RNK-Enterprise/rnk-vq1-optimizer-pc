@@ -127,6 +127,12 @@ node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
+  --target-root /mnt/archive --target-free-bytes 100000000000 \
+  --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
+node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
+  --target-root /mnt/archive --target-free-bytes 100000000000 \
+  --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -185,6 +191,12 @@ reported rather than presented as enforcement.
 SSD/HDD classification. Its optional SMART probe is separate and uses strict
 device validation; inventory data is not presented as SMART health, and
 unavailable tooling remains unavailable.
+
+Cross-volume placement is a separate explicit workflow. The preview requires
+caller-supplied file facts, source and target roots, protected roots, and free
+space. Apply requires confirmation, verifies cross-volume copies before source
+deletion, and exposes rollback evidence; it never sweeps arbitrary large
+directories.
 
 ## PC mesh and empirical proof
 

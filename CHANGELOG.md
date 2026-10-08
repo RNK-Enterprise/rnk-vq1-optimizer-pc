@@ -32,6 +32,8 @@
 - Added cross-platform drive inventory and optional SMART observation to the
   native storage evidence path without treating inventory metadata as health
   proof.
+- Added explicit cross-volume placement with protected roots, free-space
+  evidence, copy verification, confirmation, and rollback support.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

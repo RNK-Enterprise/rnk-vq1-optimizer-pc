@@ -35,6 +35,7 @@ import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
+import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -259,6 +260,25 @@ async function runDriveHealthCommand(args) {
   return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
 }
 
+function jsonOption(args, name) {
+  try { return JSON.parse(requireOption(args, name)); } catch (error) { throw new Error(`--${name} must contain valid JSON: ${error.message}`); }
+}
+
+async function runPlacementCommand(command, args) {
+  if (command === 'placement-rollback') return rollbackFilePlacement(jsonOption(args, 'result'));
+  const plan = previewFilePlacement({
+    files: jsonOption(args, 'files'),
+    sourceRoots: [requireOption(args, 'source-root')],
+    targetRoot: requireOption(args, 'target-root'),
+    protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
+    targetFreeBytes: numberOption(args, 'target-free-bytes', null),
+    maxEntries: numberOption(args, 'max-entries', 256)
+  });
+  if (command === 'placement-preview') return plan;
+  if (args.confirm !== true) throw new Error('placement-apply requires --confirm');
+  return { plan, result: await applyFilePlacement(plan, { approved: true, dryRun: false }) };
+}
+
 async function runDownloadCommand(command, args) {
   const guard = downloadGuardFromArgs(args);
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
@@ -318,6 +338,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
+  if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);

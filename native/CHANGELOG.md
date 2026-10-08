@@ -31,6 +31,8 @@
   exclusion, and explicit unsupported hard-cap dimensions.
 - Added cross-platform drive inventory and optional validated SMART health
   observation with fail-closed unavailable states.
+- Added explicit cross-volume file placement preview, copy verification,
+  protected-root checks, approval, and rollback support.
 
 ## 2026-10-06
 
