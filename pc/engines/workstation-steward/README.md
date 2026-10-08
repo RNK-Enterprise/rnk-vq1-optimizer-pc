@@ -9,7 +9,7 @@ reversible action receipts.
 It is deliberately facts-to-plan only. Windows, Linux, and macOS share the
 input/output schema, but each platform reports its native capability boundary.
 Native budget handoffs declare bounded CPU and memory hard-limit support where
-the adapter implements it: Windows CPU/memory and Linux memory. I/O remains
+the adapter implements it: Windows CPU/memory and Linux cgroup-v2 CPU/memory. I/O remains
 priority-only and GPU remains observational. Runtime host proof is still
 required before release certification. File moves, cleanup, process controls,
 and media actions are previewed and require explicit approval.

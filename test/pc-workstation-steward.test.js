@@ -29,7 +29,7 @@ describe('workstation-steward engine and library', () => {
     expect(WORKSTATION_STEWARD_ENGINE_ID).toBe('workstation-steward');
     expect(WORKSTATION_STEWARD_TRIGGERS).toEqual(['install.preflight', 'system.facts.request', 'workload.changed', 'health.interval']);
     expect(result).toMatchObject({ state: 'plan-ready', platform: 'win32', game: { detected: true, name: 'game.exe' } });
-    expect(result.capabilities.cpuHardCap).toContain('unsupported');
+    expect(result.capabilities.cpuHardCap).toBe('platform-adapter-review');
     expect(result.resources).toMatchObject({ capabilities: { cpuPercent: 'hard-limit-adapter', memoryBytes: 'hard-limit-adapter', ioBytesPerSecond: 'priority-only', gpuPercent: 'observation-only' }, actions: [expect.objectContaining({ type: 'budget-process', pid: 11, requiresApproval: true, enforcement: 'hard-where-supported' })] });
     expect(result.files.duplicateGroups).toHaveLength(1);
     expect(result.files.incomplete).toEqual(['C:/Downloads/c.part']);
@@ -49,7 +49,7 @@ describe('workstation-steward engine and library', () => {
     const empty = runWorkstationStewardEngine({ engine: 'system-facts' }, { trigger: 'health.interval', now: () => 2 });
     expect(empty.state).toBe('observation-required');
     const declared = runWorkstationStewardEngine({ engine: 'system-facts', os: { platform: 'linux' }, game: { detected: true, pid: 99, name: 'declared' }, workload: {}, storage: [], processes: [] }, { trigger: 'health.interval', now: () => 3 });
-    expect(declared).toMatchObject({ platform: 'linux', game: { detected: true, pid: 99, confidence: 1 }, resources: { capabilities: { cpuPercent: 'unsupported', memoryBytes: 'hard-limit-adapter' } } });
+    expect(declared).toMatchObject({ platform: 'linux', game: { detected: true, pid: 99, confidence: 1 }, resources: { capabilities: { cpuPercent: 'hard-limit-adapter', memoryBytes: 'hard-limit-adapter' } } });
     const candidateWithoutPid = runWorkstationStewardEngine({ engine: 'system-facts', processes: [{ role: 'game', foreground: false }] }, { trigger: 'health.interval', now: () => 4 });
     expect(candidateWithoutPid.game).toMatchObject({ detected: true, pid: null, confidence: 0.8 });
     expect(runWorkstationStewardEngine({ engine: 'system-facts', processes: [{ role: 'build', foreground: true }] }, { trigger: 'health.interval', now: () => 5 }).game.detected).toBe(false);
