@@ -123,6 +123,13 @@ node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
+node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
+node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
+  --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
+node native/cli.mjs media-favorite --state-path "$HOME/.rnk-optimizer/media.json" \
+  --file "$HOME/Music/track-a.mp3"
+node native/cli.mjs media-playback-plan --state-path "$HOME/.rnk-optimizer/media.json" \
+  --file "$HOME/Music/track-a.mp3"
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```
@@ -145,6 +152,12 @@ The guard distinguishes platform/driver shader caches from optimizer-owned
 temporary files, reports pagefile pressure separately, previews exact paths and
 byte counts, and records removed bytes plus measured post-cleanup recovery. It
 never recursively deletes a directory because it is large.
+
+The native media library is a bounded, cross-platform catalogue for local
+audio, video, and image files. It supports duplicate evidence, favorites,
+recently played entries, playlists, import/export, and an explicit
+player-host handoff plan. It never plays, downloads, moves, copies, or deletes
+media; actual playback remains an application-owned host responsibility.
 
 ## PC mesh and empirical proof
 

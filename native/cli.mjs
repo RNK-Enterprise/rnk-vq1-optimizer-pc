@@ -31,6 +31,7 @@ import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
 import { createDownloadGuard } from './download-guard.js';
 import { createAuditedNativeAgent } from './action-audit.js';
+import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -225,6 +226,30 @@ async function runDownloadCommand(command, args) {
   return guard.preflight({ sizeBytes: numberOption(args, 'size-bytes', null), destinationMount: args.destination || null, volumes });
 }
 
+function mediaLibraryFromArgs(args) {
+  return createMediaLibrary({ filePath: requireOption(args, 'state-path') });
+}
+
+async function runMediaCommand(command, args) {
+  if (command === 'media-scan') {
+    return scanMediaRoot(requireOption(args, 'root'), {
+      maxEntries: numberOption(args, 'max-entries', 1024),
+      maxDepth: numberOption(args, 'max-depth', 3),
+      maxHashBytes: numberOption(args, 'max-hash-bytes', 256 * 1024 ** 2),
+      hashFiles: args['hash-files'] === true
+    });
+  }
+  const library = mediaLibraryFromArgs(args);
+  if (command === 'media-read') return library.read();
+  if (command === 'media-favorite') return library.favorite(requireOption(args, 'file'), args.disable !== true);
+  if (command === 'media-played') return library.played(requireOption(args, 'file'));
+  if (command === 'media-playlist') return library.playlist(requireOption(args, 'name'), JSON.parse(requireOption(args, 'tracks')));
+  if (command === 'media-export') return JSON.parse(await library.exportPlaylist(requireOption(args, 'name')));
+  if (command === 'media-import') return library.importPlaylist(requireOption(args, 'playlist'));
+  if (command === 'media-playback-plan') return library.playbackPlan(requireOption(args, 'file'));
+  throw new Error(`Unknown media command: ${command}`);
+}
+
 export async function runCli(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
@@ -248,6 +273,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
+  if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);
 }

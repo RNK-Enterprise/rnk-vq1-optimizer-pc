@@ -19,6 +19,10 @@
   review-only entries and no disable or launch authority.
 - Added authority-side append-only audit wrapping for optimize actions with
   bounded before/preview/apply/verify evidence.
+- Added a bounded cross-platform media catalogue with audio/video/image
+  discovery, duplicate evidence, favorites, recent history, playlists,
+  import/export, and explicit player-host handoff plans without media-file
+  mutation.
 
 ## 2026-10-06
 

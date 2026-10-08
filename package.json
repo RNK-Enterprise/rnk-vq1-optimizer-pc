@@ -25,7 +25,15 @@
     "native:steward:monitor": "node native/cli.mjs steward-monitor",
     "native:download:preflight": "node native/cli.mjs download-preflight",
     "native:download:scan": "node native/cli.mjs download-scan",
-    "native:download:verify": "node native/cli.mjs download-verify"
+    "native:download:verify": "node native/cli.mjs download-verify",
+    "native:media:scan": "node native/cli.mjs media-scan",
+    "native:media:read": "node native/cli.mjs media-read",
+    "native:media:favorite": "node native/cli.mjs media-favorite",
+    "native:media:played": "node native/cli.mjs media-played",
+    "native:media:playlist": "node native/cli.mjs media-playlist",
+    "native:media:export": "node native/cli.mjs media-export",
+    "native:media:import": "node native/cli.mjs media-import",
+    "native:media:playback-plan": "node native/cli.mjs media-playback-plan"
   },
   "keywords": [
     "pc-optimizer",

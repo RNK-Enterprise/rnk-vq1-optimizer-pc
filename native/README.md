@@ -36,6 +36,13 @@ node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
+node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
+node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
+  --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
+node native/cli.mjs media-favorite --state-path "$HOME/.rnk-optimizer/media.json" \
+  --file "$HOME/Music/track-a.mp3"
+node native/cli.mjs media-playback-plan --state-path "$HOME/.rnk-optimizer/media.json" \
+  --file "$HOME/Music/track-a.mp3"
 ```
 
 Remote gateways require HTTPS. Plain HTTP is accepted only for exact
@@ -95,6 +102,14 @@ The download guard provides explicit preflight, bounded scanning, incomplete
 download review, duplicate groups, and SHA-256 verification. It requires an
 explicit root or volume fact set, does not start or intercept downloads, and
 does not move or delete files.
+
+The media library provides a bounded read-only catalogue for local audio,
+video, and image files, plus explicit favorites, recently played entries,
+playlists, import/export, and a player-host handoff plan. It skips symlinks,
+limits depth and entries, optionally hashes within a byte budget, and stores
+only metadata in a caller-selected state file. It does not play, move, copy,
+download, or delete media; an application-owned player host remains required
+for playback.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,
