@@ -137,10 +137,14 @@ node native/cli.mjs assistant --question "Why is my C: drive full?"
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
 node native/cli.mjs power-apply --profile gaming --confirm
+node native/cli.mjs process-overview --max-entries 128
+node native/cli.mjs process-stop-preview --pid 1234
+node native/cli.mjs process-stop-apply --pid 1234 --confirm --allow-admin
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
+node native/cli.mjs download-monitor --root "$HOME/Downloads" --interval-seconds 30
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -209,6 +213,13 @@ responses are preview plans that retain the existing approval boundaries.
 Named power profiles map only to documented platform profiles; unsupported
 platforms remain unsupported and firmware or fan-register control is not
 attempted.
+
+`process-overview` combines bounded process and startup evidence with plain
+role, usage, runtime, and stop-impact explanations. `process-stop-preview`
+selects one observed PID and refuses foreground, protected, system, runtime,
+model, credential, and user-protected names. `process-stop-apply` is a separate
+explicit operation requiring confirmation and the platform adapter's approval
+boundary.
 
 ## PC mesh and empirical proof
 

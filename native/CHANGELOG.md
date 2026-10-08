@@ -35,6 +35,10 @@
   protected-root checks, approval, and rollback support.
 - Added deterministic facts-only workstation question routing and named power
   profile preview/apply/recommendation controls with fixed platform mappings.
+- Added process/startup overview and exact approved-PID stop workflows with
+  protected-role, foreground, and admin boundaries.
+- Added bounded trigger-based download progress observation with active,
+  stalled, incomplete, completed, and throughput evidence.
 
 ## 2026-10-06
 

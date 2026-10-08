@@ -30,6 +30,7 @@ import { createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
 import { createDownloadGuard } from './download-guard.js';
+import { createDownloadMonitor } from './download-monitor.js';
 import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
@@ -38,6 +39,7 @@ import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
+import { applyProcessStop, buildProcessOverview, previewProcessStop } from './process-manager.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -298,6 +300,17 @@ async function runPowerCommand(command, args) {
   return { facts, plan, result: await applyPowerProfile(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runProcessCommand(command, args) {
+  const adapter = createPlatformAdapter();
+  const facts = await adapter.collectFacts();
+  const protectedNames = typeof args['protected-name'] === 'string' ? args['protected-name'].split(',').filter(Boolean) : [];
+  if (command === 'process-overview') return { facts, overview: buildProcessOverview(facts, { protectedNames, maxEntries: numberOption(args, 'max-entries', 128) }) };
+  const plan = previewProcessStop(facts, numberOption(args, 'pid', null), { protectedNames });
+  if (command === 'process-stop-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('process-stop-apply requires --confirm');
+  return { facts, plan, result: await applyProcessStop(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
+}
+
 async function runDownloadCommand(command, args) {
   const guard = downloadGuardFromArgs(args);
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
@@ -305,6 +318,20 @@ async function runDownloadCommand(command, args) {
   let volumes = [];
   if (typeof args.volumes === 'string') volumes = JSON.parse(args.volumes);
   return guard.preflight({ sizeBytes: numberOption(args, 'size-bytes', null), destinationMount: args.destination || null, volumes });
+}
+
+async function runDownloadMonitorCommand(args) {
+  const guard = downloadGuardFromArgs(args);
+  const root = requireOption(args, 'root');
+  const monitor = createDownloadMonitor({ scan: (target) => guard.scan(target, { hashFiles: false }), intervalMs: numberOption(args, 'interval-seconds', 30) * 1000 });
+  process.stdout.write(`${JSON.stringify(await monitor.observe(root))}\n`);
+  monitor.start(root, (report) => process.stdout.write(`${JSON.stringify(report)}\n`));
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
 }
 
 function mediaLibraryFromArgs(args) {
@@ -355,11 +382,13 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (command === 'steward-report') return runStewardReportCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
+  if (command === 'download-monitor') return runDownloadMonitorCommand(args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
+  if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
   if (['media-scan', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
   throw new Error(`Unknown native command: ${command}`);

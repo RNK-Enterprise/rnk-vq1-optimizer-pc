@@ -36,6 +36,7 @@ node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
+node native/cli.mjs download-monitor --root "$HOME/Downloads" --interval-seconds 30
 node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
 node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
@@ -54,6 +55,9 @@ node native/cli.mjs assistant --question "Why is my C: drive full?"
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
 node native/cli.mjs power-apply --profile gaming --confirm
+node native/cli.mjs process-overview --max-entries 128
+node native/cli.mjs process-stop-preview --pid 1234
+node native/cli.mjs process-stop-apply --pid 1234 --confirm --allow-admin
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -124,6 +128,11 @@ download review, duplicate groups, and SHA-256 verification. It requires an
 explicit root or volume fact set, does not start or intercept downloads, and
 does not move or delete files.
 
+`download-monitor` compares bounded scans of an explicit root and reports
+active, stalled, incomplete, and completed entries with measured byte rate.
+It is trigger-based observation only; it does not intercept downloads or
+change destination, bandwidth, or file state.
+
 The media library provides a bounded read-only catalogue for local audio,
 video, and image files, plus explicit favorites, recently played entries,
 playlists, import/export, and a player-host handoff plan. It skips symlinks,
@@ -162,6 +171,12 @@ unknown operations and never turns natural-language text into a command.
 map to fixed documented adapter values and require confirmation for mutation;
 fan curves, firmware registers, and unsupported platform controls remain
 unavailable.
+
+`process-overview` joins bounded process and startup facts with role, usage,
+runtime, and stop-impact explanations. Stop preview selects an exact observed
+PID and refuses protected or foreground processes. Stop apply requires
+confirmation, an approved background PID, and any platform-required admin
+boundary; startup changes remain review-only.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,
