@@ -210,10 +210,11 @@ review-required. Hard CPU, memory, GPU, and network caps remain unsupported.
 
 `drive-health` inventories physical drives with fixed platform commands. Windows
 uses `Get-PhysicalDisk`, Linux uses `lsblk`, and macOS uses `diskutil list`.
-The optional `--smart-device` probe invokes only `smartctl -H` after strict
-device-path validation. Inventory metadata is not SMART proof; missing
-`smartctl`, unsupported devices, and command failures are reported as
-unavailable.
+The optional `--smart-device` probe invokes only the read-only `smartctl -H -A`
+path after strict device-path validation. It reports available temperature,
+percentage-used, power-on-hour, unsafe-shutdown, and critical-warning
+attributes. Missing `smartctl`, unsupported devices, attributes, and command
+failures remain unavailable.
 
 `drive-benchmark` writes one bounded temporary sample under an explicit root,
 reads it back, verifies the byte count, reports write/read throughput, and

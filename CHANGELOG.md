@@ -25,6 +25,8 @@
   audio channels, and video dimensions through fixed `ffprobe` invocation.
 - Added trigger-based game-session supervision with approved background
   priority application and evidence-gated restoration.
+- Extended read-only SMART evidence with available temperature, percentage-used,
+  power-on-hour, unsafe-shutdown, and critical-warning attributes.
 - Added an append-only native steward history store and cross-platform report
   monitor with explicit delivery callbacks and no automatic host mutation.
 - Added bounded cross-platform process, battery, thermal, and network telemetry

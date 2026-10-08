@@ -256,8 +256,10 @@ memory, GPU, or network caps.
 
 `drive-health` provides cross-platform physical-drive inventory and explicit
 SSD/HDD classification. Its optional SMART probe is separate and uses strict
-device validation; inventory data is not presented as SMART health, and
-unavailable tooling remains unavailable.
+device validation. It reports SMART health plus available temperature,
+percentage-used, power-on-hour, unsafe-shutdown, and critical-warning
+attributes. Missing attributes or tooling remain unavailable rather than being
+treated as healthy.
 
 Cross-volume placement is a separate explicit workflow. The preview requires
 caller-supplied file facts, source and target roots, protected roots, and free

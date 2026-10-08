@@ -4,7 +4,7 @@
  * Contributor: Lisa's Dungeon
  */
 
-import { collectDriveHealth, collectSmartHealth, DRIVE_HEALTH_VERSION, parseDarwinDriveHealth, parseLinuxDriveHealth, parseWindowsDriveHealth } from '../native/drive-health.js';
+import { collectDriveHealth, collectSmartHealth, DRIVE_HEALTH_VERSION, parseDarwinDriveHealth, parseLinuxDriveHealth, parseSmartOutput, parseWindowsDriveHealth } from '../native/drive-health.js';
 
 describe('native drive health', () => {
   test('parses Windows, Linux, and macOS drive inventory evidence', () => {
@@ -47,10 +47,10 @@ describe('native drive health', () => {
   });
 
   test('validates SMART device paths and reports pass/fail/tool errors', async () => {
-    const runner = { run: jest.fn(async (_command, args) => ({ code: args[2] === '/dev/sdb' ? 0 : 2, stdout: args[2] === '/dev/sdb' ? 'SMART overall-health self-assessment test result: PASSED' : '', stderr: args[2] === '/dev/sdc' ? 'SMART overall-health self-assessment test result: FAILED' : '' })) };
+    const runner = { run: jest.fn(async (_command, args) => ({ code: args[2] === '/dev/sdb' ? 0 : 2, stdout: args[2] === '/dev/sdb' ? 'SMART overall-health self-assessment test result: PASSED\n194 Temperature_Celsius 0 0 0 0 35\nPercent_Lifetime_Remain 0 0 0 0 98\nPower_On_Hours 0 0 0 0 123\nUnsafe_Shutdowns 0 0 0 0 4\nCritical Warning: 0x00' : '', stderr: args[2] === '/dev/sdc' ? 'SMART overall-health self-assessment test result: FAILED\nPercentage Used: 5%' : '' })) };
     await expect(collectSmartHealth('../secret', { platform: 'linux', commandRunner: runner })).resolves.toMatchObject({ available: false, health: 'unknown' });
-    await expect(collectSmartHealth('/dev/sdb', { platform: 'linux', commandRunner: runner })).resolves.toMatchObject({ available: true, health: 'healthy' });
-    await expect(collectSmartHealth('/dev/sdc', { platform: 'linux', commandRunner: runner })).resolves.toMatchObject({ available: true, health: 'failed' });
+    await expect(collectSmartHealth('/dev/sdb', { platform: 'linux', commandRunner: runner })).resolves.toMatchObject({ available: true, health: 'healthy', temperatureC: 35, percentageUsed: 2, powerOnHours: 123, unsafeShutdowns: 4, criticalWarning: '0x00' });
+    await expect(collectSmartHealth('/dev/sdc', { platform: 'linux', commandRunner: runner })).resolves.toMatchObject({ available: true, health: 'failed', percentageUsed: 5 });
     await expect(collectSmartHealth('\\\\.\\PhysicalDrive0', { platform: 'win32', commandRunner: runner })).resolves.toMatchObject({ available: false, health: 'unknown' });
     await expect(collectSmartHealth('/dev/sdf', { platform: 'linux', commandRunner: runner })).resolves.toMatchObject({ available: false, health: 'unknown' });
     const secondary = { run: jest.fn(async () => ({ code: 2, stdout: 'SMART Health Status: OK', stderr: '' })) };
@@ -61,6 +61,9 @@ describe('native drive health', () => {
     await expect(collectSmartHealth()).resolves.toMatchObject({ available: false, reason: 'device path is not approved' });
     const thrown = { run: jest.fn(async () => { throw new Error('smart unavailable'); }) };
     await expect(collectSmartHealth('/dev/sde', { platform: 'linux', commandRunner: thrown })).resolves.toMatchObject({ available: false, reason: 'smart unavailable' });
+    expect(parseSmartOutput('')).toEqual({ temperatureC: null, percentageUsed: null, powerOnHours: null, unsafeShutdowns: null, criticalWarning: null });
+    expect(parseSmartOutput('Percent_Lifetime_Remain 98')).toMatchObject({ percentageUsed: 2 });
+    expect(parseSmartOutput('Percent_Lifetime_Remain')).toMatchObject({ percentageUsed: 0 });
   });
 });
 

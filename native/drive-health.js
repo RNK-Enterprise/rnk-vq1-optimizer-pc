@@ -86,6 +86,26 @@ export async function collectDriveHealth({ platform = process.platform, commandR
   }
 }
 
+function lastNumber(value) {
+  const matches = String(value || '').match(/\b\d+(?:\.\d+)?\b/g) || [];
+  const parsed = Number(matches.at(-1));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function lineWith(source, pattern) { return source.split(/\r?\n/).find((line) => pattern.test(line)) || ''; }
+
+export function parseSmartOutput(output) {
+  const source = String(output || '');
+  const temperature = lastNumber(lineWith(source, /(?:Temperature_Celsius|Airflow_Temperature_Cel|Temperature:)/i));
+  const usedMatch = source.match(/Percentage Used:\s*(\d+(?:\.\d+)?)\s*%/i);
+  const remainingLine = lineWith(source, /Percent_Lifetime_Remain/i);
+  const percentageUsed = usedMatch ? Number(usedMatch[1]) : remainingLine ? Math.max(0, 100 - (lastNumber(remainingLine) ?? 100)) : null;
+  const powerOnHours = lastNumber(lineWith(source, /Power_On_Hours|Power On Hours/i));
+  const unsafeShutdowns = lastNumber(lineWith(source, /Unsafe_Shutdowns|Unsafe Shutdowns/i));
+  const criticalWarning = source.match(/Critical Warning:\s*(\S+)/i)?.[1] || null;
+  return Object.freeze({ temperatureC: temperature, percentageUsed, powerOnHours, unsafeShutdowns, criticalWarning });
+}
+
 function validDevice(device, platform) {
   const value = text(device);
   if (!value || value.includes('..')) return false;
@@ -96,11 +116,11 @@ export async function collectSmartHealth(device, { platform = process.platform, 
   if (!validDevice(device, platform)) return Object.freeze({ available: false, device: null, health: 'unknown', reason: 'device path is not approved' });
   if (!commandAvailable(commandRunner)) return Object.freeze({ available: false, device, health: 'unknown', reason: 'command runner unavailable' });
   try {
-    const result = await commandRunner.run('smartctl', ['-H', '--', device], { timeoutMs: 5000, maxOutputBytes: 8192 });
+    const result = await commandRunner.run('smartctl', ['-H', '-A', device], { timeoutMs: 5000, maxOutputBytes: 16384 });
     const output = `${result?.stdout || ''}\n${result?.stderr || ''}`;
     const passed = /SMART overall-health self-assessment test result:\s*PASSED/i.test(output) || /SMART Health Status:\s*OK/i.test(output);
     const failed = /SMART overall-health self-assessment test result:\s*(FAILED|UNKNOWN)/i.test(output) || /SMART Health Status:\s*(FAILED|UNKNOWN)/i.test(output);
-    return Object.freeze({ available: result?.code === 0 || passed || failed, device, health: passed ? 'healthy' : failed ? 'failed' : 'unknown', exitCode: Number.isInteger(result?.code) ? result.code : null, source: 'smartctl' });
+    return Object.freeze({ available: result?.code === 0 || passed || failed, device, health: passed ? 'healthy' : failed ? 'failed' : 'unknown', exitCode: Number.isInteger(result?.code) ? result.code : null, source: 'smartctl', ...parseSmartOutput(output) });
   } catch (error) { return Object.freeze({ available: false, device, health: 'unknown', reason: error.message }); }
 }
 
