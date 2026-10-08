@@ -29,6 +29,7 @@ import { applyOrganization, previewOrganization } from './organizer.js';
 import { createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
+import { createDailyWorkstationScheduler } from './steward-scheduler.js';
 import { createDownloadGuard } from './download-guard.js';
 import { createDownloadMonitor } from './download-monitor.js';
 import { createAuditedNativeAgent } from './action-audit.js';
@@ -238,6 +239,26 @@ async function runStewardTrendsCommand(args) {
   return buildWorkstationTrends(await store.read(), { windowMs: numberOption(args, 'window-days', 30) * 24 * 60 * 60 * 1000, maxEntries: numberOption(args, 'max-entries', 512) });
 }
 
+async function runStewardScheduleCommand(args) {
+  const store = historyStoreFromArgs(args);
+  const scheduler = createDailyWorkstationScheduler({
+    store,
+    intervalMs: numberOption(args, 'interval-seconds', 900) * 1000,
+    windowMs: numberOption(args, 'window-hours', 24) * 60 * 60 * 1000,
+    maxSamples: numberOption(args, 'max-samples', 96),
+    deliver: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    onError: (error) => process.stderr.write(`steward scheduler: ${error.message}\n`)
+  });
+  await scheduler.run();
+  scheduler.start();
+  await new Promise((resolve) => {
+    const stop = () => { scheduler.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
 function downloadGuardFromArgs(args) {
   return createDownloadGuard({ hashFiles: args['hash-files'] === true });
 }
@@ -408,6 +429,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
+  if (command === 'steward-schedule') return runStewardScheduleCommand(args);
   if (command === 'steward-report') return runStewardReportCommand(args);
   if (command === 'steward-trends') return runStewardTrendsCommand(args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);

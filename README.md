@@ -121,6 +121,8 @@ node native/cli.mjs steward-monitor --path "$HOME/.rnk-optimizer/history.jsonl" 
   --interval-seconds 900
 node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
+node native/cli.mjs steward-schedule --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --interval-seconds 900
 node native/cli.mjs steward-trends --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-days 30 --max-entries 512
 node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
@@ -200,6 +202,11 @@ memory and pagefile pressure, CPU/GPU load, thermals and throttling, battery
 condition, abnormal processes, network counters, development/gaming
 contention, and cleanup evidence. It reports unavailable dimensions as missing
 evidence and never infers health from silence.
+
+`steward-schedule` delivers at most one report per UTC day through a
+caller-owned callback (the CLI writes JSON lines to stdout). It is trigger-based
+and remains active only while the command is running; installing an operating
+system scheduler is outside the native authority.
 
 `steward-trends` reduces the same caller-owned history over a bounded
 multi-day window and reports storage fill rate, battery-health movement,

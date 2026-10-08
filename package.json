@@ -23,6 +23,7 @@
     "native:storage:monitor": "node native/cli.mjs storage-monitor",
     "native:steward:history": "node native/cli.mjs steward-history",
     "native:steward:monitor": "node native/cli.mjs steward-monitor",
+    "native:steward:schedule": "node native/cli.mjs steward-schedule",
     "native:steward:report": "node native/cli.mjs steward-report",
     "native:steward:trends": "node native/cli.mjs steward-trends",
     "native:workload:preview": "node native/cli.mjs workload-preview",

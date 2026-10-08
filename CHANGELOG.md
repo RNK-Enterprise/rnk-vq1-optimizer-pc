@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added a bounded trigger-based daily report scheduler with one-delivery-per-day
+  suppression, forced delivery, callback error handling, and a CLI command.
+
 ## 2026-10-08
 
 - Removed the unpatched `sprintf-js` transitive dependency from the Jest

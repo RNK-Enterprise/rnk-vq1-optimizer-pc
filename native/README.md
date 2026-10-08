@@ -39,6 +39,8 @@ node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 H
 node native/cli.mjs download-monitor --root "$HOME/Downloads" --interval-seconds 30
 node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
+node native/cli.mjs steward-schedule --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --interval-seconds 900
 node native/cli.mjs steward-trends --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-days 30 --max-entries 512
 node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
@@ -121,6 +123,10 @@ the retained facts into a daily report with storage, memory, CPU/GPU, thermal,
 battery, pagefile, process, network, workload, gaming, and cleanup evidence.
 Missing sensors remain missing. Neither command applies the planner's actions
 automatically.
+
+`steward-schedule` delivers one report per UTC day while its trigger loop is
+running. It writes through a caller-owned delivery callback and does not install
+an operating-system task or claim background service persistence.
 
 `steward-trends` reduces retained reports over a bounded multi-day window and
 reports storage fill rate, battery-health movement, thermal movement,

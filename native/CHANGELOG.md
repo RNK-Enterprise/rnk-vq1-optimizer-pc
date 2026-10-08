@@ -1,5 +1,10 @@
 # Native whole-PC optimizer changelog
 
+## Unreleased
+
+- Added the cross-platform `steward-scheduler` module and `steward-schedule`
+  CLI command for caller-owned daily report delivery.
+
 ## 2026-10-08
 
 - Added the bounded Storage Pressure Guard with configurable pressure levels,
