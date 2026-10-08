@@ -76,3 +76,10 @@ cross-platform observation monitor. `steward-history` supports read, append,
 rollback-preview, and quarantine-preview operations; `steward-monitor` records
 periodic steward reports and delivers them to stdout. Neither command applies
 the planner's actions automatically.
+
+`collectSystemFacts()` now includes bounded process, battery, thermal, and
+network telemetry when the host exposes it. Windows uses fixed PowerShell
+queries, Linux uses fixed `ps` plus read-only `/sys` and `/proc` files, and
+macOS uses fixed `ps`, `pmset`, and `netstat` queries. Missing sensors and
+unsupported platforms remain `available: false`; no telemetry path grants
+process-stop, file-delete, or network-control authority.

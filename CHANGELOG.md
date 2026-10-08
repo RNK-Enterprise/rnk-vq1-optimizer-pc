@@ -12,6 +12,8 @@
   receipts.
 - Added an append-only native steward history store and cross-platform report
   monitor with explicit delivery callbacks and no automatic host mutation.
+- Added bounded cross-platform process, battery, thermal, and network telemetry
+  to the native facts path with fixed commands and fail-closed sensor states.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

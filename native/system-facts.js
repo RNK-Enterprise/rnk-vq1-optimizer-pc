@@ -21,6 +21,7 @@
 
 import os from 'os';
 import { collectStoragePressureSnapshot } from './storage-pressure.js';
+import { collectWorkstationTelemetry } from './workstation-telemetry.js';
 
 function percentage(used, total) {
   if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(used)) return null;
@@ -87,9 +88,15 @@ export async function collectSystemFacts({ platform = process.platform, osImpl =
   const facts = collectBaseFacts({ platform, osImpl });
   facts.gpu = await collectGpuFacts({ platform, commandRunner });
   const storage = await collectStoragePressureSnapshot({ platform, commandRunner });
+  const telemetry = await collectWorkstationTelemetry({ platform, commandRunner });
   facts.storage = storage.storage;
   facts.pagefile = storage.pagefile;
   facts.storagePressure = storage.pressure;
   facts.storagePressureAvailable = storage.available;
+  facts.processes = telemetry.processes.processes;
+  facts.battery = telemetry.battery;
+  facts.thermals = telemetry.thermals;
+  facts.network = telemetry.network;
+  facts.telemetry = telemetry;
   return facts;
 }

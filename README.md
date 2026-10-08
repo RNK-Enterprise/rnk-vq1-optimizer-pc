@@ -1,9 +1,10 @@
 # RNK Vortex System Optimizer
 
-This repository is the public PC optimizer release. It contains a native
-Windows/Linux authority, a PC browser host, and the PC analysis engine tree.
-The native agent measures the host and applies only bounded, locally validated
-actions.
+This repository is the public PC optimizer release. It contains native
+Windows/Linux action authority, a cross-platform facts layer for Windows,
+Linux, and macOS where supported, a PC browser host, and the PC analysis
+engine tree. The native agent measures the host and applies only bounded,
+locally validated actions.
 
 ## Safety model
 
@@ -53,7 +54,10 @@ The current platform adapters provide documented controls for:
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
   explicitly approved cleanup of regenerable categories.
-- Read-only CPU, memory, storage, process, network, and optional NVIDIA facts.
+- Read-only CPU, memory, storage, process, startup, battery, thermal, network,
+  and optional NVIDIA facts. Process, battery, thermal, and network telemetry
+  returns explicit unavailable evidence when the platform or sensor does not
+  provide it.
 
 GPU policy, CPU affinity, memory policy, network tuning, and frame-rate
 control remain explicit unsupported results until a platform-safe
@@ -138,7 +142,7 @@ never recursively deletes a directory because it is large.
 
 ## PC mesh and empirical proof
 
-`pc/mesh.js` registers 37 engines, 37 engine libraries, 148 turbos, and 148
+`pc/mesh.js` registers 38 engines, 38 engine libraries, 152 turbos, and 152
 turbo libraries behind typed local command/event routes. Nodes are lazy-loaded
 and execution requires a declared trigger. The mesh is in-process only: it
 does not use HTTP, REST, sockets, public listeners, or network mutation.

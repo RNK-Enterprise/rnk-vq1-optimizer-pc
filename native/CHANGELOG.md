@@ -11,6 +11,8 @@
   CLI commands with opt-in safe-category automatic cleanup.
 - Added bounded append-only workstation history and a cross-platform report
   monitor with explicit callback delivery.
+- Added cross-platform process, battery, thermal, and network telemetry with
+  fixed commands, bounded output, and fail-closed unavailable states.
 
 ## 2026-10-06
 
