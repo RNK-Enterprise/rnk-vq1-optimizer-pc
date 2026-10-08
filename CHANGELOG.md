@@ -15,6 +15,8 @@
   game policy, drive/file/download evidence, daily trend reports, local media
   and music catalogues, fixed workstation intents, and reversible action
   receipts.
+- Extended the facts-only assistant with report-backed daily-priority answers
+  and explicit no-report evidence states.
 - Added confirmed local-media playback through fixed shell-free platform
   default-player openers without remote fetching or downloading.
 - Added an append-only native steward history store and cross-platform report

@@ -235,9 +235,10 @@ deletion, and exposes rollback evidence; it never sweeps arbitrary large
 directories.
 
 The local workstation assistant is deterministic and facts-only. It answers
-storage, memory/pagefile, thermal, battery, history, workload, and placement
-questions, but never executes natural-language commands. Cleanup and placement
-responses are preview plans that retain the existing approval boundaries.
+storage, memory/pagefile, thermal, battery, history, daily-priority, workload,
+and placement questions, but never executes natural-language commands. Cleanup
+and placement responses are preview plans that retain the existing approval
+boundaries.
 Named power profiles map only to documented platform profiles; unsupported
 platforms remain unsupported and firmware or fan-register control is not
 attempted.

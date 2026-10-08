@@ -55,6 +55,13 @@ function reportAnswer(report) {
   return Object.freeze({ intent: 'history', state: supplied ? 'answered' : 'observation-required', answer: supplied ? 'The supplied workstation report is ready for comparison.' : 'A prior workstation report is required for comparison.', evidence: supplied ? Object.freeze({ report }) : Object.freeze({}), recommendations: Object.freeze(supplied ? ['review-trends-and-recommendations'] : ['run-daily-report']) });
 }
 
+function recommendationAnswer(report) {
+  const supplied = record(report);
+  const listed = supplied && Array.isArray(report.recommendations) ? report.recommendations.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim()).slice(0, 8) : [];
+  const recommendations = listed.length ? listed : supplied ? ['no-change'] : ['run-daily-report'];
+  return Object.freeze({ intent: 'recommendations', state: supplied ? 'answered' : 'observation-required', answer: supplied ? `Today's priorities: ${recommendations.join(', ')}.` : 'A daily workstation report is required before priorities can be ranked.', evidence: Object.freeze({ report: supplied ? report : null, recommendations: Object.freeze(recommendations) }), recommendations: Object.freeze(recommendations) });
+}
+
 function workloadAnswer(facts) {
   const game = record(facts.game) ? facts.game : null;
   const workloads = rows(facts.processes).filter((item) => ['build', 'ai', 'model', 'compiler'].includes(text(item.role)?.toLowerCase()));
@@ -77,6 +84,7 @@ export function interpretWorkstationQuestion(question, facts = {}, { report = nu
   if (/\b(ram|memory|pagefile|swap)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...memoryAnswer(facts) });
   if (/\b(hot|thermal|temperature|cooling|throttl)/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...thermalAnswer(facts) });
   if (/\b(battery|charge|charging|degrad)/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...batteryAnswer(facts) });
+  if (/\b(what should i (fix|care about)|what do i need to fix|top recommendations)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...recommendationAnswer(report) });
   if (/\b(yesterday|changed|trend|history|since)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...reportAnswer(report) });
   if (/\b(game|gaming|build|ai job|local model|run .*while)/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...workloadAnswer(facts) });
   if (/\b(clean|reclaim|remove)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...cleanupPlan(facts) });

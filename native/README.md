@@ -200,9 +200,10 @@ scans by size or moves files during preview. `placement-apply` requires
 copy-verify-delete and preserve the source if verification fails.
 
 `assistant` is a deterministic local facts-to-plan interface. It answers
-supported storage, memory/pagefile, thermal, battery, history, workload, and
-placement questions from supplied or locally collected facts. It refuses
-unknown operations and never turns natural-language text into a command.
+supported storage, memory/pagefile, thermal, battery, history, daily-priority,
+workload, and placement questions from supplied or locally collected facts. It
+refuses unknown operations and never turns natural-language text into a
+command.
 `power-preview` and `power-apply` expose named cross-platform profiles. They
 map to fixed documented adapter values and require confirmation for mutation;
 fan curves, firmware registers, and unsupported platform controls remain

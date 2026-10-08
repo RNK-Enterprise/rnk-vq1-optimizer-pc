@@ -4,6 +4,8 @@
 
 - Added the cross-platform `steward-scheduler` module and `steward-schedule`
   CLI command for caller-owned daily report delivery.
+- Extended the deterministic assistant with report-backed daily-priority
+  answers and explicit missing-report handling.
 
 ## 2026-10-08
 

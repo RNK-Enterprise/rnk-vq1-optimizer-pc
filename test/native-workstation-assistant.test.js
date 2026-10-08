@@ -24,6 +24,7 @@ describe('workstation assistant', () => {
     expect(interpretWorkstationQuestion('Why did the laptop get hot?', facts)).toMatchObject({ intent: 'thermals', state: 'answered', recommendations: ['reduce-sustained-load', 'check-cooling'] });
     expect(interpretWorkstationQuestion('How healthy is my battery?', facts)).toMatchObject({ intent: 'battery', state: 'answered' });
     expect(interpretWorkstationQuestion('What changed since yesterday?', facts, { report: { trend: 'storage-growing' } })).toMatchObject({ intent: 'history', state: 'answered', evidence: { report: { trend: 'storage-growing' } } });
+    expect(interpretWorkstationQuestion('What should I fix today?', facts, { report: { recommendations: ['review-storage-pressure', 'review-memory-and-pagefile'] } })).toMatchObject({ intent: 'recommendations', state: 'answered', recommendations: ['review-storage-pressure', 'review-memory-and-pagefile'] });
     expect(interpretWorkstationQuestion('Can I run this game while my build finishes?', facts)).toMatchObject({ intent: 'workload', state: 'answered', recommendations: ['preview-gaming-build-policy', 'preserve-foreground-latency'] });
   });
 
@@ -35,6 +36,7 @@ describe('workstation assistant', () => {
     expect(interpretWorkstationQuestion('Why is it hot?', {})).toMatchObject({ intent: 'thermals', state: 'observation-required' });
     expect(interpretWorkstationQuestion('How is the battery?', {})).toMatchObject({ intent: 'battery', state: 'observation-required' });
     expect(interpretWorkstationQuestion('What changed?', {})).toMatchObject({ intent: 'history', state: 'observation-required' });
+    expect(interpretWorkstationQuestion('What should I fix today?', {})).toMatchObject({ intent: 'recommendations', state: 'observation-required', recommendations: ['run-daily-report'] });
     expect(interpretWorkstationQuestion('Can I run the game?', {})).toMatchObject({ intent: 'workload', state: 'observation-required' });
     expect(interpretWorkstationQuestion('Do something mysterious', {})).toMatchObject({ intent: 'unknown', state: 'refused' });
     expect(() => interpretWorkstationQuestion('', {})).toThrow('question');
@@ -50,6 +52,7 @@ describe('workstation assistant', () => {
     expect(interpretWorkstationQuestion('Can I game?', { processes: [{ role: 'background' }] })).toMatchObject({ intent: 'workload', state: 'observation-required' });
     expect(interpretWorkstationQuestion('Clean the safe cache', {})).toMatchObject({ intent: 'cleanup', state: 'observation-required' });
     expect(interpretWorkstationQuestion('What changed?', {})).toMatchObject({ intent: 'history', state: 'observation-required' });
+    expect(interpretWorkstationQuestion('What should I fix?', {}, { report: { recommendations: [] } })).toMatchObject({ intent: 'recommendations', state: 'answered', recommendations: ['no-change'] });
     expect(interpretWorkstationQuestion('What is on disk?', { storagePressure: {} })).toMatchObject({ intent: 'storage', answer: 'System storage pressure is unknown.' });
     expect(interpretWorkstationQuestion('What is eating memory?', { memory: { usedPercent: 'bad' }, pagefile: {}, processes: [{ memoryBytes: 10 }, { memoryBytes: null }, { memoryBytes: 20 }, { memoryBytes: null }] })).toMatchObject({ intent: 'memory', answer: 'Memory usage is unknown percent.', recommendations: ['review-top-memory-processes'] });
     expect(interpretWorkstationQuestion('Unknown request')).toMatchObject({ intent: 'unknown' });
