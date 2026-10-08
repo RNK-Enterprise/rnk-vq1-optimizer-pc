@@ -20,6 +20,7 @@ import {
   validatePersistedState
 } from '../scripts/vq/persistence/storage.js';
 import { withPersistence } from '../scripts/vq/persistence/mixin.js';
+import { OPTIMIZER_PERSISTENCE_MODULE_ID } from '../scripts/vq/persistence/index.js';
 
 const action = { type: 'set-quality', key: 'render.distance', value: 8 };
 const environment = {
@@ -38,6 +39,10 @@ function makeHost(overrides = {}) {
     ...overrides
   };
 }
+
+test('publishes the persistence barrel identity', () => {
+  expect(OPTIMIZER_PERSISTENCE_MODULE_ID).toBe('optimizer.persistence');
+});
 
 describe('PC protocol validation', () => {
   test('validates action families and normalizes plan versions', () => {

@@ -2,6 +2,10 @@
 
 ## 2026-10-08
 
+- Added the analysis-only workstation-health engine family for daily reports,
+  resource pressure, storage trends, workload contention, and cleanup audits.
+- Kept the public PC mesh separate from the private VQ1 stack and retained the
+  strict 100% runtime coverage gate.
 - Added the Storage Pressure Guard workflow for continuous system-drive
   monitoring, exact bounded cleanup previews, safe-category opt-in cleanup,
   separate pagefile evidence, protected paths, and measured cleanup audits.

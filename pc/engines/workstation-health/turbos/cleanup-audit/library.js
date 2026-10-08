@@ -1,0 +1,20 @@
+/**
+ * RNK Vortex System Optimizer
+ * Contributor: Lisa's Dungeon
+ *
+ * Dedicated cleanup-audit library for before/after recovery evidence.
+ */
+
+export const WORKSTATION_CLEANUP_AUDIT_LIBRARY_ID = 'workstation-health.cleanup-audit.library';
+export const WORKSTATION_CLEANUP_AUDIT_LIBRARY_VERSION = 1;
+const STATES = Object.freeze(['insufficient-data', 'cleanup-not-observed', 'recovery-observed', 'no-cleanup']);
+function isRecord(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
+function requireReport(report) { if (!isRecord(report)) throw new TypeError('Cleanup-audit library report must be an object'); if (report.turbo !== 'workstation-health.cleanup-audit') throw new Error('Cleanup-audit library requires a cleanup-audit turbo report'); if (!STATES.includes(report.state)) throw new Error('Cleanup-audit library report has an invalid state'); if (!Number.isFinite(report.confidence) || report.confidence < 0 || report.confidence > 1) throw new RangeError('Cleanup-audit library confidence must be between 0 and 1'); return report; }
+function reportsOf(reports) { if (!Array.isArray(reports)) throw new TypeError('Cleanup-audit library reports must be an array'); if (reports.length > 64) throw new RangeError('Cleanup-audit library accepts at most 64 reports'); return Object.freeze(reports.map(requireReport)); }
+function stateOf(reports) { if (!reports.length) return 'insufficient-data'; if (reports.some((report) => report.state === 'cleanup-not-observed')) return 'cleanup-not-observed'; if (reports.some((report) => report.state === 'recovery-observed')) return 'recovery-observed'; if (reports.every((report) => report.state === 'insufficient-data')) return 'insufficient-data'; return 'no-cleanup'; }
+function recommendations(state) { if (state === 'recovery-observed') return Object.freeze(['record-cleanup-recovery']); if (state === 'cleanup-not-observed') return Object.freeze(['request-cleanup-audit-evidence']); if (state === 'insufficient-data') return Object.freeze(['collect-more-cleanup-audit-samples']); return Object.freeze(['no-change']); }
+export function mergeWorkstationCleanupAuditReports(reports) { const validated = reportsOf(reports); const state = stateOf(validated); const latest = validated.at(-1); return Object.freeze({ library: WORKSTATION_CLEANUP_AUDIT_LIBRARY_ID, libraryVersion: WORKSTATION_CLEANUP_AUDIT_LIBRARY_VERSION, reportCount: validated.length, state, performedCount: validated.reduce((sum, report) => sum + (report.performedCount || 0), 0), recoveredBytes: validated.reduce((sum, report) => sum + (report.recoveredBytes || 0), 0), actionCount: validated.reduce((sum, report) => sum + (report.actionCount || 0), 0), confidence: latest?.confidence || 0, recommendations: recommendations(state) }); }
+export function buildWorkstationCleanupAuditPlan(report, environment = 'unknown') { const validated = requireReport(report); return Object.freeze({ library: WORKSTATION_CLEANUP_AUDIT_LIBRARY_ID, environment, mode: environment === 'unknown' ? 'profile-required' : validated.state === 'recovery-observed' ? 'recovery-review' : 'cleanup-observation', intervalMs: 86400000, state: validated.state, confidence: validated.confidence }); }
+function requireClock(now) { const timestamp = now(); if (!Number.isFinite(timestamp)) throw new TypeError('Cleanup-audit library clock must return a number'); return timestamp; }
+export function buildWorkstationCleanupAuditEnvelope(report, { trigger, now = Date.now } = {}) { if (typeof trigger !== 'string' || !trigger) throw new TypeError('Cleanup-audit library trigger is required'); return Object.freeze({ library: WORKSTATION_CLEANUP_AUDIT_LIBRARY_ID, libraryVersion: WORKSTATION_CLEANUP_AUDIT_LIBRARY_VERSION, trigger, generatedAt: new Date(requireClock(now)).toISOString(), report: requireReport(report) }); }
+export function createWorkstationCleanupAuditLibrary() { return Object.freeze({ id: WORKSTATION_CLEANUP_AUDIT_LIBRARY_ID, version: WORKSTATION_CLEANUP_AUDIT_LIBRARY_VERSION, merge: mergeWorkstationCleanupAuditReports, plan: buildWorkstationCleanupAuditPlan, envelope: buildWorkstationCleanupAuditEnvelope }); }

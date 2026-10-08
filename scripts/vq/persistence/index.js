@@ -8,3 +8,5 @@
 
 export * from './storage.js';
 export * from './mixin.js';
+
+export const OPTIMIZER_PERSISTENCE_MODULE_ID = 'optimizer.persistence';

@@ -9,14 +9,14 @@ describe('PC-wide local mesh', () => {
     expect(PC_MESH_ID).toBe('optimizer.pc.mesh');
     expect(PC_MESH_VERSION).toBe(1);
     expect(PC_MESH_TRIGGERS).toEqual(['install.preflight', 'system.facts.request', 'workload.changed', 'health.interval']);
-    expect(nodes).toHaveLength(340);
-    expect(nodes.filter((node) => node.kind === 'engine')).toHaveLength(34);
-    expect(nodes.filter((node) => node.kind === 'library')).toHaveLength(34);
-    expect(nodes.filter((node) => node.kind === 'turbo')).toHaveLength(136);
-    expect(nodes.filter((node) => node.kind === 'turbo-library')).toHaveLength(136);
-    expect(bridges).toHaveLength(2856);
-    expect(bridges.filter((bridge) => bridge.type === 'command')).toHaveLength(1428);
-    expect(bridges.filter((bridge) => bridge.type === 'event')).toHaveLength(1428);
+    expect(nodes).toHaveLength(350);
+    expect(nodes.filter((node) => node.kind === 'engine')).toHaveLength(35);
+    expect(nodes.filter((node) => node.kind === 'library')).toHaveLength(35);
+    expect(nodes.filter((node) => node.kind === 'turbo')).toHaveLength(140);
+    expect(nodes.filter((node) => node.kind === 'turbo-library')).toHaveLength(140);
+    expect(bridges).toHaveLength(3010);
+    expect(bridges.filter((bridge) => bridge.type === 'command')).toHaveLength(1505);
+    expect(bridges.filter((bridge) => bridge.type === 'event')).toHaveLength(1505);
     expect(nodes.every((node) => node.lazy && node.triggers === PC_MESH_TRIGGERS)).toBe(true);
   });
 
@@ -31,11 +31,13 @@ describe('PC-wide local mesh', () => {
     const same = await mesh.loadNode('optimizer.authority.system-facts.engine');
     const turbo = await mesh.loadNode('workload-profile.intensity-trend.turbo');
     const library = await mesh.loadNode('workload-profile.intensity-trend.turbo-library');
+    const workstationHealth = await mesh.loadNode('workstation-health.engine');
     expect(first).toBe(same);
     expect(typeof first.runSystemFactsEngine).toBe('function');
     expect(typeof turbo.runWorkloadIntensityTrendTurbo).toBe('function');
     expect(typeof library.mergeWorkloadIntensityTrendReports).toBe('function');
-    expect(mesh.loadedNodes()).toEqual(['system-facts.engine', 'workload-profile.intensity-trend.turbo', 'workload-profile.intensity-trend.turbo-library']);
+    expect(typeof workstationHealth.runWorkstationHealthEngine).toBe('function');
+    expect(mesh.loadedNodes()).toEqual(['system-facts.engine', 'workload-profile.intensity-trend.turbo', 'workload-profile.intensity-trend.turbo-library', 'workstation-health.engine']);
     await expect(mesh.loadNode('missing')).rejects.toThrow('Unknown PC mesh node: missing');
     await expect(mesh.loadNode()).rejects.toThrow('Unknown PC mesh node: unknown');
   });

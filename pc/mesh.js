@@ -49,7 +49,8 @@ const TURBOS = Object.freeze({
   'workload-profile': ['context-drift', 'declaration-stability', 'environment-boundary', 'intensity-trend'],
   'driver-capability': ['evidence-drift', 'identity-completeness', 'inventory-drift', 'version-churn'],
   'organization-preview': ['category-drift', 'item-inventory', 'ownership-review', 'proposal-drift'],
-  'safety-audit': ['admin-boundary', 'approval-drift', 'mutation-boundary', 'proposal-risk']
+  'safety-audit': ['admin-boundary', 'approval-drift', 'mutation-boundary', 'proposal-risk'],
+  'workstation-health': ['storage-trend', 'resource-pressure', 'workload-conflict', 'cleanup-audit']
 });
 
 function authority(id) { return `optimizer.authority.${id}`; }
