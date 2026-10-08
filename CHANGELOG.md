@@ -37,6 +37,8 @@
   approval-gated optional application of documented profiles.
 - Added fixed balanced/performance CPU-affinity actions for approved Windows
   and Linux process targets; memory/GPU hard policy remains unsupported.
+- Added a bounded macOS action adapter for process priority, cache cleanup, and
+  approved process stop; unsupported macOS controls remain explicit.
 - Added explicit cross-platform read-only filesystem-health evidence through
   fixed Windows, Linux, and macOS volume checkers.
 - Added an append-only native steward history store and cross-platform report

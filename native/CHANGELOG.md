@@ -22,6 +22,8 @@
   approval-gated optional application of documented profiles.
 - Added fixed balanced/performance CPU-affinity actions for approved Windows
   and Linux process targets; memory/GPU hard policy remains unsupported.
+- Added a bounded macOS action adapter for process priority, cache cleanup, and
+  approved process stop; unsupported macOS controls remain explicit.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor

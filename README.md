@@ -1,7 +1,7 @@
 # RNK Vortex System Optimizer
 
 This repository is the public PC optimizer release. It contains native
-Windows/Linux action authority, a cross-platform facts layer for Windows,
+Windows/Linux/macOS action authority, a cross-platform facts layer for Windows,
 Linux, and macOS where supported, a PC browser host, and the PC analysis
 engine tree. The native agent measures the host and applies only bounded,
 locally validated actions.
@@ -49,8 +49,10 @@ and (where applicable) a caller-owned append-only history store.
 
 The current platform adapters provide documented controls for:
 
-- Windows power profile and process priority.
-- Linux power profile, process priority, and process I/O priority.
+- Windows power profile, process priority, and bounded process affinity.
+- Linux power profile, process priority, process I/O priority, and bounded
+  process affinity.
+- macOS process priority, bounded cache cleanup, and approved process stop.
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
   explicitly approved cleanup of regenerable categories.

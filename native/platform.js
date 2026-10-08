@@ -23,6 +23,7 @@ import { createCommandRunner } from './command-runner.js';
 import { createCacheCleaner } from './cache-cleaner.js';
 import { createLinuxAdapter } from './linux-adapter.js';
 import { createWindowsAdapter } from './windows-adapter.js';
+import { createMacosAdapter } from './macos-adapter.js';
 import { collectBaseFacts } from './system-facts.js';
 
 function createUnsupportedAdapter(platform) {
@@ -38,5 +39,6 @@ export function createPlatformAdapter({ platform = process.platform, commandRunn
   const cleaner = cacheCleaner || createCacheCleaner();
   if (platform === 'win32') return createWindowsAdapter({ commandRunner: runner, cacheCleaner: cleaner });
   if (platform === 'linux') return createLinuxAdapter({ commandRunner: runner, cacheCleaner: cleaner });
+  if (platform === 'darwin') return createMacosAdapter({ commandRunner: runner, cacheCleaner: cleaner });
   return createUnsupportedAdapter(platform);
 }

@@ -6,6 +6,7 @@
 
 import { createLinuxAdapter } from '../native/linux-adapter.js';
 import { createWindowsAdapter } from '../native/windows-adapter.js';
+import { createMacosAdapter } from '../native/macos-adapter.js';
 import { createPlatformAdapter } from '../native/platform.js';
 
 const valid = {
@@ -39,14 +40,21 @@ describe('native adapters', () => {
     expect(adapter.requiresAdmin(valid.power)).toBe(false);
     expect((await adapter.applyAction(valid.power)).ok).toBe(true);
     expect((await adapter.applyAction(valid.priority, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: false, approvedBackgroundPids: [123] })).ok).toBe(false);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: new Set([123]) })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: {} })).ok).toBe(false);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: {} })).ok).toBe(false);
     expect((await adapter.applyAction(valid.priority, { targetPid: null })).ok).toBe(false);
     expect((await adapter.applyAction({ type: 'unknown' })).ok).toBe(false);
+    h.commandRunner.run.mockResolvedValue({ code: 1, stderr: 'denied' });
+    await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'denied' });
+    h.commandRunner.run.mockResolvedValue({ code: 1 });
+    await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-priority failed' });
     for (const action of [valid.io, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect(h.calls[0]).toEqual(['powercfg.exe', ['/setactive', '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c']]);
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'win32' }));
@@ -113,5 +121,38 @@ describe('native adapters', () => {
     expect(createPlatformAdapter({ platform: 'win32', commandRunner: h.commandRunner, cacheCleaner: h.cacheCleaner }).platform).toBe('win32');
     expect(createPlatformAdapter({ platform: 'linux' }).platform).toBe('linux');
     expect(createPlatformAdapter().platform).toBe('linux');
+  });
+
+  test('macOS exposes only fixed priority/cache/process controls', async () => {
+    const h = harness();
+    const adapter = createMacosAdapter(h);
+    expect(adapter.platform).toBe('darwin');
+    expect(adapter.requiresAdmin(valid.stop)).toBe(true);
+    expect(adapter.requiresAdmin({ ...valid.priority, value: 'high' })).toBe(true);
+    expect(adapter.requiresAdmin({ ...valid.priority, value: 'low' })).toBe(false);
+    expect((await adapter.applyAction(valid.priority, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.priority, value: 'high' }, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: new Set([123]) })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: {} })).ok).toBe(false);
+    expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: false, approvedBackgroundPids: [123] })).ok).toBe(false);
+    expect((await adapter.applyAction(valid.priority, { targetPid: 0 })).ok).toBe(false);
+    for (const action of [valid.power, valid.io, valid.affinity, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
+    expect((await adapter.applyAction({ type: 'unknown' })).ok).toBe(false);
+    h.commandRunner.run.mockResolvedValue({ code: 1, stderr: 'denied' });
+    await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'denied' });
+    h.commandRunner.run.mockResolvedValue({ code: 1 });
+    await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-priority failed' });
+    expect(h.calls).toEqual(expect.arrayContaining([
+      ['renice', ['-n', '10', '-p', '123']],
+      ['renice', ['-n', '-5', '-p', '123']],
+      ['kill', ['-TERM', '123']]
+    ]));
+    await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'darwin' }));
+    expect(() => createMacosAdapter()).toThrow('command runner');
+    expect(() => createMacosAdapter({ commandRunner: h.commandRunner })).toThrow('cache cleaner');
+    expect(createPlatformAdapter({ platform: 'darwin', commandRunner: h.commandRunner, cacheCleaner: h.cacheCleaner }).platform).toBe('darwin');
   });
 });
