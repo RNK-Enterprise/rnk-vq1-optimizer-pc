@@ -39,6 +39,7 @@ import { applyMediaPlayback, buildMediaPlaybackPlan } from './media-playback.js'
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
+import { applyWorkloadBudget, previewWorkloadBudget } from './workload-budget.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
@@ -289,6 +290,23 @@ async function runWorkloadCommand(command, args) {
   return { facts, plan, report: await applyWorkloadPolicy(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runWorkloadBudgetCommand(command, args) {
+  const adapter = createPlatformAdapter();
+  const facts = await adapter.collectFacts();
+  const budget = typeof args.budget === 'string' ? jsonOption(args, 'budget') : {
+    cpuPercent: args['cpu-percent'] === undefined ? null : numberOption(args, 'cpu-percent', null),
+    memoryBytes: args['memory-bytes'] === undefined ? null : numberOption(args, 'memory-bytes', null),
+    ioBytesPerSecond: args['io-bytes-per-second'] === undefined ? null : numberOption(args, 'io-bytes-per-second', null),
+    gpuPercent: args['gpu-percent'] === undefined ? null : numberOption(args, 'gpu-percent', null)
+  };
+  const plan = previewWorkloadBudget(facts, { budget, targetPids: listOption(args, 'target-pids') });
+  if (command === 'workload-budget-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('workload-budget-apply requires --confirm');
+  const approvedPids = listOption(args, 'approve-pids');
+  if (approvedPids.length === 0) throw new Error('workload-budget-apply requires --approve-pids');
+  return { facts, plan, report: await applyWorkloadBudget(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
+}
+
 async function runDriveHealthCommand(args) {
   const inventory = await collectDriveHealth({ platform: process.platform, commandRunner: createCommandRunner() });
   if (typeof args['smart-device'] !== 'string') return inventory;
@@ -441,6 +459,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
+  if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);

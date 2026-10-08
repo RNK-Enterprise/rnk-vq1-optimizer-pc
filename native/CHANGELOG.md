@@ -38,6 +38,9 @@
 - Added a bounded workload governor for explicit gaming/build coexistence,
   approved-PID process and I/O priority application, protected-process
   exclusion, and explicit unsupported hard-cap dimensions.
+- Added a workload-budget supervisor for observed CPU/I/O breaches, approved
+  soft-priority responses, trigger monitoring, and unsupported memory/GPU
+  hard-cap states.
 - Added cross-platform drive inventory and optional validated SMART health
   observation with fail-closed unavailable states.
 - Added explicit cross-volume file placement preview, copy verification,

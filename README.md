@@ -129,6 +129,11 @@ node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
   --background-pids 1234,5678
 node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
+node native/cli.mjs workload-budget-preview --budget \
+  '{"cpuPercent":50,"memoryBytes":8589934592,"ioBytesPerSecond":52428800,"gpuPercent":35}' \
+  --target-pids 1234,5678
+node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
+  --target-pids 1234 --approve-pids 1234 --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
@@ -222,6 +227,12 @@ and system processes, previews exact PID operations, and requires explicit
 approval before applying them. Hard CPU, RAM, and GPU caps remain unsupported
 until platform-safe implementations are proven; unsupported results are
 reported rather than presented as enforcement.
+
+`workload-budget-preview` compares explicit per-process CPU, memory, I/O, and
+GPU limits with observed facts. `workload-budget-apply` can apply only the
+supported soft responses—lower process priority and, on Linux, lower I/O
+priority—to explicitly approved background PIDs. Memory and GPU hard caps stay
+unsupported evidence; the command never claims those limits were enforced.
 
 `drive-health` provides cross-platform physical-drive inventory and explicit
 SSD/HDD classification. Its optional SMART probe is separate and uses strict

@@ -47,6 +47,10 @@ node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
   --background-pids 1234,5678
 node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
+node native/cli.mjs workload-budget-preview --budget '{"cpuPercent":50}' \
+  --target-pids 1234,5678
+node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
+  --target-pids 1234 --approve-pids 1234 --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
@@ -180,6 +184,11 @@ explicit `--approve-pids` list. The Linux adapter can apply both priority
 types; Windows currently reports I/O priority as unsupported. CPU, memory, and
 GPU hard caps remain explicit unsupported dimensions, and the governor does
 not claim an exact restore without pre-change priority evidence.
+
+`workload-budget-preview` compares explicit CPU, memory, I/O, and GPU limits
+with observed process facts. Apply can lower process priority and supported
+I/O priority for explicitly approved background PIDs. Memory and GPU hard caps
+remain unsupported; a plan never claims those dimensions were enforced.
 
 `drive-health` inventories physical drives with fixed platform commands. Windows
 uses `Get-PhysicalDisk`, Linux uses `lsblk`, and macOS uses `diskutil list`.

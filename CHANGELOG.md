@@ -38,6 +38,9 @@
 - Added the native workload governor bridge for previewed and explicitly
   approved gaming/build process-priority policies across supported adapters;
   hard CPU/RAM/GPU caps remain fail-closed unsupported outcomes.
+- Added bounded workload-budget supervision with trigger-based monitoring,
+  approved soft CPU/I/O priority responses, and explicit memory/GPU hard-cap
+  evidence states.
 - Added cross-platform drive inventory and optional SMART observation to the
   native storage evidence path without treating inventory metadata as health
   proof.
