@@ -49,9 +49,10 @@ and (where applicable) a caller-owned append-only history store.
 
 The current platform adapters provide documented controls for:
 
-- Windows power profile, process priority, and bounded process affinity.
-- Linux power profile, process priority, process I/O priority, and bounded
-  process affinity.
+- Windows power profile, process priority, bounded process affinity, and
+  approved Job Object CPU/memory limits.
+- Linux power profile, process priority, process I/O priority, bounded process
+  affinity, and approved `prlimit` address-space limits.
 - macOS process priority, bounded cache cleanup, and approved process stop.
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
@@ -61,10 +62,13 @@ The current platform adapters provide documented controls for:
   returns explicit unavailable evidence when the platform or sensor does not
   provide it.
 
-GPU policy, memory policy, network tuning, and frame-rate control remain
-explicit unsupported results until a platform-safe implementation is added
-and proven. CPU affinity is supported only through fixed balanced/performance
-masks for explicitly approved processes. NVIDIA facts are observational only. The
+GPU policy, network tuning, and frame-rate control remain explicit unsupported
+results until a platform-safe implementation is added and proven. Linux CPU
+hard limits and macOS resource limits remain explicit unsupported results.
+Windows resource limits use a fixed Job Object authority and Linux memory
+limits use the process address-space boundary exposed by `prlimit`; neither
+claims a portable RSS or GPU cap. CPU affinity is supported only through fixed
+balanced/performance masks for explicitly approved processes. NVIDIA facts are observational only. The
 browser host under `scripts/pc-host.js` does not execute operating-system
 commands.
 
@@ -137,6 +141,11 @@ node native/cli.mjs workload-budget-preview --budget \
   --target-pids 1234,5678
 node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
   --target-pids 1234 --approve-pids 1234 --confirm
+node native/cli.mjs resource-limit-preview --limits \
+  '{"cpuPercent":50,"memoryBytes":8589934592}' --target-pids 1234
+node native/cli.mjs resource-limit-apply --limits \
+  '{"cpuPercent":50,"memoryBytes":8589934592}' --target-pids 1234 \
+  --approve-pids 1234 --allow-admin --confirm
 node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234,5678 --interval-seconds 10
 node native/cli.mjs game-session-monitor --game-names game.exe \
@@ -265,6 +274,15 @@ GPU limits with observed facts. `workload-budget-apply` can apply only the
 supported soft responses—lower process priority and, on Linux, lower I/O
 priority—to explicitly approved background PIDs. Memory and GPU hard caps stay
 unsupported evidence; the command never claims those limits were enforced.
+
+`resource-limit-preview` and `resource-limit-apply` are the separate hard-limit
+authority for approved background PIDs. Windows applies CPU and per-process
+memory limits through a fixed Job Object script. Linux applies a memory
+address-space limit through `prlimit`; Linux CPU limits and macOS limits refuse
+explicitly. These operations require `--confirm`, approved PIDs, and the
+platform's administrative boundary. A hard limit is not reversible through a
+generic rollback because the operating system owns its lifetime; the process
+must be reconfigured or restarted after review.
 
 `game-session-monitor` is a trigger-based gaming-session supervisor. Windows
 process telemetry supplies the current desktop foreground PID through fixed

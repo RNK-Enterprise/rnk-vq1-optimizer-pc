@@ -14,6 +14,8 @@ const valid = {
   priority: { type: 'set-process-priority', key: 'process.priority', value: 'high' },
   io: { type: 'set-process-io-priority', key: 'process.io', value: 'low' },
   affinity: { type: 'set-process-affinity', key: 'process.affinity', value: 'performance' },
+  cpuLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'cpu-percent', limit: 50 },
+  memoryLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 1024 * 1024 * 1024 },
   gpu: { type: 'set-gpu-policy', key: 'gpu.policy', value: 'performance' },
   memory: { type: 'set-memory-policy', key: 'memory.policy', value: 'background-low' },
   cache: { type: 'clear-cache', key: 'cache', value: 'user-temp' },
@@ -37,11 +39,19 @@ describe('native adapters', () => {
     expect(adapter.platform).toBe('win32');
     expect(adapter.requiresAdmin(valid.stop)).toBe(true);
     expect(adapter.requiresAdmin(valid.affinity)).toBe(true);
+    expect(adapter.requiresAdmin(valid.cpuLimit)).toBe(true);
     expect(adapter.requiresAdmin(valid.power)).toBe(false);
     expect((await adapter.applyAction(valid.power)).ok).toBe(true);
     expect((await adapter.applyAction(valid.priority, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.cpuLimit, limit: 101 }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction({ type: 'set-process-resource-limit' }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 1 }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 2 ** 41 }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 0 })).ok).toBe(false);
     expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: false, approvedBackgroundPids: [123] })).ok).toBe(false);
@@ -71,6 +81,14 @@ describe('native adapters', () => {
     expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.io, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
+    expect(adapter.requiresAdmin(valid.memoryLimit)).toBe(true);
+    expect(adapter.requiresAdmin(valid.cpuLimit)).toBe(false);
+    expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 0 }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 1 }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 2 ** 41 }, { targetPid: 123 })).ok).toBe(false);
+    expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 0 })).ok).toBe(false);
     expect((await adapter.applyAction({ ...valid.affinity, value: 'balanced' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: new Set([123]) })).ok).toBe(true);
@@ -81,6 +99,7 @@ describe('native adapters', () => {
       ['renice', ['-n', '10', '-p', '123']],
       ['ionice', ['-c', '2', '-n', '7', '-p', '123']],
       ['taskset', ['-p', expect.stringMatching(/^0x/), '123']],
+      ['prlimit', ['--pid', '123', '--as=1073741824:1073741824']],
       ['kill', ['-TERM', '123']]
     ]));
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'linux' }));
@@ -139,7 +158,7 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: {} })).ok).toBe(false);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: false, approvedBackgroundPids: [123] })).ok).toBe(false);
     expect((await adapter.applyAction(valid.priority, { targetPid: 0 })).ok).toBe(false);
-    for (const action of [valid.power, valid.io, valid.affinity, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
+    for (const action of [valid.power, valid.io, valid.affinity, valid.cpuLimit, valid.memoryLimit, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect((await adapter.applyAction({ type: 'unknown' })).ok).toBe(false);
     h.commandRunner.run.mockResolvedValue({ code: 1, stderr: 'denied' });
     await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'denied' });

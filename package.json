@@ -31,6 +31,8 @@
     "native:workload:apply": "node native/cli.mjs workload-apply",
     "native:workload:budget:preview": "node native/cli.mjs workload-budget-preview",
     "native:workload:budget:apply": "node native/cli.mjs workload-budget-apply",
+    "native:resource:preview": "node native/cli.mjs resource-limit-preview",
+    "native:resource:apply": "node native/cli.mjs resource-limit-apply",
     "native:game:session": "node native/cli.mjs game-session-monitor",
     "native:drive:health": "node native/cli.mjs drive-health",
     "native:filesystem:health": "node native/cli.mjs filesystem-health",

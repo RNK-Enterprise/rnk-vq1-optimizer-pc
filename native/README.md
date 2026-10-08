@@ -51,6 +51,10 @@ node native/cli.mjs workload-budget-preview --budget '{"cpuPercent":50}' \
   --target-pids 1234,5678
 node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
   --target-pids 1234 --approve-pids 1234 --confirm
+node native/cli.mjs resource-limit-preview --limits '{"cpuPercent":50,"memoryBytes":8589934592}' \
+  --target-pids 1234
+node native/cli.mjs resource-limit-apply --limits '{"memoryBytes":8589934592}' \
+  --target-pids 1234 --approve-pids 1234 --allow-admin --confirm
 node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234,5678 --interval-seconds 10
 node native/cli.mjs game-session-monitor --game-names game.exe \

@@ -20,6 +20,7 @@
 
 import { collectSystemFacts } from './system-facts.js';
 import os from 'os';
+import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
 
 const POWER_PROFILES = Object.freeze({ balanced: 'balanced', performance: 'performance', battery: 'power-saver' });
 const NICE_VALUES = Object.freeze({ low: '10', normal: '0', high: '-5' });
@@ -44,6 +45,13 @@ function validPid(pid) {
   return Number.isInteger(pid) && pid > 0;
 }
 
+function validResourceLimit(action) {
+  return action && ['cpu-percent', 'memory-bytes'].includes(action.value)
+    && Number.isInteger(action.limit) && action.limit > 0
+    && (action.value !== 'cpu-percent' || action.limit <= 100)
+    && (action.value !== 'memory-bytes' || (action.limit >= MIN_RESOURCE_MEMORY_BYTES && action.limit <= MAX_RESOURCE_MEMORY_BYTES));
+}
+
 function approvedPid(context, pid) {
   const list = context?.approvedBackgroundPids;
   return Array.isArray(list) ? list.includes(pid) : list instanceof Set ? list.has(pid) : false;
@@ -62,6 +70,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
       return action.type === 'set-power-profile'
         || action.type === 'stop-approved-process'
         || action.type === 'set-process-affinity'
+        || (action.type === 'set-process-resource-limit' && action.value === 'memory-bytes')
         || (action.type === 'set-process-priority' && action.value === 'high')
         || (action.type === 'set-process-io-priority' && action.value === 'high');
     },
@@ -87,6 +96,11 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
           if (!mask) return { ok: false, reason: 'unsupported process affinity value' };
           return resultFromCommand(await commandRunner.run('taskset', ['-p', mask, String(pid)]), 'set-process-affinity');
         }
+        case 'set-process-resource-limit':
+          if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
+          if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
+          if (action.value !== 'memory-bytes') return { ok: false, reason: 'CPU hard limits are not supported by the Linux adapter' };
+          return resultFromCommand(await commandRunner.run('prlimit', ['--pid', String(pid), `--as=${action.limit}:${action.limit}`]), 'set-process-resource-limit');
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'linux' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });

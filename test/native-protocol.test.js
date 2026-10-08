@@ -19,6 +19,7 @@ const actions = [
   ['set-process-priority', 'process.priority', 'high'],
   ['set-process-io-priority', 'process.io', 'low'],
   ['set-process-affinity', 'process.affinity', 'performance'],
+  ['set-process-resource-limit', 'process.resource-limit', 'cpu-percent'],
   ['set-gpu-policy', 'gpu.policy', 'battery'],
   ['set-memory-policy', 'memory.policy', 'background-low'],
   ['clear-cache', 'cache', 'user-temp'],
@@ -30,7 +31,7 @@ const VALID_EXPIRY = new Date(VALID_NOW + 60 * 1000).toISOString();
 describe('native protocol', () => {
   test('validates every bounded action shape and returns a copy', () => {
     for (const [type, key, value] of actions) {
-      const input = { type, key, value };
+      const input = { type, key, value, ...(type === 'set-process-resource-limit' ? { limit: 50 } : {}) };
       expect(validateNativeAction(input)).toEqual(input);
       expect(validateNativeAction(input)).not.toBe(input);
     }
@@ -50,6 +51,11 @@ describe('native protocol', () => {
     expect(() => validateNativeAction({ type: 'clear-cache', key: 'cache', value: 'files' })).toThrow('unsupported value');
     expect(() => validateNativeAction({ type: 'stop-approved-process', key: 'process.stop', value: 'any' })).toThrow('approved target');
     expect(() => validateNativeAction({ type: 'set-process-priority', key: 'process.priority', value: 'realtime' })).toThrow('unsupported value');
+    expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'cpu-percent', limit: 0 })).toThrow('positive integer');
+    expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'cpu-percent', limit: 101 })).toThrow('100 percent');
+    expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 1.5 })).toThrow('positive integer');
+    expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 1 })).toThrow('bounded range');
+    expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 2 ** 41 })).toThrow('bounded range');
   });
 
   test('validates bounded plans and expiry', () => {

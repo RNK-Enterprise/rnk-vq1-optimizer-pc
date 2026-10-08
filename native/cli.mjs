@@ -43,6 +43,7 @@ import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
 import { applyWorkloadBudget, previewWorkloadBudget } from './workload-budget.js';
+import { applyResourceLimits, previewResourceLimits } from './resource-limits.js';
 import { createGameSessionMonitor } from './game-session.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
 import { collectFilesystemHealth } from './filesystem-health.js';
@@ -325,6 +326,21 @@ async function runWorkloadBudgetCommand(command, args) {
   return { facts, plan, report: await applyWorkloadBudget(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runResourceLimitCommand(command, args) {
+  const adapter = createPlatformAdapter();
+  const facts = await adapter.collectFacts();
+  const limits = typeof args.limits === 'string' ? jsonOption(args, 'limits') : {
+    cpuPercent: args['cpu-percent'] === undefined ? null : numberOption(args, 'cpu-percent', null),
+    memoryBytes: args['memory-bytes'] === undefined ? null : numberOption(args, 'memory-bytes', null)
+  };
+  const plan = previewResourceLimits(facts, { limits, targetPids: listOption(args, 'target-pids') });
+  if (command === 'resource-limit-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('resource-limit-apply requires --confirm');
+  const approvedPids = listOption(args, 'approve-pids');
+  if (approvedPids.length === 0) throw new Error('resource-limit-apply requires --approve-pids');
+  return { facts, plan, report: await applyResourceLimits(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
+}
+
 async function runGameSessionCommand(args) {
   const autoApply = args['auto-apply'] === true;
   if (autoApply && args.confirm !== true) throw new Error('game-session-monitor --auto-apply requires --confirm');
@@ -540,6 +556,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
   if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args);
+  if (['resource-limit-preview', 'resource-limit-apply'].includes(command)) return runResourceLimitCommand(command, args);
   if (command === 'game-session-monitor') return runGameSessionCommand(args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (command === 'filesystem-health') return runFilesystemHealthCommand(args);

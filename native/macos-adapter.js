@@ -37,6 +37,7 @@ export function createMacosAdapter({ commandRunner, cacheCleaner } = {}) {
           return resultFromCommand(await commandRunner.run('kill', ['-TERM', String(pid)]), 'stop-approved-process');
         case 'set-process-io-priority':
         case 'set-process-affinity':
+        case 'set-process-resource-limit':
         case 'set-gpu-policy':
         case 'set-memory-policy':
         case 'set-power-profile':

@@ -29,12 +29,16 @@ export const PROCESS_PRIORITIES = Object.freeze(['low', 'normal', 'high']);
 export const GPU_POLICIES = Object.freeze(['balanced', 'performance', 'battery']);
 export const MEMORY_POLICIES = Object.freeze(['balanced', 'background-low']);
 export const CACHE_TARGETS = Object.freeze(['user-temp', 'shader-cache', 'app-cache']);
+export const RESOURCE_LIMITS = Object.freeze(['cpu-percent', 'memory-bytes']);
+export const MIN_RESOURCE_MEMORY_BYTES = 16 * 1024 * 1024;
+export const MAX_RESOURCE_MEMORY_BYTES = 1024 ** 4;
 
 export const NATIVE_ACTIONS = Object.freeze([
   'set-power-profile',
   'set-process-priority',
   'set-process-io-priority',
   'set-process-affinity',
+  'set-process-resource-limit',
   'set-gpu-policy',
   'set-memory-policy',
   'clear-cache',
@@ -81,6 +85,19 @@ export function validateNativeAction(action) {
     case 'set-process-affinity':
       requireKey(action, 'process.affinity');
       requireChoice(action, ['balanced', 'performance']);
+      break;
+    case 'set-process-resource-limit':
+      requireKey(action, 'process.resource-limit');
+      requireChoice(action, RESOURCE_LIMITS);
+      if (!Number.isInteger(action.limit) || action.limit <= 0) {
+        throw new Error('set-process-resource-limit requires a positive integer limit');
+      }
+      if (action.value === 'cpu-percent' && action.limit > 100) {
+        throw new Error('CPU resource limit cannot exceed 100 percent');
+      }
+      if (action.value === 'memory-bytes' && (action.limit < MIN_RESOURCE_MEMORY_BYTES || action.limit > MAX_RESOURCE_MEMORY_BYTES)) {
+        throw new Error('Memory resource limit is outside the bounded range');
+      }
       break;
     case 'set-gpu-policy':
       requireKey(action, 'gpu.policy');
