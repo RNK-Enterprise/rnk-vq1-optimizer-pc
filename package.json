@@ -43,6 +43,8 @@
     "native:drive:benchmark": "node native/cli.mjs drive-benchmark",
     "native:network:overview": "node native/cli.mjs network-overview",
     "native:network:monitor": "node native/cli.mjs network-rate-monitor",
+    "native:policy:preview": "node native/cli.mjs policy-preview",
+    "native:policy:approve": "node native/cli.mjs policy-approve",
     "native:placement:preview": "node native/cli.mjs placement-preview",
     "native:placement:apply": "node native/cli.mjs placement-apply",
     "native:placement:rollback": "node native/cli.mjs placement-rollback",
