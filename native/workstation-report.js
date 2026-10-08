@@ -70,6 +70,7 @@ function cpuGpuSample(facts) {
   return {
     cpuPercent: nonNegative(cpu.loadPercent ?? cpu.utilizationPercent),
     gpuPercent: nonNegative(gpu.loadPercent ?? gpu.utilizationPercent),
+    gpuTemperatureC: nonNegative(gpu.temperatureC ?? gpu.temperature),
     gpuMemoryUsedBytes: nonNegative(gpu.memoryUsedBytes),
     gpuMemoryTotalBytes: nonNegative(gpu.memoryTotalBytes)
   };
@@ -170,6 +171,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const memoryPercent = finiteValues(memory.map((item) => item.usedPercent));
   const cpuPercent = finiteValues(cpuGpu.map((item) => item.cpuPercent));
   const gpuPercent = finiteValues(cpuGpu.map((item) => item.gpuPercent));
+  const gpuTemperatures = finiteValues(cpuGpu.map((item) => item.gpuTemperatureC));
   const temperatures = finiteValues(thermals.map((item) => item.temperatureC));
   const batteryHealth = finiteValues(batteries.map((item) => item.healthPercent));
   const pagefilePressure = finiteValues(pagefile.map((item) => item.pressurePercent));
@@ -195,7 +197,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     sampleCount: samples.length,
     storage: Object.freeze({ minimumFreeBytes: minimum(storageFree), latestFreeBytes: last(storageFree), trendBytes: trend(storageFree), pressureEvents: storageEvents }),
     memory: Object.freeze({ peakUsedBytes: maximum(memoryUsed), peakUsedPercent: maximum(memoryPercent), pressureEvents: memoryEvents }),
-    cpuGpu: Object.freeze({ peakCpuPercent: maximum(cpuPercent), peakGpuPercent: maximum(gpuPercent), latestGpuMemoryUsedBytes: last(finiteValues(cpuGpu.map((item) => item.gpuMemoryUsedBytes))) }),
+    cpuGpu: Object.freeze({ peakCpuPercent: maximum(cpuPercent), peakGpuPercent: maximum(gpuPercent), peakGpuTemperatureC: maximum(gpuTemperatures), latestGpuTemperatureC: last(gpuTemperatures), latestGpuMemoryUsedBytes: last(finiteValues(cpuGpu.map((item) => item.gpuMemoryUsedBytes))) }),
     thermals: Object.freeze({ peakTemperatureC: maximum(temperatures), throttleEvents }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), systemManaged: true, cleanup: 'never' }),
