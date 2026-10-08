@@ -2,6 +2,8 @@
 
 ## 2026-10-08
 
+- Removed the unpatched `sprintf-js` transitive dependency from the Jest
+  coverage toolchain by enforcing the maintained `js-yaml` 4 graph.
 - Added analysis-only Workload Policy and Download Guard engine families for
   Developer, Gaming, Gaming+Build, and bounded download placement workflows.
 - Added the analysis-only workstation-health engine family for daily reports,
