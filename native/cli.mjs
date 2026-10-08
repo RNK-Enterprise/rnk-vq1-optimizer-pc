@@ -36,6 +36,7 @@ import { createAuditedNativeAgent } from './action-audit.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildMediaPanelPlan, createMediaPlayer } from './media-player.js';
 import { applyMediaPlayback, buildMediaPlaybackPlan } from './media-playback.js';
+import { applyMediaPanelOpen, buildMediaPanelOpenPlan } from './media-panel.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
 import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.js';
@@ -411,6 +412,11 @@ async function runMediaCommand(command, args) {
     if (args.confirm !== true) throw new Error('media-play requires --confirm');
     return { plan, result: await applyMediaPlayback(plan, { commandRunner: createCommandRunner(), approved: true, dryRun: false }) };
   }
+  if (command === 'media-panel-open') {
+    const plan = buildMediaPanelOpenPlan(requireOption(args, 'url'), { platform: process.platform });
+    if (args.confirm !== true) throw new Error('media-panel-open requires --confirm');
+    return { plan, result: await applyMediaPanelOpen(plan, { commandRunner: createCommandRunner(), approved: true, dryRun: false }) };
+  }
   const library = mediaLibraryFromArgs(args);
   if (command === 'media-read') return library.read();
   if (command === 'media-favorite') return library.favorite(requireOption(args, 'file'), args.disable !== true);
@@ -467,7 +473,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'assistant') return runAssistantCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
   if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
-  if (['media-scan', 'media-play', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
+  if (['media-scan', 'media-play', 'media-panel-open', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'media-player') return runMediaPlayerCommand(args);
   if (command === 'media-panel') return buildMediaPanelPlan(requireOption(args, 'url'));
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);

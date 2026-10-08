@@ -167,6 +167,7 @@ node native/cli.mjs media-playback-plan --state-path "$HOME/.rnk-optimizer/media
 node native/cli.mjs media-play --file "$HOME/Music/track-a.mp3" --confirm
 node native/cli.mjs media-player --tracks '["/music/track-a.mp3","/music/track-b.mp3"]' --action next
 node native/cli.mjs media-panel --url "https://www.youtube.com/playlist?list=EXAMPLE"
+node native/cli.mjs media-panel-open --url "https://www.youtube.com/playlist?list=EXAMPLE" --confirm
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 ```
@@ -202,7 +203,9 @@ one exact existing local media file and opens it with the fixed platform
 default-player command after `--confirm`; it uses no shell and accepts no
 remote URL. The media panel accepts only HTTPS URLs on an explicit allow-list
 and produces an approval-gated embed plan; it never fetches media or bypasses
-service restrictions.
+service restrictions. `media-panel-open` can open an approved panel URL in the
+fixed platform default browser after confirmation; it does not download or
+embed arbitrary content.
 
 `steward-report` reduces the bounded facts retained by `steward-monitor` into a
 daily workstation report. It reports observed storage/free-space movement,

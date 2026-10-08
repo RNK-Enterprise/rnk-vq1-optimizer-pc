@@ -19,6 +19,8 @@
   and explicit no-report evidence states.
 - Added confirmed local-media playback through fixed shell-free platform
   default-player openers without remote fetching or downloading.
+- Added confirmed opening of allow-listed HTTPS media panels through fixed
+  shell-free platform browser openers without fetching or downloading.
 - Added an append-only native steward history store and cross-platform report
   monitor with explicit delivery callbacks and no automatic host mutation.
 - Added bounded cross-platform process, battery, thermal, and network telemetry
