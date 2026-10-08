@@ -203,6 +203,8 @@ The guard distinguishes platform/driver shader caches from optimizer-owned
 temporary files, reports pagefile pressure separately, previews exact paths and
 byte counts, and records removed bytes plus measured post-cleanup recovery. It
 never recursively deletes a directory because it is large.
+Linux and macOS system-drive pressure use fixed read-only `df` collectors;
+Windows pagefile evidence remains separate from reclaimable storage.
 
 The native media library is a bounded, cross-platform catalogue for local
 audio, video, and image files. It supports duplicate evidence, favorites,

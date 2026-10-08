@@ -154,6 +154,25 @@ export function parseLinuxDfOutput(output, policy = {}) {
   };
 }
 
+export function parseDarwinDfOutput(output, policy = {}) {
+  const lines = String(output || '').trim().split(/\r?\n/).filter(Boolean);
+  const line = lines.at(-1);
+  if (!line) return null;
+  const fields = line.trim().split(/\s+/);
+  if (fields.length < 6) return null;
+  const totalBlocks = nonNegative(fields[1]);
+  const freeBlocks = nonNegative(fields[3]);
+  if (totalBlocks === null || freeBlocks === null) return null;
+  const totalBytes = totalBlocks * 1024;
+  const freeBytes = freeBlocks * 1024;
+  const mount = fields.slice(5).join(' ');
+  return {
+    storage: [{ mount, device: fields[0], totalBytes, freeBytes, health: 'unknown', readOnly: false }],
+    pagefile: Object.freeze({ available: false, systemManaged: true, files: Object.freeze([]), allocatedBytes: null, currentBytes: null, pressurePercent: null, cleanup: 'never' }),
+    pressure: classifyStoragePressure({ totalBytes, freeBytes }, policy)
+  };
+}
+
 export async function collectStoragePressureSnapshot({
   platform = process.platform,
   commandRunner,
@@ -169,6 +188,8 @@ export async function collectStoragePressureSnapshot({
     ? ['powershell.exe', WINDOWS_STORAGE_COMMAND, { timeoutMs: 5000, maxOutputBytes: 8192 }]
     : platform === 'linux'
       ? ['df', ['-P', '-B1', '--', '/'], { timeoutMs: 2500, maxOutputBytes: 4096 }]
+      : platform === 'darwin'
+        ? ['df', ['-Pk', '/'], { timeoutMs: 2500, maxOutputBytes: 4096 }]
       : null;
   if (!command) {
     return { available: false, platform, storage: [], pagefile: normalizePagefiles(), pressure: classifyStoragePressure({}, policy), collectedAt: new Date(timestamp).toISOString(), reason: 'platform unsupported' };
@@ -178,7 +199,7 @@ export async function collectStoragePressureSnapshot({
     if (result?.code !== 0) throw new Error(result?.stderr || 'storage command failed');
     const parsed = platform === 'win32'
       ? parseWindowsStorageOutput(result.stdout, policy)
-      : parseLinuxDfOutput(result.stdout, policy);
+      : platform === 'linux' ? parseLinuxDfOutput(result.stdout, policy) : parseDarwinDfOutput(result.stdout, policy);
     if (!parsed) throw new Error('storage command returned invalid facts');
     return { available: true, platform, ...parsed, collectedAt: new Date(timestamp).toISOString() };
   } catch (error) {
