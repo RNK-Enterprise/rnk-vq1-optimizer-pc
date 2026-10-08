@@ -18,6 +18,8 @@
   review, and SHA-256 verification without downloader or filesystem mutation.
 - Added cross-platform startup inventory facts from fixed Windows, Linux, and
   macOS startup locations with review-only authority.
+- Added append-only native action auditing for optional before/preview/apply/
+  verify evidence around approved optimize operations.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
 - Kept the public PC mesh separate from the private VQ1 stack and retained the

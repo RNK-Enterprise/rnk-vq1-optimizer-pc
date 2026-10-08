@@ -104,6 +104,8 @@ node native/cli.mjs facts
 node native/cli.mjs optimize --gateway URL
 node native/cli.mjs optimize --gateway URL --apply --approve=clear-cache
 node native/cli.mjs optimize --gateway URL --apply --allow-admin
+node native/cli.mjs optimize --gateway URL --history-path \
+  "$HOME/.rnk-optimizer/history.jsonl"
 node native/cli.mjs cache-preview --target user-temp --max-age-hours 24
 node native/cli.mjs cache-clean --target user-temp --confirm
 node native/cli.mjs storage-preview --target-free-gb 5 \

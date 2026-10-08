@@ -20,6 +20,8 @@ node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan
 node native/cli.mjs optimize --gateway http://127.0.0.1:9999/optimizer/v1/plan
 node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan --apply --approve=clear-cache
 node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan --apply --allow-admin
+node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan \
+  --history-path "$HOME/.rnk-optimizer/history.jsonl"
 node native/cli.mjs cache-preview --target user-temp --max-age-hours 24
 node native/cli.mjs cache-clean --target user-temp --confirm
 node native/cli.mjs storage-preview --target-free-gb 5 \
@@ -93,3 +95,9 @@ The download guard provides explicit preflight, bounded scanning, incomplete
 download review, duplicate groups, and SHA-256 verification. It requires an
 explicit root or volume fact set, does not start or intercept downloads, and
 does not move or delete files.
+
+Supplying `--history-path` to `optimize` wraps the native authority with an
+append-only audit sequence: bounded observation, plan preview, apply report,
+and post-action verification. If the preview cannot be recorded, the native
+action is not attempted. The audit layer does not claim reversibility unless a
+separate authority supplies an undo record.

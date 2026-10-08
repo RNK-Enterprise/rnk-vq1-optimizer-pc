@@ -30,6 +30,7 @@ import { createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
 import { createDownloadGuard } from './download-guard.js';
+import { createAuditedNativeAgent } from './action-audit.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -229,7 +230,10 @@ export async function runCli(argv = process.argv.slice(2)) {
   const command = args._[0] || 'facts';
   if (command === 'facts') return agentFromArgs(args).collectFacts();
   if (command === 'optimize') {
-    const agent = agentFromArgs(args);
+    const baseAgent = agentFromArgs(args);
+    const agent = typeof args['history-path'] === 'string'
+      ? createAuditedNativeAgent({ agent: baseAgent, historyStore: historyStoreFromArgs({ ...args, path: args['history-path'] }) })
+      : baseAgent;
     return agent.optimize({
       apply: args.apply === true,
       profile: args.profile || undefined,

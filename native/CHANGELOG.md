@@ -17,6 +17,8 @@
   SHA-256 verification commands with no downloader or filesystem mutation.
 - Added fixed-root startup inventory for Windows, Linux, and macOS with
   review-only entries and no disable or launch authority.
+- Added authority-side append-only audit wrapping for optimize actions with
+  bounded before/preview/apply/verify evidence.
 
 ## 2026-10-06
 
