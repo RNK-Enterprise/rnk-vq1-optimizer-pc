@@ -52,6 +52,7 @@ import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { applyPlacementPolicy, previewPlacementPolicy, rollbackPlacementPolicy } from './file-placement-policy.js';
+import { applyQuarantine, previewQuarantine, rollbackQuarantine } from './quarantine.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
 import { createPowerMonitor } from './power-monitor.js';
@@ -184,6 +185,7 @@ function agentFromArgs(args) {
 }
 
 async function runCacheCommand(command, args) {
+  if (command === 'cache-quarantine-rollback') return rollbackQuarantine(jsonOption(args, 'result'));
   const cleaner = createCacheCleaner();
   const preview = await cleaner.preview({
     target: args.target || 'user-temp',
@@ -191,6 +193,17 @@ async function runCacheCommand(command, args) {
     maxEntries: numberOption(args, 'max-entries', 2000)
   });
   if (command === 'cache-preview') return preview;
+  if (command === 'cache-quarantine-preview' || command === 'cache-quarantine-apply') {
+    const plan = previewQuarantine(preview.items, {
+      sourceRoots: preview.roots,
+      quarantineRoot: requireOption(args, 'quarantine-root'),
+      protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
+      maxEntries: numberOption(args, 'max-entries', 256)
+    });
+    if (command === 'cache-quarantine-preview') return { preview, plan };
+    if (args.confirm !== true) throw new Error('cache-quarantine-apply requires --confirm');
+    return { preview, plan, result: await applyQuarantine(plan, { approved: true, dryRun: false }) };
+  }
   if (args.confirm !== true) throw new Error('cache-clean requires --confirm');
   return { preview, result: await cleaner.clean(preview, { approved: true, dryRun: false }) };
 }
@@ -594,7 +607,7 @@ export async function runCli(argv = process.argv.slice(2)) {
       allowAdmin: args['allow-admin'] === true
     });
   }
-  if (['cache-preview', 'cache-clean'].includes(command)) return runCacheCommand(command, args);
+  if (['cache-preview', 'cache-clean', 'cache-quarantine-preview', 'cache-quarantine-apply', 'cache-quarantine-rollback'].includes(command)) return runCacheCommand(command, args);
   if (['organize-preview', 'organize-apply'].includes(command)) return runOrganizerCommand(command, args);
   if (command === 'file-inspect') return runFileInsightsCommand(args);
   if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);

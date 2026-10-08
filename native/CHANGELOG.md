@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a reversible quarantine authority and cache-quarantine CLI workflow
+  with separate-root, protected-path, symlink, same-volume, exact-receipt,
+  and rollback boundaries.
 - Added bounded category-to-volume file placement policy planning from prior
   file-insights scans, with protected/incomplete/duplicate exclusions and
   delegated copy-verify-delete apply/rollback authority.

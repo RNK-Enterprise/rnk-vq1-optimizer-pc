@@ -23,6 +23,11 @@ node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan
 node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan \
   --history-path "$HOME/.rnk-optimizer/history.jsonl"
 node native/cli.mjs cache-preview --target user-temp --max-age-hours 24
+node native/cli.mjs cache-quarantine-preview --target user-temp \
+  --quarantine-root "$HOME/.rnk-optimizer/quarantine"
+node native/cli.mjs cache-quarantine-apply --target user-temp \
+  --quarantine-root "$HOME/.rnk-optimizer/quarantine" --confirm
+node native/cli.mjs cache-quarantine-rollback --result '{"version":1,"sourceRoots":["/tmp/cache"],"quarantineRoot":"/tmp/quarantine","moved":[]}'
 node native/cli.mjs cache-clean --target user-temp --confirm
 node native/cli.mjs storage-preview --target-free-gb 5 \
   --enable=temporary-files,package-cache,browser-automation-cache,gpu-shader-cache
@@ -108,6 +113,13 @@ loopback development endpoints. `optimize` is preview-only unless `--apply`
 is supplied. Cache cleanup and process stopping require explicit approval.
 File organization is never part of an optimization plan; it is a separate
 preview/confirm workflow and never overwrites an existing destination.
+
+`cache-quarantine-preview` and `cache-quarantine-apply` provide a reversible
+alternative for cache previews. They require a quarantine root separate from
+every source root, never follow symlinks, and move only exact preview entries
+with same-volume rename. `cache-quarantine-rollback` consumes the apply receipt
+and restores entries only when the original path is still unoccupied. A
+cross-volume quarantine is refused instead of falling back to copy-and-delete.
 
 Supported controls are Windows power profile/process priority/process affinity,
 Linux power profile/process priority/process I/O priority/process affinity, and
