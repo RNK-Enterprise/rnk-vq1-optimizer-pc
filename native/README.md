@@ -125,7 +125,8 @@ and restores entries only when the original path is still unoccupied. A
 cross-volume quarantine is refused instead of falling back to copy-and-delete.
 
 Supported controls are Windows power profile/process priority/process affinity,
-Linux power profile/process priority/process I/O priority/process affinity, and
+Linux power profile/process priority/process I/O priority/process affinity and
+available cgroup-v2 CPU/memory limits, and
 macOS process priority, bounded cache cleanup, and approved process stop.
 Affinity is limited to fixed balanced/performance masks and requires admin
 approval. macOS named power profiles, I/O policy, GPU policy, and memory policy
@@ -260,8 +261,10 @@ foreground state is unavailable. It plans
 low/normal process and I/O priorities only for non-foreground, non-protected,
 non-system background PIDs. `workload-apply` requires `--confirm` and an
 explicit `--approve-pids` list. The Linux adapter can apply both priority
-types; Windows currently reports I/O priority as unsupported. CPU, memory, and
-GPU hard caps remain explicit unsupported dimensions, and the governor does
+types; Windows currently reports I/O priority as unsupported. Linux CPU limits
+use a dedicated cgroup-v2 group when the host exposes the CPU controller, and
+Linux memory limits use `prlimit`; macOS hard resource limits remain explicit
+unsupported results. GPU hard caps remain unsupported, and the governor does
 not claim an exact restore without pre-change priority evidence.
 
 `workload-budget-preview` compares explicit CPU, memory, I/O, and GPU limits

@@ -18,6 +18,8 @@
  * Linux native adapter. Commands are fixed here and never supplied by VQ.
  */
 
+import fs from 'fs/promises';
+import path from 'path';
 import { collectSystemFacts } from './system-facts.js';
 import os from 'os';
 import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
@@ -57,7 +59,25 @@ function approvedPid(context, pid) {
   return Array.isArray(list) ? list.includes(pid) : list instanceof Set ? list.has(pid) : false;
 }
 
-export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length } = {}) {
+function cgroupName(root, pid) { return path.join(root, `rnk-optimizer-${pid}`); }
+
+async function applyCpuCgroupLimit(pid, limit, { fsImpl, cgroupRoot }) {
+  try {
+    const controllers = String(await fsImpl.readFile(path.join(cgroupRoot, 'cgroup.controllers'))).split(/\s+/).filter(Boolean);
+    if (!controllers.includes('cpu')) return { ok: false, reason: 'Linux cgroup CPU controller is unavailable' };
+    const group = cgroupName(cgroupRoot, pid);
+    await fsImpl.mkdir(group, { recursive: true });
+    const period = 100000;
+    const quota = Math.max(1000, Math.floor(period * limit / 100));
+    await fsImpl.writeFile(path.join(group, 'cpu.max'), `${quota} ${period}`);
+    await fsImpl.writeFile(path.join(group, 'cgroup.procs'), String(pid));
+    return { ok: true, operation: 'set-process-resource-limit', mechanism: 'cgroup-v2', group, quota, period };
+  } catch (error) {
+    return { ok: false, reason: error?.message || 'Linux cgroup CPU limit failed' };
+  }
+}
+
+export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length, fsImpl = fs, cgroupRoot = '/sys/fs/cgroup' } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') throw new TypeError('Linux adapter requires a command runner');
   if (!cacheCleaner || typeof cacheCleaner.preview !== 'function' || typeof cacheCleaner.clean !== 'function') {
     throw new TypeError('Linux adapter requires a cache cleaner');
@@ -71,6 +91,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         || action.type === 'stop-approved-process'
         || action.type === 'set-process-affinity'
         || (action.type === 'set-process-resource-limit' && action.value === 'memory-bytes')
+        || (action.type === 'set-process-resource-limit' && action.value === 'cpu-percent')
         || (action.type === 'set-process-priority' && action.value === 'high')
         || (action.type === 'set-process-io-priority' && action.value === 'high');
     },
@@ -99,7 +120,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         case 'set-process-resource-limit':
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
           if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
-          if (action.value !== 'memory-bytes') return { ok: false, reason: 'CPU hard limits are not supported by the Linux adapter' };
+          if (action.value === 'cpu-percent') return applyCpuCgroupLimit(pid, action.limit, { fsImpl, cgroupRoot });
           return resultFromCommand(await commandRunner.run('prlimit', ['--pid', String(pid), `--as=${action.limit}:${action.limit}`]), 'set-process-resource-limit');
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'linux' });

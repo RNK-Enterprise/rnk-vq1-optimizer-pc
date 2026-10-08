@@ -8,6 +8,8 @@
   when explaining the highest observed thermal reading.
 - Added pagefile-growth and GPU-thermal trend series and recommendations to
   the bounded multi-day workstation history reducer.
+- Added Linux cgroup-v2 CPU hard-limit enforcement for approved PIDs with
+  controller detection and fail-closed setup/write errors.
 
 - Added cross-platform interface bandwidth-rate derivation and a trigger-based
   `network-rate-monitor` command with counter-reset and per-process authority
@@ -34,8 +36,8 @@
   command to coordinate bounded observation history and one-per-day reports in
   one signal-aware process without installing an operating-system service.
 - Added explicit resource-limit preview/apply commands with approved-PID
-  boundaries, Windows Job Object CPU/memory enforcement, Linux `prlimit`
-  memory enforcement, and explicit unsupported results for Linux CPU and macOS.
+  boundaries, Windows Job Object CPU/memory enforcement, Linux cgroup-v2 CPU
+  and `prlimit` memory enforcement, and explicit unsupported results for macOS.
 - Added the cross-platform `steward-scheduler` module and `steward-schedule`
   CLI command for caller-owned daily report delivery.
 - Extended the deterministic assistant with report-backed daily-priority
