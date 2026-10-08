@@ -26,6 +26,7 @@ import { createCommandRunner } from './command-runner.js';
 import { NativeOptimizerAgent } from './agent.js';
 import { createPlatformAdapter } from './platform.js';
 import { applyOrganization, previewOrganization } from './organizer.js';
+import { buildFileInsightPlan, scanFileInsights } from './file-insights.js';
 import { createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
@@ -195,6 +196,18 @@ async function runOrganizerCommand(command, args) {
   if (command === 'organize-preview') return plan;
   if (args.confirm !== true) throw new Error('organize-apply requires --confirm');
   return { plan, result: await applyOrganization(plan, { approved: true, dryRun: false }) };
+}
+
+async function runFileInsightsCommand(args) {
+  const scan = await scanFileInsights(requireOption(args, 'root'), {
+    maxEntries: numberOption(args, 'max-entries', 2000),
+    maxDepth: numberOption(args, 'max-depth', 4),
+    minAgeHours: numberOption(args, 'min-age-hours', 24 * 30),
+    largeFileBytes: numberOption(args, 'large-file-bytes', 1024 ** 3),
+    protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
+    hashFiles: args['hash-files'] === true
+  });
+  return { scan, plan: buildFileInsightPlan(scan, { targetRoot: args['target-root'] || null }) };
 }
 
 async function runStewardHistoryCommand(args) {
@@ -492,6 +505,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
   if (['cache-preview', 'cache-clean'].includes(command)) return runCacheCommand(command, args);
   if (['organize-preview', 'organize-apply'].includes(command)) return runOrganizerCommand(command, args);
+  if (command === 'file-inspect') return runFileInsightsCommand(args);
   if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);

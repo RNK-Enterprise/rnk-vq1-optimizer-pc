@@ -18,6 +18,7 @@
     "native:optimize": "node native/cli.mjs optimize",
     "native:cache:preview": "node native/cli.mjs cache-preview",
     "native:organize:preview": "node native/cli.mjs organize-preview",
+    "native:file:inspect": "node native/cli.mjs file-inspect",
     "native:storage:preview": "node native/cli.mjs storage-preview",
     "native:storage:cleanup": "node native/cli.mjs storage-cleanup",
     "native:storage:monitor": "node native/cli.mjs storage-monitor",

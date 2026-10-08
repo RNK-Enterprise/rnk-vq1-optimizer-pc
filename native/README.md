@@ -61,6 +61,8 @@ node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
+node native/cli.mjs file-inspect --root "$HOME/Downloads" \
+  --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
@@ -171,6 +173,12 @@ network throttle is claimed or applied.
 platform sampler. It emits stable, started, continued, and stopped contention
 events, preserves the sample source, and remains observation-only. It does not
 intercept traffic or claim bandwidth enforcement.
+
+`file-inspect` scans one explicit root for incomplete downloads, stale
+installers, large files, models, archives, ISO files, protected paths, and
+hash-backed duplicate groups. It returns a review-only plan; `organize-preview`
+and `placement-preview` remain the only move previews, and no file-insights
+command mutates the filesystem.
 
 The media library provides a bounded read-only catalogue for local audio,
 video, and image files, plus explicit favorites, recently played entries,

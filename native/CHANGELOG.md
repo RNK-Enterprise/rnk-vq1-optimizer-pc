@@ -16,6 +16,8 @@
   evidence; unsupported platforms remain explicit rather than inferred.
 - Added a trigger-based network contention monitor around explicit platform or
   caller samples, with transition history and no unsupported throttle claim.
+- Added bounded read-only file-insights scanning for incomplete downloads,
+  stale installers, large files, protected paths, and hash-backed duplicates.
 - Added separate Windows pagefile pressure evidence with cleanup permanently
   disabled for system-managed storage.
 - Added preview, confirmed cleanup, audit records, and trigger-based monitor

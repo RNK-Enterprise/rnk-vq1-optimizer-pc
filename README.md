@@ -144,6 +144,8 @@ node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
+node native/cli.mjs file-inspect --root "$HOME/Downloads" \
+  --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
@@ -238,6 +240,11 @@ recommendations. Missing samples remain unknown.
 `network-monitor` adds trigger-based contention history around an explicit
 platform or caller per-process sampler. It reports gaming/download contention
 transitions and never claims to enforce a network budget.
+
+`file-inspect` provides bounded read-only evidence for incomplete downloads,
+stale installers, large files, models, archives, ISO files, protected paths,
+and hash-backed duplicate groups. Its plan never mutates the filesystem; use
+the existing organizer or placement preview before approving a move.
 
 The workload governor connects gaming/build coexistence policy to the native
 priority authority. It detects only explicit game evidence, excludes protected
