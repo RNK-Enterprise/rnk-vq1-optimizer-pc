@@ -166,6 +166,9 @@ node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
 node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
+node native/cli.mjs placement-policy-preview --scan '{"root":"/home/me/Downloads","entries":[],"duplicates":[]}' \
+  --target-roots '{"model":"/mnt/archive/models","archive":"/mnt/archive/archives"}' \
+  --target-free-bytes '{"/mnt/archive/models":100000000000,"/mnt/archive/archives":100000000000}'
 node native/cli.mjs assistant --question "Why is my C: drive full?"
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
@@ -322,6 +325,13 @@ caller-supplied file facts, source and target roots, protected roots, and free
 space. Apply requires confirmation, verifies cross-volume copies before source
 deletion, and exposes rollback evidence; it never sweeps arbitrary large
 directories.
+
+`placement-policy-preview` consumes a prior file-insights scan and an explicit
+category-to-target map. It skips protected, incomplete, duplicate, unclassified,
+and missing-evidence entries, then emits one bounded placement plan per target
+volume. `placement-policy-apply` delegates to the same copy-verify-delete
+authority and `placement-policy-rollback` delegates to its receipts; it never
+invents a destination from file size or recursively moves a directory.
 
 The local workstation assistant is deterministic and facts-only. It answers
 storage, memory/pagefile, thermal, battery, history, daily-priority, workload,

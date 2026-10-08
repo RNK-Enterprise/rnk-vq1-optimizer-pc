@@ -42,6 +42,8 @@
     "native:placement:preview": "node native/cli.mjs placement-preview",
     "native:placement:apply": "node native/cli.mjs placement-apply",
     "native:placement:rollback": "node native/cli.mjs placement-rollback",
+    "native:placement:policy:preview": "node native/cli.mjs placement-policy-preview",
+    "native:placement:policy:apply": "node native/cli.mjs placement-policy-apply",
     "native:assistant": "node native/cli.mjs assistant",
     "native:power:preview": "node native/cli.mjs power-preview",
     "native:power:apply": "node native/cli.mjs power-apply",

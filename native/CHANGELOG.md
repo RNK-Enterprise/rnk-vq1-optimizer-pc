@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added bounded category-to-volume file placement policy planning from prior
+  file-insights scans, with protected/incomplete/duplicate exclusions and
+  delegated copy-verify-delete apply/rollback authority.
 - Added exact-entry startup preview/apply/restore authority for Linux, macOS,
   and allow-listed Windows Run registry locations with protected-name, symlink,
   admin, and reversible-receipt boundaries.

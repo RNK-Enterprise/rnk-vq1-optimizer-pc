@@ -75,6 +75,9 @@ node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
 node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
+node native/cli.mjs placement-policy-preview --scan '{"root":"/home/me/Downloads","entries":[],"duplicates":[]}' \
+  --target-roots '{"model":"/mnt/archive/models","archive":"/mnt/archive/archives"}' \
+  --target-free-bytes '{"/mnt/archive/models":100000000000,"/mnt/archive/archives":100000000000}'
 node native/cli.mjs assistant --question "Why is my C: drive full?"
 node native/cli.mjs power-recommend
 node native/cli.mjs power-preview --profile gaming
@@ -262,6 +265,11 @@ target root, protected-root list, and target free-space measurement. It never
 scans by size or moves files during preview. `placement-apply` requires
 `--confirm`; same-volume moves use rename, while cross-volume moves use
 copy-verify-delete and preserve the source if verification fails.
+
+`placement-policy-preview` consumes a prior file-insights scan and an explicit
+category-to-target map, then creates one bounded plan per target volume.
+Protected, incomplete, duplicate, unclassified, and missing-evidence entries
+remain skipped. Apply and rollback delegate to the existing placement authority.
 
 `assistant` is a deterministic local facts-to-plan interface. It answers
 supported storage, memory/pagefile, thermal, battery, history, daily-priority,

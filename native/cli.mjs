@@ -51,6 +51,7 @@ import { collectFilesystemHealth } from './filesystem-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
+import { applyPlacementPolicy, previewPlacementPolicy, rollbackPlacementPolicy } from './file-placement-policy.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
 import { createPowerMonitor } from './power-monitor.js';
@@ -431,6 +432,20 @@ async function runPlacementCommand(command, args) {
   return { plan, result: await applyFilePlacement(plan, { approved: true, dryRun: false }) };
 }
 
+async function runPlacementPolicyCommand(command, args) {
+  if (command === 'placement-policy-rollback') return rollbackPlacementPolicy(jsonOption(args, 'result'));
+  const plan = previewPlacementPolicy(jsonOption(args, 'scan'), {
+    targetRoots: jsonOption(args, 'target-roots'),
+    sourceRoots: typeof args['source-root'] === 'string' ? args['source-root'].split(',').filter(Boolean) : undefined,
+    protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
+    targetFreeBytes: typeof args['target-free-bytes'] === 'string' ? jsonOption(args, 'target-free-bytes') : {},
+    maxEntries: numberOption(args, 'max-entries', 256)
+  });
+  if (command === 'placement-policy-preview') return plan;
+  if (args.confirm !== true) throw new Error('placement-policy-apply requires --confirm');
+  return { plan, result: await applyPlacementPolicy(plan, { approved: true, dryRun: false }) };
+}
+
 async function runAssistantCommand(args) {
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await createPlatformAdapter().collectFacts();
   const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
@@ -600,6 +615,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
+  if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
   if (command === 'power-monitor') return runPowerMonitorCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
