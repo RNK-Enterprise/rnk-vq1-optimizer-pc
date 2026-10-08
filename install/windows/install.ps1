@@ -11,7 +11,7 @@
 #>
 
 param(
-  [string]$RepositoryUrl = '',
+  [string]$RepositoryUrl = 'https://github.com/RNK-Enterprise/pc-optimizer.git',
   [string]$InstallDirectory = "$env:LOCALAPPDATA\RNK-Vortex-Optimizer",
   [switch]$RunOptimize,
   [string]$GatewayUrl = $env:OPTIMIZER_GATEWAY_URL,

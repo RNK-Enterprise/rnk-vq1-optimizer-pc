@@ -11,7 +11,7 @@
 
 set -eu
 
-repository_url='https://github.com/Odinn-1982/rnk-vortex-system-optimizer.git'
+repository_url='https://github.com/RNK-Enterprise/pc-optimizer.git'
 install_directory="${XDG_DATA_HOME:-$HOME/.local/share}/rnk-vortex-optimizer"
 run_optimize=0
 environment_mode=''
