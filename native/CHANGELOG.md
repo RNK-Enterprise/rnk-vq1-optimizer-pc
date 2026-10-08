@@ -28,6 +28,8 @@
   discovery, duplicate evidence, favorites, recent history, playlists,
   import/export, and explicit player-host handoff plans without media-file
   mutation.
+- Added confirmed local-media playback through fixed shell-free platform
+  default-player openers with symlink and extension refusal.
 - Added bounded fact retention to steward report history and a daily report
   reducer with storage, memory, CPU/GPU, thermal, battery, pagefile, process,
   network, workload, gaming, and cleanup evidence.

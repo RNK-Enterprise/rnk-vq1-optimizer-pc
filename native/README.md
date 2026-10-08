@@ -72,6 +72,7 @@ node native/cli.mjs media-favorite --state-path "$HOME/.rnk-optimizer/media.json
   --file "$HOME/Music/track-a.mp3"
 node native/cli.mjs media-playback-plan --state-path "$HOME/.rnk-optimizer/media.json" \
   --file "$HOME/Music/track-a.mp3"
+node native/cli.mjs media-play --file "$HOME/Music/track-a.mp3" --confirm
 node native/cli.mjs media-player --tracks '["/music/track-a.mp3","/music/track-b.mp3"]' --action next
 node native/cli.mjs media-panel --url "https://www.youtube.com/playlist?list=EXAMPLE"
 ```
@@ -165,8 +166,11 @@ for playback.
 
 `media-player` provides deterministic queue, play/pause, previous/next,
 shuffle, repeat, select, and search state for an application-owned player
-host. `media-panel` accepts only HTTPS URLs on its explicit allow-list and
-returns an approval-gated embed plan; it does not fetch or download media.
+host. `media-play` validates one exact existing local media file and invokes
+only the fixed platform default-player opener after confirmation. It uses the
+shell-free command runner and refuses remote URLs, symlinks, and non-media
+extensions. `media-panel` accepts only HTTPS URLs on its explicit allow-list
+and returns an approval-gated embed plan; it does not fetch or download media.
 
 `workload-preview` detects only declared game evidence, a foreground process
 with an explicit game role, or a caller-supplied exact process name. It plans
