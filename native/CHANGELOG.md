@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added exact-entry startup preview/apply/restore authority for Linux, macOS,
+  and allow-listed Windows Run registry locations with protected-name, symlink,
+  admin, and reversible-receipt boundaries.
 - Added the cross-platform `steward-daemon` runtime and `steward-daemon` CLI
   command to coordinate bounded observation history and one-per-day reports in
   one signal-aware process without installing an operating-system service.

@@ -84,6 +84,8 @@ node native/cli.mjs power-monitor --auto-apply --confirm --allow-admin
 node native/cli.mjs process-overview --max-entries 128
 node native/cli.mjs process-stop-preview --pid 1234
 node native/cli.mjs process-stop-apply --pid 1234 --confirm --allow-admin
+node native/cli.mjs startup-preview --name Updater --location 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
+node native/cli.mjs startup-apply --name Updater --location 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' --confirm
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'
@@ -280,7 +282,14 @@ platforms and adapter failures remain visible in the report.
 runtime, and stop-impact explanations. Stop preview selects an exact observed
 PID and refuses protected or foreground processes. Stop apply requires
 confirmation, an approved background PID, and any platform-required admin
-boundary; startup changes remain review-only.
+boundary.
+
+`startup-preview` and `startup-apply` select one exact observed startup entry.
+Linux and macOS user startup files use an optimizer-owned `.rnk-disabled`
+suffix with a restore receipt. Windows accepts only the documented HKCU/HKLM
+Run registry locations and removes one named value with a restore receipt.
+Unknown locations, symlinks, protected names, occupied restore paths, and
+unsupported platforms refuse. `startup-restore` requires explicit confirmation.
 
 Supplying `--history-path` to `optimize` wraps the native authority with an
 append-only audit sequence: bounded observation, plan preview, apply report,

@@ -55,6 +55,7 @@ import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
 import { createPowerMonitor } from './power-monitor.js';
 import { applyProcessStop, buildProcessOverview, previewProcessStop } from './process-manager.js';
+import { applyStartupMutation, previewStartupMutation, restoreStartupMutation } from './startup-manager.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -481,6 +482,19 @@ async function runProcessCommand(command, args) {
   return { facts, plan, result: await applyProcessStop(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+async function runStartupCommand(command, args) {
+  const adapter = createPlatformAdapter();
+  if (command === 'startup-restore') {
+    const receipt = jsonOption(args, 'receipt');
+    return restoreStartupMutation(receipt, { approved: true, allowAdmin: args['allow-admin'] === true, dryRun: args.confirm !== true, commandRunner: createCommandRunner() });
+  }
+  const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await adapter.collectFacts();
+  const plan = previewStartupMutation(facts, { name: requireOption(args, 'name'), location: requireOption(args, 'location'), protectedNames: typeof args['protected-name'] === 'string' ? args['protected-name'].split(',').filter(Boolean) : [] });
+  if (command === 'startup-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('startup-apply requires --confirm');
+  return { facts, plan, result: await applyStartupMutation(plan, { approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false, commandRunner: createCommandRunner() }) };
+}
+
 async function runDownloadCommand(command, args) {
   const guard = downloadGuardFromArgs(args);
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
@@ -590,6 +604,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'power-monitor') return runPowerMonitorCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
   if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
+  if (['startup-preview', 'startup-apply', 'startup-restore'].includes(command)) return runStartupCommand(command, args);
   if (['media-scan', 'media-play', 'media-panel-open', 'media-metadata', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'media-player') return runMediaPlayerCommand(args);
   if (command === 'media-panel') return buildMediaPanelPlan(requireOption(args, 'url'));

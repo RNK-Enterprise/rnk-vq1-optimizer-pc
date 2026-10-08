@@ -50,6 +50,8 @@
     "native:process:overview": "node native/cli.mjs process-overview",
     "native:process:stop-preview": "node native/cli.mjs process-stop-preview",
     "native:process:stop-apply": "node native/cli.mjs process-stop-apply",
+    "native:startup:preview": "node native/cli.mjs startup-preview",
+    "native:startup:apply": "node native/cli.mjs startup-apply",
     "native:download:preflight": "node native/cli.mjs download-preflight",
     "native:download:scan": "node native/cli.mjs download-scan",
     "native:download:monitor": "node native/cli.mjs download-monitor",

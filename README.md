@@ -175,6 +175,10 @@ node native/cli.mjs power-monitor --auto-apply --confirm --allow-admin
 node native/cli.mjs process-overview --max-entries 128
 node native/cli.mjs process-stop-preview --pid 1234
 node native/cli.mjs process-stop-apply --pid 1234 --confirm --allow-admin
+node native/cli.mjs startup-preview --name Updater \
+  --location 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
+node native/cli.mjs startup-apply --name Updater \
+  --location 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' --confirm
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -339,6 +343,14 @@ selects one observed PID and refuses foreground, protected, system, runtime,
 model, credential, and user-protected names. `process-stop-apply` is a separate
 explicit operation requiring confirmation and the platform adapter's approval
 boundary.
+
+`startup-preview` and `startup-apply` select one exact observed startup entry.
+Linux and macOS user startup files are renamed to an optimizer-owned
+`.rnk-disabled` suffix and return a restore receipt. Windows accepts only the
+documented HKCU/HKLM Run registry locations and removes one named value, also
+returning a restore receipt. Unknown locations, symlinks, protected names,
+occupied restore paths, and unsupported platforms refuse. `startup-restore`
+requires the receipt and explicit confirmation.
 
 ## PC mesh and empirical proof
 
