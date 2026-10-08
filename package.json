@@ -44,6 +44,9 @@
     "globals": "^16.0.0",
     "jest": "^30.5.2"
   },
+  "overrides": {
+    "sprintf-js": "1.1.3"
+  },
   "jest": {
     "testEnvironment": "node",
     "setupFilesAfterEnv": [
