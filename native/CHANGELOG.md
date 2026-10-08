@@ -15,6 +15,8 @@
   fixed commands, bounded output, and fail-closed unavailable states.
 - Added bounded download preflight, incomplete/duplicate scanning, and
   SHA-256 verification commands with no downloader or filesystem mutation.
+- Added fixed-root startup inventory for Windows, Linux, and macOS with
+  review-only entries and no disable or launch authority.
 
 ## 2026-10-06
 

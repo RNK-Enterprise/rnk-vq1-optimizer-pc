@@ -9,6 +9,7 @@
  */
 
 import fs from 'fs/promises';
+import { collectStartupTelemetry } from './startup-telemetry.js';
 
 export const WORKSTATION_TELEMETRY_VERSION = 1;
 const EMPTY = Object.freeze([]);
@@ -208,12 +209,13 @@ export async function collectNetworkTelemetry({ platform = process.platform, com
   try { const result = await commandRunner.run(command[0], command[1], command[2]); return result?.code === 0 ? parseNetworkTelemetry(result.stdout, { platform }) : Object.freeze({ available: false, interfaces: EMPTY, source: result?.stderr || 'network command failed' }); } catch (error) { return Object.freeze({ available: false, interfaces: EMPTY, source: error.message }); }
 }
 
-export async function collectWorkstationTelemetry({ platform = process.platform, commandRunner, fsImpl = fs } = {}) {
-  const [processes, battery, thermals, network] = await Promise.all([
+export async function collectWorkstationTelemetry({ platform = process.platform, commandRunner, fsImpl = fs, env = process.env } = {}) {
+  const [processes, battery, thermals, network, startup] = await Promise.all([
     collectProcessTelemetry({ platform, commandRunner }),
     collectBatteryTelemetry({ platform, commandRunner, fsImpl }),
     collectThermalTelemetry({ platform, commandRunner, fsImpl }),
-    collectNetworkTelemetry({ platform, commandRunner, fsImpl })
+    collectNetworkTelemetry({ platform, commandRunner, fsImpl }),
+    collectStartupTelemetry({ platform, commandRunner, env, fsImpl })
   ]);
-  return Object.freeze({ telemetryVersion: WORKSTATION_TELEMETRY_VERSION, platform, processes, battery, thermals, network });
+  return Object.freeze({ telemetryVersion: WORKSTATION_TELEMETRY_VERSION, platform, processes, battery, thermals, network, startup });
 }

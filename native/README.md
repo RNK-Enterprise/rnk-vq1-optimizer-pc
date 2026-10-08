@@ -81,12 +81,13 @@ rollback-preview, and quarantine-preview operations; `steward-monitor` records
 periodic steward reports and delivers them to stdout. Neither command applies
 the planner's actions automatically.
 
-`collectSystemFacts()` now includes bounded process, battery, thermal, and
-network telemetry when the host exposes it. Windows uses fixed PowerShell
-queries, Linux uses fixed `ps` plus read-only `/sys` and `/proc` files, and
-macOS uses fixed `ps`, `pmset`, and `netstat` queries. Missing sensors and
-unsupported platforms remain `available: false`; no telemetry path grants
-process-stop, file-delete, or network-control authority.
+`collectSystemFacts()` now includes bounded process, startup, battery, thermal,
+and network telemetry when the host exposes it. Windows uses fixed PowerShell
+queries, Linux uses fixed `ps` plus read-only `/sys`, `/proc`, and startup
+roots, and macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
+Missing sensors and unsupported platforms remain `available: false`; no
+telemetry path grants process-stop, startup-disable, file-delete, or
+network-control authority.
 
 The download guard provides explicit preflight, bounded scanning, incomplete
 download review, duplicate groups, and SHA-256 verification. It requires an
