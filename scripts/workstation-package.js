@@ -30,6 +30,7 @@ function text(value) { return typeof value === 'string' && value.trim() ? value.
 function absolute(value, pathImpl) { const resolved = text(value); return resolved && pathImpl.isAbsolute(resolved) ? pathImpl.resolve(resolved) : null; }
 function validVersion(value) { return typeof value === 'string' && /^\d+\.\d+\.\d+$/.test(value); }
 function launcherName(platform) { return platform === 'win32' ? 'rnk-optimizer-dashboard.cmd' : 'rnk-optimizer-dashboard'; }
+function stewardLauncherName(platform) { return platform === 'win32' ? 'rnk-optimizer-steward.cmd' : 'rnk-optimizer-steward'; }
 
 export function buildWorkstationPackagePlan({ platform = process.platform, sourceRoot, outputRoot, version, pathImpl = path } = {}) {
   const normalizedPlatform = text(platform)?.toLowerCase() || 'unknown';
@@ -47,7 +48,8 @@ export function buildWorkstationPackagePlan({ platform = process.platform, sourc
     outputRoot: output,
     releaseVersion: version,
     files: RUNTIME_FILES,
-    launcher: launcherName(normalizedPlatform)
+    launcher: launcherName(normalizedPlatform),
+    stewardLauncher: stewardLauncherName(normalizedPlatform)
   });
 }
 
@@ -56,6 +58,13 @@ export function renderWorkstationLauncher(platform) {
   if (!PLATFORMS.has(normalizedPlatform)) throw new Error('unsupported workstation package platform');
   if (normalizedPlatform === 'win32') return '@echo off\r\nnode "%~dp0native\\cli.mjs" steward-dashboard --packaged %*\r\n';
   return '#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "${RNK_NODE:-node}" "$SCRIPT_DIR/native/cli.mjs" steward-dashboard --packaged "$@"\n';
+}
+
+export function renderWorkstationStewardLauncher(platform) {
+  const normalizedPlatform = text(platform)?.toLowerCase();
+  if (!PLATFORMS.has(normalizedPlatform)) throw new Error('unsupported workstation package platform');
+  if (normalizedPlatform === 'win32') return '@echo off\r\nnode "%~dp0native\\cli.mjs" steward-daemon --packaged %*\r\n';
+  return '#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "${RNK_NODE:-node}" "$SCRIPT_DIR/native/cli.mjs" steward-daemon --packaged "$@"\n';
 }
 
 function validPlan(plan) {
@@ -81,12 +90,15 @@ export async function materializeWorkstationPackage(plan, { fsImpl = fs, pathImp
   await fsImpl.mkdir(plan.outputRoot, { recursive: true });
   for (const entry of plan.files) await fsImpl.cp(pathImpl.join(plan.sourceRoot, entry), pathImpl.join(plan.outputRoot, entry), { recursive: true, force: true });
   const launcherPath = pathImpl.join(plan.outputRoot, plan.launcher);
+  const stewardLauncherPath = pathImpl.join(plan.outputRoot, plan.stewardLauncher);
   await fsImpl.writeFile(launcherPath, renderWorkstationLauncher(plan.platform), 'utf8');
+  await fsImpl.writeFile(stewardLauncherPath, renderWorkstationStewardLauncher(plan.platform), 'utf8');
   if (plan.platform !== 'win32') await fsImpl.chmod(launcherPath, 0o755);
+  if (plan.platform !== 'win32') await fsImpl.chmod(stewardLauncherPath, 0o755);
   const files = await packageFileEntries(plan.outputRoot, '.', { fsImpl, pathImpl });
   const manifest = { packageVersion: plan.version, releaseVersion: plan.releaseVersion, platform: plan.platform, files };
   await fsImpl.writeFile(pathImpl.join(plan.outputRoot, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-  return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, manifest: Object.freeze(manifest) });
+  return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, stewardLauncherPath, manifest: Object.freeze(manifest) });
 }
 
 function safeManifestPath(value, pathImpl) {

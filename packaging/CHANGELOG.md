@@ -15,5 +15,7 @@
   reproducible release artifacts.
 - Fixed packaged dashboard launchers to pass the packaged-session flag so a
   fresh bundle resolves its per-user history and HTML report paths directly.
+- Added matching dashboard and continuous-steward launchers to every runtime
+  bundle; both launchers are included in manifest hashing and verification.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.

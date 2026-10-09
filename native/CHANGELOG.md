@@ -5,6 +5,8 @@
 - Added a cross-platform packaged-session user-data path resolver for Windows,
   Linux, and macOS. Packaged dashboard launchers now use isolated per-user
   history and report paths instead of requiring manual path arguments.
+- Added a packaged continuous-steward launcher that runs the existing bounded
+  observation and daily-report loop with the same isolated per-user paths.
 
 - Added the reproducible cross-platform runtime package boundary and fixed
   Windows, Linux, and macOS dashboard launchers; tray lifecycle remains outside

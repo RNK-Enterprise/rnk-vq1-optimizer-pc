@@ -23,6 +23,7 @@ import { buildWorkstationTrends } from './workstation-trends.js';
 import { createStorageGrowthTracker } from './storage-growth.js';
 import { createWorkstationReportFileDelivery } from './workstation-report-delivery.js';
 import { applyReportSchedule, previewReportSchedule, restoreReportSchedule } from './report-scheduler.js';
+import { defaultWorkstationPaths } from './workstation-paths.js';
 import {
   downloadGuardFromArgs,
   historyStoreFromArgs,
@@ -262,16 +263,24 @@ export async function runStewardScheduleCommand(args, { store = historyStoreFrom
 }
 
 export async function runStewardDaemonCommand(args, {
-  store = historyStoreFromArgs(args),
+  store = null,
   daemonFactory = createStewardDaemon,
-  adapterFactory = async () => (await import('./platform.js')).createPlatformAdapter()
+  adapterFactory = async () => (await import('./platform.js')).createPlatformAdapter(),
+  platform = process.platform,
+  env = process.env,
+  pathResolver = defaultWorkstationPaths
 } = {}) {
-  const reportDelivery = typeof args['report-output-path'] === 'string'
-    ? createWorkstationReportFileDelivery({ filePath: args['report-output-path'], format: args.format || 'json' })
+  const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
+  if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
+  const historyPath = defaults?.historyPath || requireOption(args, 'path');
+  const reportPath = defaults?.reportPath || args['report-output-path'];
+  const history = store || historyStoreFromArgs({ ...args, path: historyPath });
+  const reportDelivery = typeof reportPath === 'string'
+    ? createWorkstationReportFileDelivery({ filePath: reportPath, format: args.format || 'json' })
     : null;
   const daemon = daemonFactory({
     adapter: await adapterFactory(),
-    store,
+    store: history,
     observationIntervalMs: numberOption(args, 'observation-interval-seconds', 900) * 1000,
     reportIntervalMs: numberOption(args, 'report-interval-seconds', 900) * 1000,
     onObservation: (report) => process.stdout.write(`${JSON.stringify({ type: 'observation', report })}\n`),
