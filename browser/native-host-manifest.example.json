@@ -1,0 +1,9 @@
+{
+  "name": "com.rnk.enterprise.optimizer",
+  "description": "Bounded local download preflight host",
+  "path": "/ABSOLUTE/PATH/TO/native/browser-bridge.mjs",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://REPLACE_WITH_EXACT_EXTENSION_ID/"
+  ]
+}

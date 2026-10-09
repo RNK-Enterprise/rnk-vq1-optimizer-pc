@@ -311,6 +311,14 @@ also attaches current Storage Pressure Guard evidence and returns
 emergency free-space pressure. It is trigger-based observation only; it does
 not intercept downloads or change destination, bandwidth, or file state.
 
+`native:download:bridge` starts the optional browser native-messaging host.
+The host accepts only a bounded `download-preflight` message containing a size
+and optional volume label, collects local volume facts, and returns an advisory
+allow/redirect/insufficient-space result. Install the browser-specific example
+manifest from `browser/native-host-manifest.example.json` with an exact
+extension origin. The bridge never receives arbitrary paths, opens a network
+listener, cancels a download, or rewrites a browser destination.
+
 `media-player --action play --tracks ... --confirm` uses the selected local
 track from the deterministic queue and delegates only to the fixed platform
 default-player opener. Without confirmation it returns a preview or approval

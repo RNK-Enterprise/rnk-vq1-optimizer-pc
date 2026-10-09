@@ -8,6 +8,9 @@
 - Added fixed macOS `taskpolicy` background/unbackground I/O priority actions for
   approved process targets; hard CPU and memory caps remain explicit unsupported
   results rather than being misrepresented as equivalent controls.
+- Added a bounded browser native-messaging download-preflight bridge and an
+  advisory browser adapter. It exchanges only size and mount facts, has no HTTP
+  listener, and does not cancel or rewrite downloads.
 - Added a packaged System Drive Guard launcher that continuously observes the
   configured free-space floor with the existing protected-root and approval
   boundaries; automatic cleanup remains opt-in and category-limited.

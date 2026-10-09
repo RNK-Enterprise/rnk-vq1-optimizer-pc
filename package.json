@@ -7,10 +7,10 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --verbose",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --ci --coverage --maxWorkers=2",
-    "verify": "npm test -- --runInBand && npm run lint && node --check native/cli.mjs && node --check native/cli-maintenance.mjs && node --check native/cli-media.mjs && node --check native/cli-utils.mjs && node --check scripts/pc-host-benchmark.mjs && node --check scripts/verify-release-provenance.mjs && node --check scripts/verify-public-boundary.mjs && node scripts/verify-public-boundary.mjs && npm run bench -- --json",
+    "verify": "npm test -- --runInBand && npm run lint && node --check native/cli.mjs && node --check native/cli-maintenance.mjs && node --check native/cli-media.mjs && node --check native/cli-utils.mjs && node --check native/browser-bridge.mjs && node --check scripts/pc-host-benchmark.mjs && node --check scripts/verify-release-provenance.mjs && node --check scripts/verify-public-boundary.mjs && node scripts/verify-public-boundary.mjs && npm run bench -- --json",
     "bench": "node scripts/pc-host-benchmark.mjs",
-    "lint": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs",
-    "lint:fix": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs --fix",
+    "lint": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs browser/**/*.js",
+    "lint:fix": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs browser/**/*.js --fix",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "audit:high": "npm audit --audit-level=high",
     "native:facts": "node native/cli.mjs facts",
@@ -73,6 +73,7 @@
     "native:download:scan": "node native/cli.mjs download-scan",
     "native:download:monitor": "node native/cli.mjs download-monitor",
     "native:download:verify": "node native/cli.mjs download-verify",
+    "native:download:bridge": "node native/browser-bridge.mjs",
     "native:media:scan": "node native/cli.mjs media-scan",
     "native:media:read": "node native/cli.mjs media-read",
     "native:media:favorite": "node native/cli.mjs media-favorite",
@@ -137,10 +138,12 @@
       "native/cli-media.mjs",
       "native/cli-maintenance.mjs",
       "native/cli.mjs",
+      "native/browser-bridge.mjs",
       "scripts/verify-public-boundary.mjs",
       "scripts/verify-release-provenance.mjs",
       "scripts/pc-host-benchmark.mjs",
-      "scripts/workstation-package.js"
+      "scripts/workstation-package.js",
+      "browser/**/*.js"
     ],
     "testMatch": [
       "**/test/**/*.test.js"

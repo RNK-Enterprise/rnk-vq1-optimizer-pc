@@ -47,7 +47,9 @@ wishlist:
    observational and no platform-safe portable cap is claimed.
 4. macOS hard CPU/RAM/I/O limits. macOS returns explicit unsupported results.
 5. Browser/OS-integrated download interception and destination redirection.
-   The explicit-root guard and monitor are implemented.
+   A native-messaging preflight bridge and advisory browser adapter now exist;
+   browser-specific cancellation and destination redirection remain outside
+   the authority until a safe host contract is proven.
 6. Full service/decoder media integration. Local metadata and host handoff are
    implemented; the optimizer does not ship a decoder or service downloader.
 7. Live release evidence: clean-machine install, Windows 11 ROG execution,
