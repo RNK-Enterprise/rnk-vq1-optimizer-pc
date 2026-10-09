@@ -451,6 +451,9 @@ supported storage, memory/pagefile, CPU/GPU thermal, battery, history, daily-pri
 workload, and placement questions from supplied or locally collected facts. It
 refuses unknown operations and never turns natural-language text into a
 command.
+With a workstation report it also answers which observed process is the latest
+CPU or I/O leader; without sampled process-rate evidence it returns an
+observation-required result.
 
 `policy-preview` combines local facts into bounded storage, memory/pagefile,
 thermal, gaming/build, battery, and process handoffs. `policy-approve` marks

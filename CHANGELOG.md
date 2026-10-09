@@ -18,6 +18,8 @@
   new monitor remains observation-only.
 - Extended daily workstation reports to surface measured process CPU/I/O peaks,
   latest leaders, rate-ready samples, and counter resets.
+- Extended the facts-only assistant with report-backed process CPU/I/O leader
+  answers and explicit missing-evidence results.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

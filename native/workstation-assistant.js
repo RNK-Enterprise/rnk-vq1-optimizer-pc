@@ -43,6 +43,14 @@ function memoryAnswer(facts) {
   return Object.freeze({ intent: 'memory', state: memory || processes.length ? 'answered' : 'observation-required', answer: memory ? `Memory usage is ${number(memory.usedPercent) ?? 'unknown'} percent.` : 'Memory evidence is unavailable.', evidence: Object.freeze({ memory, pagefile, topProcesses: processes }), recommendations: Object.freeze(pagefile?.pressure === true ? ['review-pagefile-pressure', 'reduce-concurrent-workloads'] : processes.length ? ['review-top-memory-processes'] : ['collect-memory-evidence']) });
 }
 
+function processResourceAnswer(report, mode) {
+  const supplied = record(report);
+  const processes = supplied && record(report.processes) ? report.processes : null;
+  const leader = processes && (mode === 'io' ? processes.latestTopIo : processes.latestTopCpu);
+  const label = mode === 'io' ? 'I/O' : 'CPU';
+  return Object.freeze({ intent: 'process-resource', state: leader ? 'answered' : 'observation-required', answer: leader ? `${leader.name || 'unknown'} is the latest observed ${label} leader.` : 'A sampled workstation report is required for process resource rates.', evidence: Object.freeze({ mode, report: supplied ? report : null, leader: leader || null }), recommendations: Object.freeze(leader ? ['review-process-resource-leader'] : ['collect-process-rate-evidence']) });
+}
+
 function thermalAnswer(facts) {
   const thermals = record(facts.thermals) ? facts.thermals : null;
   const gpu = record(facts.gpu) ? facts.gpu : null;
@@ -87,6 +95,7 @@ function movePlan() {
 export function interpretWorkstationQuestion(question, facts = {}, { report = null } = {}) {
   const normalized = questionText(question);
   if (!record(facts)) throw new TypeError('Assistant facts must be an object');
+  if (/\b(eating|using|consuming).*(disk|cpu|processor|i\/o)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...processResourceAnswer(report, /\b(disk|i\/o)\b/.test(normalized) ? 'io' : 'cpu') });
   if (/\b(c:|drive|disk|storage|space|full)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...storageAnswer(facts) });
   if (/\b(ram|memory|pagefile|swap)\b/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...memoryAnswer(facts) });
   if (/\b(hot|thermal|temperature|cooling|throttl)/.test(normalized)) return Object.freeze({ version: WORKSTATION_ASSISTANT_VERSION, ...thermalAnswer(facts) });

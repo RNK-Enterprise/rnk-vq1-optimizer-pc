@@ -397,6 +397,9 @@ storage, memory/pagefile, thermal, battery, history, daily-priority, workload,
 and placement questions, but never executes natural-language commands. Cleanup
 and placement responses are preview plans that retain the existing approval
 boundaries.
+When supplied a workstation report, it also answers which observed process is
+the latest CPU or I/O leader; without sampled report evidence it returns an
+observation-required result.
 Named power profiles map only to documented platform profiles; unsupported
 platforms remain unsupported and firmware or fan-register control is not
 attempted.

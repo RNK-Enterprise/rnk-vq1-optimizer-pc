@@ -19,6 +19,8 @@
 - Extended daily workstation reports with measured process CPU and read/write
   I/O peaks, latest leaders, rate-ready sample counts, and counter-reset events
   from the same bounded two-sample evidence.
+- Extended the deterministic workstation assistant to answer report-backed
+  process CPU and I/O leader questions without adding execution authority.
 - Added an explicit bounded multi-drive SMART observer that reuses validated
   inventory devices without changing normal inventory-only facts collection.
 - Corrected the Linux mounted-volume command so GNU `df` no longer receives the

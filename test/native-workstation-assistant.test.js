@@ -22,6 +22,9 @@ describe('workstation assistant', () => {
   test('answers storage, memory, thermal, battery, history, and workload questions from facts', () => {
     expect(interpretWorkstationQuestion('Why is my C: drive full?', facts)).toMatchObject({ version: WORKSTATION_ASSISTANT_VERSION, intent: 'storage', state: 'answered', evidence: { pressure: { level: 'critical' }, volumes: [{ mount: 'C:' }, { mount: 'E:' }] } });
     expect(interpretWorkstationQuestion('What is eating my RAM?', facts)).toMatchObject({ intent: 'memory', evidence: { topProcesses: expect.arrayContaining([expect.objectContaining({ name: 'model' })]), pagefile: { pressure: true } } });
+    expect(interpretWorkstationQuestion('What is eating disk right now?', facts, { report: { processes: { latestTopIo: { pid: 3, name: 'builder', ioBytesPerSecond: 100 } } } })).toMatchObject({ intent: 'process-resource', state: 'answered', evidence: { mode: 'io', leader: { name: 'builder' } } });
+    expect(interpretWorkstationQuestion('What is using CPU?', facts, { report: { processes: { latestTopCpu: { pid: 3, name: 'builder', cpuPercent: 50 } } } })).toMatchObject({ intent: 'process-resource', state: 'answered', evidence: { mode: 'cpu', leader: { name: 'builder' } } });
+    expect(interpretWorkstationQuestion('What is using CPU?', facts, { report: { processes: { latestTopCpu: { pid: 3, name: '', cpuPercent: 50 } } } })).toMatchObject({ intent: 'process-resource', answer: 'unknown is the latest observed CPU leader.' });
     expect(interpretWorkstationQuestion('Why did the laptop get hot?', facts)).toMatchObject({ intent: 'thermals', state: 'answered', recommendations: ['reduce-sustained-load', 'check-cooling'] });
     expect(interpretWorkstationQuestion('How hot is the GPU?', { thermals: { maxTemperatureC: 70 }, gpu: { temperatureC: 95 } })).toMatchObject({ intent: 'thermals', answer: 'The highest observed thermal reading is 95 C.' });
     expect(interpretWorkstationQuestion('How healthy is my battery?', facts)).toMatchObject({ intent: 'battery', state: 'answered' });
@@ -57,6 +60,8 @@ describe('workstation assistant', () => {
     expect(interpretWorkstationQuestion('What should I fix?', {}, { report: { recommendations: [] } })).toMatchObject({ intent: 'recommendations', state: 'answered', recommendations: ['no-change'] });
     expect(interpretWorkstationQuestion('What is on disk?', { storagePressure: {} })).toMatchObject({ intent: 'storage', answer: 'System storage pressure is unknown.' });
     expect(interpretWorkstationQuestion('What is eating memory?', { memory: { usedPercent: 'bad' }, pagefile: {}, processes: [{ memoryBytes: 10 }, { memoryBytes: null }, { memoryBytes: 20 }, { memoryBytes: null }] })).toMatchObject({ intent: 'memory', answer: 'Memory usage is unknown percent.', recommendations: ['review-top-memory-processes'] });
+    expect(interpretWorkstationQuestion('What is using CPU?', facts)).toMatchObject({ intent: 'process-resource', state: 'observation-required', recommendations: ['collect-process-rate-evidence'] });
+    expect(interpretWorkstationQuestion('What is eating disk?', facts, { report: { processes: {} } })).toMatchObject({ intent: 'process-resource', state: 'observation-required' });
     expect(interpretWorkstationQuestion('Unknown request')).toMatchObject({ intent: 'unknown' });
   });
 });
