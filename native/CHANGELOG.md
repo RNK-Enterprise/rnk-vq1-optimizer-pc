@@ -245,6 +245,10 @@
 - Added facts, optimization, cache, and organizer CLI commands.
 ## Unreleased
 
+- Daily reports now retain the latest bounded drive rows (device, model, media
+  type, health, and available SMART fields) so the HTML dashboard can show
+  which drive needs attention instead of only aggregate failure counts.
+
 - Expanded the local HTML workstation report dashboard with bounded volume,
   drive-health, network-rate, workload-contention, cleanup, and policy evidence.
   Missing evidence remains visibly `unknown` or an explicit empty-state row;

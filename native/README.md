@@ -233,7 +233,7 @@ report as a bounded local artifact. `steward-daemon` accepts the corresponding
 `--report-output-path PATH --format json|markdown|html` option. HTML is a
 self-contained browser-readable dashboard with escaped data. The file sink is
 local-only and does not upload or notify external services. It includes bounded
-storage-volume, drive-health, network, workload, cleanup, and policy sections;
+storage-volume and per-drive device/model/media/health, network, workload, cleanup, and policy sections;
 missing evidence remains an explicit unknown or empty state.
 
 `report-open --path PATH` previews opening one explicit local `.html` report;

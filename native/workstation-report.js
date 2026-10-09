@@ -111,8 +111,19 @@ function pagefileSample(facts) {
 
 function driveSample(facts) {
   const source = record(facts.drives) ? facts.drives : {};
-  const drives = rows(source.drives);
-  return { available: source.available === true, count: drives.length, degraded: count(drives, (item) => item.health === 'degraded'), failed: count(drives, (item) => item.health === 'failed') };
+  const drives = rows(source.drives).map((item) => Object.freeze({
+    device: text(item.device),
+    model: text(item.model),
+    mediaType: text(item.mediaType),
+    health: text(item.health),
+    smart: record(item.smart) ? Object.freeze({
+      health: text(item.smart.health),
+      temperatureC: nonNegative(item.smart.temperatureC),
+      percentageUsed: nonNegative(item.smart.percentageUsed),
+      criticalWarning: text(item.smart.criticalWarning)
+    }) : null
+  }));
+  return { available: source.available === true, count: drives.length, degraded: count(drives, (item) => item.health === 'degraded'), failed: count(drives, (item) => item.health === 'failed'), drives };
 }
 
 function volumeSample(facts) {
@@ -234,7 +245,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     fans: Object.freeze({ peakRpm: maximum(fans.map((item) => item.maximumRpm).filter((value) => value !== null)), latestRpm: last(fans.map((item) => item.maximumRpm)), latestFanCount: last(fans.map((item) => item.fanCount)), observedSamples: count(fans, (item) => item.available) }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
-    drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
+    drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), latest: Object.freeze(drives.at(-1)?.drives || []), observedSamples: count(drives, (item) => item.available) }),
     volumes: Object.freeze({ latest: Object.freeze(volumes.at(-1)?.volumes || []), latestCount: volumes.at(-1)?.volumes.length || 0, minimumFreeBytes: minimum(volumeFree), observedSamples: count(volumes, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
     network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestConnectionCount: last(network.map((item) => item.connectionCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),

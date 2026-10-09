@@ -287,7 +287,7 @@ Use `--output-path PATH --format json|markdown|html` with `steward-schedule`, or
 persist the daily report as a bounded local artifact. HTML is a self-contained
 browser-readable dashboard with escaped report data. No external delivery is
 performed. The dashboard includes the current storage-volume table and
-evidence for drive health, network rates/connections, development and gaming
+per-drive device/model/media/health evidence, network rates/connections, development and gaming
 contention, cleanup recovery, and policy state; missing evidence remains
 explicitly unknown.
 
