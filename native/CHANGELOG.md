@@ -15,6 +15,9 @@
 - Added a Windows, Linux, and macOS CI host-runtime matrix that runs the strict
   verification gate and exercises live facts and mounted-volume probes on each
   runner; target-machine and administrator evidence remain separate.
+- Aligned CI and release verification with the Node 22 strict-gate environment;
+  the package still accepts Node 20 or newer, but coverage evidence now uses the
+  same runtime family as the reproducible local gate.
 - Added bounded NVIDIA GPU power-policy preview/apply for supported Windows and
   Linux hosts when current, minimum, and maximum watt limits are observed;
   universal frame-rate and non-NVIDIA GPU caps remain unsupported.
