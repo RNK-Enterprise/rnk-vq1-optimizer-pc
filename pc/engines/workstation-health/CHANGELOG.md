@@ -9,6 +9,8 @@
   GPU temperature, and pagefile pressure before daily classification.
 - Fixed missing free-space normalization so invalid values remain unavailable
   instead of becoming a false zero-byte reading.
+- Included pagefile pressure in the resource-pressure turbo's warning and
+  critical classification.
 - Added explicit warning, critical, healthy, and observation-required states.
 - Added storage-trend, resource-pressure, workload-conflict, and cleanup-audit
   turbo/library pairs.
