@@ -29,9 +29,10 @@ export const PROCESS_PRIORITIES = Object.freeze(['low', 'normal', 'high']);
 export const GPU_POLICIES = Object.freeze(['balanced', 'performance', 'battery']);
 export const MEMORY_POLICIES = Object.freeze(['balanced', 'background-low']);
 export const CACHE_TARGETS = Object.freeze(['user-temp', 'shader-cache', 'app-cache']);
-export const RESOURCE_LIMITS = Object.freeze(['cpu-percent', 'memory-bytes']);
+export const RESOURCE_LIMITS = Object.freeze(['cpu-percent', 'memory-bytes', 'io-bytes-per-second']);
 export const MIN_RESOURCE_MEMORY_BYTES = 16 * 1024 * 1024;
 export const MAX_RESOURCE_MEMORY_BYTES = 1024 ** 4;
+export const MAX_RESOURCE_IO_BYTES_PER_SECOND = 10 * 1024 ** 3;
 
 export const NATIVE_ACTIONS = Object.freeze([
   'set-power-profile',
@@ -97,6 +98,9 @@ export function validateNativeAction(action) {
       }
       if (action.value === 'memory-bytes' && (action.limit < MIN_RESOURCE_MEMORY_BYTES || action.limit > MAX_RESOURCE_MEMORY_BYTES)) {
         throw new Error('Memory resource limit is outside the bounded range');
+      }
+      if (action.value === 'io-bytes-per-second' && (action.limit > MAX_RESOURCE_IO_BYTES_PER_SECOND || typeof action.device !== 'string' || !/^[1-9]\d*:\d+$/u.test(action.device))) {
+        throw new Error('I/O resource limit requires a bounded major:minor device');
       }
       break;
     case 'set-gpu-policy':

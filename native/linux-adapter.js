@@ -23,6 +23,7 @@ import path from 'path';
 import { collectSystemFacts } from './system-facts.js';
 import os from 'os';
 import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
+import { applyLinuxIoBudget, MAX_LINUX_IO_BYTES_PER_SECOND, validLinuxBlockDevice } from './linux-io-budget.js';
 
 const POWER_PROFILES = Object.freeze({ balanced: 'balanced', performance: 'performance', battery: 'power-saver' });
 const NICE_VALUES = Object.freeze({ low: '10', normal: '0', high: '-5' });
@@ -48,10 +49,10 @@ function validPid(pid) {
 }
 
 function validResourceLimit(action) {
-  return action && ['cpu-percent', 'memory-bytes'].includes(action.value)
-    && Number.isInteger(action.limit) && action.limit > 0
-    && (action.value !== 'cpu-percent' || action.limit <= 100)
-    && (action.value !== 'memory-bytes' || (action.limit >= MIN_RESOURCE_MEMORY_BYTES && action.limit <= MAX_RESOURCE_MEMORY_BYTES));
+  if (!action || !Number.isInteger(action.limit) || action.limit <= 0) return false;
+  if (action.value === 'cpu-percent') return action.limit <= 100;
+  if (action.value === 'memory-bytes') return action.limit >= MIN_RESOURCE_MEMORY_BYTES && action.limit <= MAX_RESOURCE_MEMORY_BYTES;
+  return action.value === 'io-bytes-per-second' && action.limit <= MAX_LINUX_IO_BYTES_PER_SECOND && validLinuxBlockDevice(action.device);
 }
 
 function approvedPid(context, pid) {
@@ -111,6 +112,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         || action.type === 'set-process-affinity'
         || (action.type === 'set-process-resource-limit' && action.value === 'memory-bytes')
         || (action.type === 'set-process-resource-limit' && action.value === 'cpu-percent')
+        || (action.type === 'set-process-resource-limit' && action.value === 'io-bytes-per-second')
         || (action.type === 'set-process-priority' && action.value === 'high')
         || (action.type === 'set-process-io-priority' && action.value === 'high');
     },
@@ -140,6 +142,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
           if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
           if (action.value === 'cpu-percent') return applyCpuCgroupLimit(pid, action.limit, { fsImpl, cgroupRoot });
+          if (action.value === 'io-bytes-per-second') return applyLinuxIoBudget(pid, action.limit, action.device, { fsImpl, cgroupRoot });
           const memoryCgroup = await applyMemoryCgroupLimit(pid, action.limit, { fsImpl, cgroupRoot });
           if (memoryCgroup.ok || memoryCgroup.fallback !== true) return memoryCgroup;
           return resultFromCommand(await commandRunner.run('prlimit', ['--pid', String(pid), `--as=${action.limit}:${action.limit}`]), 'set-process-resource-limit');

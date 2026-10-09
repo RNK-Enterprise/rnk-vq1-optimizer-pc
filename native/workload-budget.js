@@ -9,7 +9,7 @@
  * only because portable hard-cap authority is not available here.
  */
 
-import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
+import { MAX_RESOURCE_IO_BYTES_PER_SECOND, MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
 
 export const WORKLOAD_BUDGET_VERSION = 1;
 const DIMENSIONS = Object.freeze(['cpuPercent', 'memoryBytes', 'ioBytesPerSecond', 'gpuPercent']);
@@ -21,6 +21,7 @@ function record(value) { return Boolean(value) && typeof value === 'object' && !
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
 function pid(value) { return Number.isInteger(value) && value > 0 && value <= 2147483647 ? value : null; }
 function nonNegative(value) { return Number.isFinite(value) && value >= 0 ? value : null; }
+function validIoDevice(value) { return typeof value === 'string' && /^[1-9]\d*:\d+$/u.test(value); }
 function rows(value) { return Array.isArray(value) ? value.filter(record).slice(0, 512) : []; }
 function priority(value) { return PRIORITIES.has(value) ? value : null; }
 function enforcement(value) { if (!ENFORCEMENTS.has(value)) throw new Error(`Unsupported workload budget enforcement: ${value || 'unknown'}`); return value; }
@@ -30,7 +31,7 @@ function validLimit(dimension, value) {
 }
 function normalizeBudget(value) {
   const source = record(value) ? value : {};
-  return Object.freeze(Object.fromEntries(DIMENSIONS.map((dimension) => [dimension, validLimit(dimension, source[dimension])] )));
+  return Object.freeze({ ...Object.fromEntries(DIMENSIONS.map((dimension) => [dimension, validLimit(dimension, source[dimension])] )), ioDevice: validIoDevice(source.ioDevice) ? source.ioDevice : null });
 }
 function protectedProcess(item) {
   return item.protected === true || item.foreground === true || PROTECTED_ROLES.has(text(item.role)?.toLowerCase() || '');
@@ -46,15 +47,16 @@ function breachFor(item, dimension, limit) {
   const usage = nonNegative(item[dimension]);
   return usage !== null && limit !== null && usage > limit ? Object.freeze({ dimension, usage, limit }) : null;
 }
-function hardLimitSupported(dimension, limit) {
-  return dimension === 'cpuPercent'
-    || (dimension === 'memoryBytes' && Number.isInteger(limit) && limit >= MIN_RESOURCE_MEMORY_BYTES && limit <= MAX_RESOURCE_MEMORY_BYTES);
+function hardLimitSupported(dimension, limit, platform, ioDevice) {
+  return (dimension === 'cpuPercent' && Number.isInteger(limit) && limit > 0 && limit <= 100)
+    || (dimension === 'memoryBytes' && Number.isInteger(limit) && limit >= MIN_RESOURCE_MEMORY_BYTES && limit <= MAX_RESOURCE_MEMORY_BYTES)
+    || (dimension === 'ioBytesPerSecond' && platform === 'linux' && Number.isInteger(limit) && limit > 0 && limit <= MAX_RESOURCE_IO_BYTES_PER_SECOND && ioDevice !== null);
 }
 
-function operationFor(item, breach, selectedEnforcement) {
-  if (selectedEnforcement === 'hard' && hardLimitSupported(breach.dimension, breach.limit)) {
-    const value = breach.dimension === 'cpuPercent' ? 'cpu-percent' : 'memory-bytes';
-    return Object.freeze({ type: 'set-process-resource-limit', key: 'process.resource-limit', value, limit: breach.limit, previousValue: null, pid: pid(item.pid), name: text(item.name) || 'unknown', requiresApproval: true, reason: `${breach.dimension} hard budget exceeded` });
+function operationFor(item, breach, selectedEnforcement, platform, ioDevice) {
+  if (selectedEnforcement === 'hard' && hardLimitSupported(breach.dimension, breach.limit, platform, ioDevice)) {
+    const value = breach.dimension === 'cpuPercent' ? 'cpu-percent' : breach.dimension === 'memoryBytes' ? 'memory-bytes' : 'io-bytes-per-second';
+    return Object.freeze({ type: 'set-process-resource-limit', key: 'process.resource-limit', value, limit: breach.limit, ...(value === 'io-bytes-per-second' ? { device: ioDevice } : {}), previousValue: null, pid: pid(item.pid), name: text(item.name) || 'unknown', requiresApproval: true, reason: `${breach.dimension} hard budget exceeded` });
   }
   const io = breach.dimension === 'ioBytesPerSecond';
   const key = io ? 'process.io' : 'process.priority';
@@ -70,6 +72,7 @@ export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = []
   if (!record(facts)) throw new TypeError('Workload budget facts must be an object');
   const selectedEnforcement = enforcement(requestedEnforcement);
   const limits = normalizeBudget(budget);
+  const ioDevice = limits.ioDevice;
   const selected = selectedProcesses(facts, targetPidsOption(targetPids));
   const breaches = [];
   const operations = [];
@@ -77,13 +80,14 @@ export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = []
     const breach = breachFor(item, dimension, limits[dimension]);
     if (!breach) return;
     const supported = selectedEnforcement === 'hard'
-      ? dimension === 'ioBytesPerSecond' || hardLimitSupported(dimension, breach.limit)
+      ? hardLimitSupported(dimension, breach.limit, facts.platform, ioDevice)
       : ['cpuPercent', 'ioBytesPerSecond'].includes(dimension);
     const evidence = Object.freeze({ pid: pid(item.pid), name: text(item.name) || 'unknown', ...breach, enforcement: selectedEnforcement, supported });
     breaches.push(evidence);
-    if (evidence.supported) operations.push(operationFor(item, breach, selectedEnforcement));
+    if (evidence.supported) operations.push(operationFor(item, breach, selectedEnforcement, facts.platform, ioDevice));
   }));
   const unsupportedBreaches = breaches.filter((item) => !item.supported);
+  const unsupportedDimensions = [...new Set([...(selectedEnforcement === 'hard' ? ['gpuPercent'] : ['memoryBytes', 'gpuPercent']), ...unsupportedBreaches.map((item) => item.dimension)])];
   const state = !DIMENSIONS.some((dimension) => limits[dimension] !== null)
     ? 'budget-required'
     : operations.length
@@ -91,7 +95,7 @@ export function previewWorkloadBudget(facts = {}, { budget = {}, targetPids = []
       : unsupportedBreaches.length
         ? 'unsupported-limit'
         : 'within-budget';
-  return Object.freeze({ version: WORKLOAD_BUDGET_VERSION, state, enforcement: selectedEnforcement, budget: limits, targetPids: Object.freeze(targetPidsOption(targetPids)), breaches: Object.freeze(breaches), operations: Object.freeze(operations), restore: Object.freeze(operations.filter((item) => item.previousValue).map((item) => Object.freeze({ ...item, value: item.previousValue, previousValue: 'low' }))), unsupportedDimensions: Object.freeze(selectedEnforcement === 'hard' ? ['gpuPercent'] : ['memoryBytes', 'gpuPercent']), protectedProcessCount: rows(facts.processes).filter(protectedProcess).length });
+  return Object.freeze({ version: WORKLOAD_BUDGET_VERSION, state, enforcement: selectedEnforcement, budget: limits, targetPids: Object.freeze(targetPidsOption(targetPids)), breaches: Object.freeze(breaches), operations: Object.freeze(operations), restore: Object.freeze(operations.filter((item) => item.previousValue).map((item) => Object.freeze({ ...item, value: item.previousValue, previousValue: 'low' }))), unsupportedDimensions: Object.freeze(unsupportedDimensions), protectedProcessCount: rows(facts.processes).filter(protectedProcess).length });
 }
 
 export async function applyWorkloadBudget(plan, { adapter, approvedPids = [], allowAdmin = false, dryRun = true } = {}) {

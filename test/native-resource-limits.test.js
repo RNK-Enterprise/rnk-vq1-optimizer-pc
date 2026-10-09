@@ -33,6 +33,9 @@ describe('native resource limits', () => {
     expect(previewResourceLimits(facts, { limits: { cpuPercent: 101, memoryBytes: 0 } })).toMatchObject({ state: 'limit-required', limits: { cpuPercent: null, memoryBytes: null } });
     expect(previewResourceLimits(facts, { limits: { memoryBytes: 1 } })).toMatchObject({ state: 'limit-required' });
     expect(previewResourceLimits(facts, { limits: { memoryBytes: 2 ** 41 } })).toMatchObject({ state: 'limit-required' });
+    expect(previewResourceLimits(facts, { limits: { ioBytesPerSecond: 4096, ioDevice: '8:0' }, targetPids: [11] })).toMatchObject({ state: 'plan-ready', operations: [expect.objectContaining({ value: 'io-bytes-per-second', device: '8:0', limit: 4096 })] });
+    expect(previewResourceLimits(facts, { limits: { ioBytesPerSecond: 4096 }, targetPids: [11] })).toMatchObject({ state: 'unsupported-limit', operations: [], unsupportedDimensions: expect.arrayContaining(['ioBytesPerSecond']) });
+    expect(previewResourceLimits(facts, { limits: { ioBytesPerSecond: 10 * 1024 ** 3 + 1 } })).toMatchObject({ state: 'limit-required' });
     expect(previewResourceLimits(facts, { limits: { cpuPercent: 50 }, targetPids: [12] })).toMatchObject({ state: 'protected-or-unselected', operations: [] });
     expect(previewResourceLimits({ processes: null }, { limits: { memoryBytes: MEMORY_LIMIT } })).toMatchObject({ state: 'protected-or-unselected', protectedProcessCount: 0 });
     expect(previewResourceLimits()).toMatchObject({ state: 'limit-required' });
@@ -57,6 +60,8 @@ describe('native resource limits', () => {
     expect(await applyResourceLimits({ ...plan, operations: [{ pid: 0 }] }, { adapter, approvedPids: true, dryRun: false })).toMatchObject({ rejected: [{ reason: 'operation PID is invalid' }] });
     const noAdminMethod = { applyAction: jest.fn(async () => ({ ok: true })) };
     expect(await applyResourceLimits(plan, { adapter: noAdminMethod, approvedPids: [11], dryRun: false })).toMatchObject({ applied: expect.any(Array) });
+    const ioPlan = previewResourceLimits({ processes: [{ pid: 11, name: 'build' }] }, { limits: { ioBytesPerSecond: 4096, ioDevice: '8:0' } });
+    expect(await applyResourceLimits(ioPlan, { adapter: noAdminMethod, approvedPids: [11], dryRun: false })).toMatchObject({ applied: [expect.objectContaining({ operation: expect.objectContaining({ device: '8:0' }) })] });
     await expect(applyResourceLimits(null, { adapter })).rejects.toThrow('invalid');
     await expect(applyResourceLimits(plan)).rejects.toThrow('platform adapter');
   });

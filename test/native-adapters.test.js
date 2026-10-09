@@ -16,6 +16,7 @@ const valid = {
   affinity: { type: 'set-process-affinity', key: 'process.affinity', value: 'performance' },
   cpuLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'cpu-percent', limit: 50 },
   memoryLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 1024 * 1024 * 1024 },
+  ioLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'io-bytes-per-second', limit: 4096, device: '8:0' },
   gpu: { type: 'set-gpu-policy', key: 'gpu.policy', value: 'performance' },
   memory: { type: 'set-memory-policy', key: 'memory.policy', value: 'background-low' },
   cache: { type: 'clear-cache', key: 'cache', value: 'user-temp' },
@@ -48,6 +49,7 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.ioLimit, { targetPid: 123 })).reason).toContain('not supported');
     expect((await adapter.applyAction({ ...valid.cpuLimit, limit: 101 }, { targetPid: 123 })).ok).toBe(false);
     expect((await adapter.applyAction({ type: 'set-process-resource-limit' }, { targetPid: 123 })).ok).toBe(false);
     expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 1 }, { targetPid: 123 })).ok).toBe(false);
@@ -84,6 +86,7 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
     expect(adapter.requiresAdmin(valid.memoryLimit)).toBe(true);
     expect(adapter.requiresAdmin(valid.cpuLimit)).toBe(true);
+    expect(adapter.requiresAdmin(valid.ioLimit)).toBe(true);
     expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(false);
     const cgroupFs = { readFile: jest.fn(async () => 'cpu memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => {}) };
@@ -91,6 +94,10 @@ describe('native adapters', () => {
     await expect(cgroupAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, mechanism: 'cgroup-v2', group: '/test-cgroup/rnk-optimizer-123', quota: 50000, period: 100000 });
     await expect(cgroupAdapter.applyAction({ ...valid.cpuLimit, limit: 1 }, { targetPid: 123 })).resolves.toMatchObject({ ok: true, quota: 1000 });
     await expect(cgroupAdapter.applyAction(valid.memoryLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, mechanism: 'cgroup-v2', limit: valid.memoryLimit.limit });
+    const ioCgroupFs = { readFile: jest.fn(async () => 'cpu memory io'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => {}) };
+    const ioCgroupAdapter = createLinuxAdapter({ ...h, fsImpl: ioCgroupFs, cgroupRoot: '/test-cgroup' });
+    await expect(ioCgroupAdapter.applyAction(valid.ioLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, mechanism: 'cgroup-v2-io.max', device: '8:0' });
+    await expect(ioCgroupAdapter.applyAction({ ...valid.ioLimit, device: 'bad' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'resource limit value is invalid' });
     expect(cgroupFs.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/cpu.max', '50000 100000');
     expect(cgroupFs.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/memory.max', String(valid.memoryLimit.limit));
     expect(cgroupFs.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/cgroup.procs', '123');

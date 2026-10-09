@@ -101,7 +101,9 @@ async function runResourceLimitCommand(command, args) {
   const facts = await adapter.collectFacts();
   const limits = typeof args.limits === 'string' ? jsonOption(args, 'limits') : {
     cpuPercent: args['cpu-percent'] === undefined ? null : numberOption(args, 'cpu-percent', null),
-    memoryBytes: args['memory-bytes'] === undefined ? null : numberOption(args, 'memory-bytes', null)
+    memoryBytes: args['memory-bytes'] === undefined ? null : numberOption(args, 'memory-bytes', null),
+    ioBytesPerSecond: args['io-bytes-per-second'] === undefined ? null : numberOption(args, 'io-bytes-per-second', null),
+    ioDevice: typeof args['io-device'] === 'string' ? args['io-device'] : null
   };
   const plan = previewResourceLimits(facts, { limits, targetPids: listOption(args, 'target-pids') });
   if (command === 'resource-limit-preview') return { facts, plan };

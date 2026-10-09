@@ -124,6 +124,7 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
           ]), 'set-process-affinity');
         case 'set-process-resource-limit':
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
+          if (action.value === 'io-bytes-per-second') return { ok: false, reason: 'I/O byte-rate limits are not supported by the Windows adapter' };
           if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
           return resultFromCommand(await commandRunner.run('powershell.exe', [
             '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',

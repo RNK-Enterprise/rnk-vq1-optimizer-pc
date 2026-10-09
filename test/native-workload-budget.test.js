@@ -14,7 +14,7 @@ const facts = {
   ]
 };
 const HARD_MEMORY_LIMIT = 64 * 1024 * 1024;
-const hardFacts = { processes: [{ pid: 11, name: '', role: 'compiler', cpuPercent: 90, memoryBytes: HARD_MEMORY_LIMIT * 2, ioBytesPerSecond: 500, gpuPercent: 80, priority: 'normal', ioPriority: 'normal' }] };
+const hardFacts = { platform: 'linux', processes: [{ pid: 11, name: '', role: 'compiler', cpuPercent: 90, memoryBytes: HARD_MEMORY_LIMIT * 2, ioBytesPerSecond: 500, gpuPercent: 80, priority: 'normal', ioPriority: 'normal' }] };
 
 describe('native workload budget supervisor', () => {
   test('detects supported and unsupported budget breaches while protecting processes', () => {
@@ -29,14 +29,15 @@ describe('native workload budget supervisor', () => {
     expect(previewWorkloadBudget()).toMatchObject({ state: 'budget-required' });
     expect(previewWorkloadBudget({ processes: [null, { pid: 15, protected: true, cpuPercent: 99 }] }, { budget: { cpuPercent: 1 } })).toMatchObject({ state: 'within-budget', protectedProcessCount: 1 });
     expect(previewWorkloadBudget({ processes: [{ pid: 16, cpuPercent: 1 }] }, { budget: { cpuPercent: 100 } })).toMatchObject({ state: 'within-budget' });
-    const hard = previewWorkloadBudget(hardFacts, { budget: { cpuPercent: 50, memoryBytes: HARD_MEMORY_LIMIT, ioBytesPerSecond: 400, gpuPercent: 70 }, enforcement: 'hard' });
+    const hard = previewWorkloadBudget(hardFacts, { budget: { cpuPercent: 50, memoryBytes: HARD_MEMORY_LIMIT, ioBytesPerSecond: 400, ioDevice: '8:0', gpuPercent: 70 }, enforcement: 'hard' });
     expect(hard).toMatchObject({ state: 'plan-ready', enforcement: 'hard', unsupportedDimensions: ['gpuPercent'] });
     expect(hard.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'set-process-resource-limit', value: 'cpu-percent', limit: 50 }),
       expect.objectContaining({ type: 'set-process-resource-limit', value: 'memory-bytes', limit: HARD_MEMORY_LIMIT }),
-      expect.objectContaining({ type: 'set-process-io-priority', value: 'low' })
+      expect.objectContaining({ type: 'set-process-resource-limit', value: 'io-bytes-per-second', limit: 400, device: '8:0' })
     ]));
-    expect(hard.restore).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'set-process-io-priority', value: 'normal' })]));
+    expect(hard.restore).toEqual([]);
+    expect(previewWorkloadBudget(hardFacts, { budget: { ioBytesPerSecond: 400 }, enforcement: 'hard' })).toMatchObject({ state: 'unsupported-limit', unsupportedDimensions: ['gpuPercent', 'ioBytesPerSecond'], operations: [] });
     expect(previewWorkloadBudget(facts, { budget: { memoryBytes: 800 }, enforcement: 'hard', targetPids: [11] })).toMatchObject({ state: 'unsupported-limit', enforcement: 'hard', operations: [] });
     expect(() => previewWorkloadBudget(facts, { enforcement: 'unsupported' })).toThrow('enforcement');
     expect(() => previewWorkloadBudget(facts, { enforcement: null })).toThrow('unknown');

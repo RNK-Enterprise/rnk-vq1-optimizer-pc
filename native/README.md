@@ -70,6 +70,9 @@ node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
 node native/cli.mjs workload-budget-preview --budget '{"cpuPercent":50}' \
   --target-pids 1234,5678
+node native/cli.mjs workload-budget-preview --budget \
+  '{"ioBytesPerSecond":52428800,"ioDevice":"8:0"}' \
+  --target-pids 1234 --hard
 node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
   --target-pids 1234 --approve-pids 1234 --confirm
 node native/cli.mjs resource-limit-preview --limits '{"cpuPercent":50,"memoryBytes":8589934592}' \
@@ -140,7 +143,8 @@ cross-volume quarantine is refused instead of falling back to copy-and-delete.
 
 Supported controls are Windows power profile/process priority/process affinity,
 Linux power profile/process priority/process I/O priority/process affinity and
-available cgroup-v2 CPU/memory limits, and
+available cgroup-v2 CPU/memory limits plus explicit `io.max` byte-rate limits
+when a block-device `major:minor` pair is supplied, and
 macOS process priority, bounded cache cleanup, and approved process stop.
 Affinity is limited to fixed balanced/performance masks and requires admin
 approval. macOS named power profiles, I/O policy, GPU policy, and memory policy
@@ -352,8 +356,10 @@ without pre-change priority evidence.
 with observed process facts. The default priority mode can lower process and
 supported I/O priority for explicitly approved background PIDs. Pass `--hard`
 to route bounded CPU and memory breaches through the existing resource-limit
-authority; adapter support, admin requirements, and apply results remain
-explicit. Hard mode does not claim I/O byte shaping or GPU hard caps.
+authority. On Linux, a hard `ioBytesPerSecond` budget is enforceable only when
+the budget also supplies an observed block-device `ioDevice` such as `8:0`;
+the adapter writes a cgroup-v2 `io.max` rule. Windows and macOS return explicit
+unsupported I/O byte-rate results, and GPU hard caps remain unsupported.
 
 `game-session-monitor` watches explicit game process evidence on a trigger
 interval. It can apply only approved background priority/I/O operations when

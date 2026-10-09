@@ -52,8 +52,9 @@ The current platform adapters provide documented controls for:
 - Windows power profile, process priority, bounded process affinity, and
   approved Job Object CPU/memory limits.
 - Linux power profile, process priority, process I/O priority, bounded process
-  affinity, and approved cgroup-v2 CPU/memory limits with an explicit
-  address-space fallback when Linux memory control is unavailable.
+  affinity, approved cgroup-v2 CPU/memory limits with an explicit address-space
+  fallback when Linux memory control is unavailable, and approved cgroup-v2
+  `io.max` byte-rate limits when block-device evidence is supplied.
 - macOS process priority, bounded cache cleanup, and approved process stop.
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
@@ -146,7 +147,7 @@ node native/cli.mjs workload-preview --mode gaming-build --game-names game.exe \
 node native/cli.mjs workload-apply --mode gaming-build --game-names game.exe \
   --approve-pids 1234 --confirm
 node native/cli.mjs workload-budget-preview --budget \
-  '{"cpuPercent":50,"memoryBytes":8589934592,"ioBytesPerSecond":52428800,"gpuPercent":35}' \
+  '{"cpuPercent":50,"memoryBytes":8589934592,"ioBytesPerSecond":52428800,"ioDevice":"8:0","gpuPercent":35}' \
   --target-pids 1234,5678
 node native/cli.mjs workload-budget-apply --budget '{"cpuPercent":50}' \
   --target-pids 1234 --approve-pids 1234 --confirm
@@ -311,8 +312,11 @@ reported rather than presented as enforcement.
 `workload-budget-preview` compares explicit per-process CPU, memory, I/O, and
 GPU limits with observed facts. `workload-budget-apply` can apply only the
 supported soft responses—lower process priority and, on Linux, lower I/O
-priority—to explicitly approved background PIDs. Memory and GPU hard caps stay
-unsupported evidence; the command never claims those limits were enforced.
+priority—to explicitly approved background PIDs. Hard CPU and memory limits
+use the existing resource-limit authority. Linux hard I/O byte-rate limits
+require an observed `ioDevice` major:minor pair and use cgroup-v2 `io.max`;
+Windows and macOS report that dimension as unsupported. GPU hard caps stay
+unsupported evidence.
 
 `resource-limit-preview` and `resource-limit-apply` are the separate hard-limit
 authority for approved background PIDs. Windows applies CPU and per-process

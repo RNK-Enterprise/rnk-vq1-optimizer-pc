@@ -5,6 +5,9 @@
 - Added an approval-gated, reversible user-level daily-report scheduler for
   Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
   schedule artifacts are fixed, local, and cleaned up on failed installation.
+- Added explicit Linux cgroup-v2 `io.max` byte-rate enforcement for hard I/O
+  budgets when the caller supplies observed block-device `major:minor` evidence;
+  Windows and macOS continue to return unsupported I/O byte-rate results.
 - Extended organizer preview/apply plans with protected-root precedence so
   project, model, credential, WSL, and user-designated paths cannot be moved;
   organizer CLI commands now accept the same comma-separated protected roots.
