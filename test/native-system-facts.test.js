@@ -55,6 +55,7 @@ describe('native system facts', () => {
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 1, stdout: '' }) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: 'bad' }) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: '1,2,3,x' }) } })).resolves.toEqual(expect.objectContaining({ available: false }));
+    await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0 }) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts()).resolves.toEqual(expect.objectContaining({ available: false }));
   });

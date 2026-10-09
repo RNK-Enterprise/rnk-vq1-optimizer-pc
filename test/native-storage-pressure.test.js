@@ -174,15 +174,17 @@ describe('native storage pressure classification and collection', () => {
 
   test('parses Windows facts and separates pagefile cleanup', () => {
     const parsed = parseWindowsStorageOutput(JSON.stringify({
-      drive: 'C:', totalBytes: '1000', freeBytes: '500',
+      drive: 'C:', totalBytes: '1000', freeBytes: '500', automaticManagedPagefile: false, committedBytes: 300, commitLimitBytes: 1000,
       pagefiles: [{ Name: 'C:\\pagefile.sys', AllocatedBaseSize: 100, CurrentUsage: 25, PeakUsage: 50 }]
     }), { targetFreeBytes: 0 });
     expect(parsed.storage[0]).toMatchObject({ mount: 'C:', device: 'C:', totalBytes: 1000, freeBytes: 500 });
-    expect(parsed.pagefile).toMatchObject({ available: true, allocatedBytes: 100 * 1024 * 1024, currentBytes: 25 * 1024 * 1024, pressurePercent: 25, cleanup: 'never' });
+    expect(parsed.pagefile).toMatchObject({ available: true, systemManaged: false, allocatedBytes: 100 * 1024 * 1024, currentBytes: 25 * 1024 * 1024, peakBytes: 50 * 1024 * 1024, pressurePercent: 25, committedBytes: 300, commitLimitBytes: 1000, freeCommitBytes: 700, commitPressurePercent: 30, cleanup: 'never' });
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, pagefiles: { Name: 'x', AllocatedBaseSize: 0, CurrentUsage: 0, PeakUsage: -1 } }), { targetFreeBytes: 0 }).pagefile).toMatchObject({ available: true, allocatedBytes: null, currentBytes: null, pressurePercent: null });
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, pagefiles: null }), { targetFreeBytes: 0 }).pagefile.available).toBe(false);
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, pagefiles: false }), { targetFreeBytes: 0 }).pagefile.available).toBe(false);
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, pagefiles: { AllocatedBaseSize: -1, CurrentUsage: -1, PeakUsage: 'bad' } }), { targetFreeBytes: 0 }).pagefile.files[0]).toEqual({ name: null, allocatedBytes: null, currentBytes: null, peakBytes: null });
+    expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, automaticManagedPagefile: true, committedBytes: 30, commitLimitBytes: 100 }), { targetFreeBytes: 0 }).pagefile).toMatchObject({ available: true, systemManaged: true, freeCommitBytes: 70 });
+    expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, automaticManagedPagefile: true, committedBytes: 30, commitLimitBytes: 100, observedAt: '2030-01-02T00:00:00.000Z', source: 'test-commit-facts' }), { targetFreeBytes: 0 }).pagefile).toMatchObject({ observedAt: '2030-01-02T00:00:00.000Z', source: 'test-commit-facts' });
     expect(parseWindowsStorageOutput('not-json')).toBeNull();
     expect(parseWindowsStorageOutput()).toBeNull();
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100 }))).toBeNull();

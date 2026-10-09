@@ -12,6 +12,7 @@ const base = { sourcePath: 'C:/Downloads/game.zip', sourceRoot: 'C:/Downloads', 
 describe('browser cross-volume redirect', () => {
   test('previews only explicit cross-volume moves', () => {
     expect(previewBrowserRedirect(base)).toMatchObject({ state: 'preview-ready', sourceMount: 'C:', targetMount: 'E:', destination: 'E:\\Games\\game.zip' });
+    expect(previewBrowserRedirect({ ...base, preserveSource: true })).toMatchObject({ state: 'preview-ready', preserveSource: true });
     expect(previewBrowserRedirect({ ...base, sourcePath: 'D:/other/game.zip' })).toMatchObject({ state: 'rejected', reason: 'browser download is outside the approved source root' });
     expect(previewBrowserRedirect({ ...base, targetMount: 'C:' })).toMatchObject({ state: 'rejected', reason: 'source and target are on the same volume' });
     expect(previewBrowserRedirect({ ...base, sizeBytes: null })).toMatchObject({ state: 'observation-required' });
@@ -39,9 +40,17 @@ describe('browser cross-volume redirect', () => {
       mkdir: jest.fn(async () => {}),
       copyFile: jest.fn(async () => {}),
       stat: jest.fn(async () => ({ size: 100 })),
-      unlink: jest.fn(async () => {})
+      unlink: jest.fn(async () => {}),
+      readFile: jest.fn(async () => Buffer.alloc(100)),
+      open: jest.fn(async () => {
+        let reads = 0;
+        return { read: jest.fn(async (buffer) => { if (reads++ > 0) return { bytesRead: 0 }; buffer.fill(1, 0, 100); return { bytesRead: 100 }; }), sync: jest.fn(async () => {}), close: jest.fn(async () => {}) };
+      })
     };
     await expect(applyBrowserRedirect(plan, { approved: true, dryRun: false, fsImpl, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'applied', mutation: 'copy-delete' });
+    const preservePlan = previewBrowserRedirect({ ...base, preserveSource: true });
+    const preserveFs = { ...fsImpl, lstat: jest.fn(async (file) => { if (file === preservePlan.destination) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; } return { isSymbolicLink: () => false }; }), stat: jest.fn(async () => ({ size: 100 })), unlink: jest.fn(async () => {}) };
+    await expect(applyBrowserRedirect(preservePlan, { approved: true, dryRun: false, fsImpl: preserveFs, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'applied', verificationState: 'verified', sourceDeletionState: 'preserved' });
     fsImpl.lstat.mockImplementationOnce(async () => ({ isSymbolicLink: () => true }));
     await expect(applyBrowserRedirect(plan, { approved: true, dryRun: false, fsImpl, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'rejected', reason: 'source download is a symbolic link' });
     fsImpl.lstat.mockImplementationOnce(async () => ({ isSymbolicLink: () => false })).mockImplementationOnce(async () => ({ size: 100 }));
@@ -51,6 +60,22 @@ describe('browser cross-volume redirect', () => {
     fsImpl.lstat.mockImplementation(async (file) => { if (file === plan.destination) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; } return { size: 100, isSymbolicLink: () => false }; });
     fsImpl.stat.mockResolvedValueOnce({ size: 99 });
     await expect(applyBrowserRedirect(plan, { approved: true, dryRun: false, fsImpl, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'rejected', reason: 'redirect copy verification failed' });
+    const noRead = { ...fsImpl, lstat: jest.fn(async (file) => { if (file === plan.destination) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; } return { isSymbolicLink: () => false }; }), open: jest.fn(async () => ({ close: jest.fn(async () => {}) })) };
+    await expect(applyBrowserRedirect(plan, { approved: true, dryRun: false, fsImpl: noRead, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'rejected', reason: 'redirect hash verification unavailable' });
+    const noHash = { ...fsImpl, lstat: noRead.lstat, open: undefined, readFile: undefined };
+    await expect(applyBrowserRedirect(plan, { approved: true, dryRun: false, fsImpl: noHash, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'rejected', reason: 'redirect hash verification unavailable' });
+    const fallbackPlan = { ...plan, destination: 'E:\\Games\\fallback.zip' };
+    const fallback = { ...fsImpl, lstat: jest.fn(async (file) => { if (file === fallbackPlan.destination) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; } return { isSymbolicLink: () => false }; }), open: undefined, readFile: jest.fn(async () => Buffer.alloc(100)) };
+    await expect(applyBrowserRedirect(fallbackPlan, { approved: true, dryRun: false, fsImpl: fallback, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'applied', verificationState: 'verified' });
+    const noClosePlan = { ...plan, destination: 'E:\\Games\\no-close.zip', preserveSource: true };
+    let noCloseCalls = 0;
+    const noClose = { ...fsImpl, lstat: jest.fn(async (file) => { if (file === noClosePlan.destination) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; } return { isSymbolicLink: () => false }; }), open: jest.fn(async () => {
+      noCloseCalls += 1;
+      if (noCloseCalls === 1) return { sync: jest.fn(async () => {}) };
+      let reads = 0;
+      return { read: jest.fn(async (buffer) => { if (reads++ > 0) return { bytesRead: 0 }; buffer.fill(1, 0, 100); return { bytesRead: 100 }; }) };
+    }) };
+    await expect(applyBrowserRedirect(noClosePlan, { approved: true, dryRun: false, fsImpl: noClose, pathImpl: path.win32 })).resolves.toMatchObject({ state: 'applied', sourceDeletionState: 'preserved' });
     await expect(applyBrowserRedirect({ state: 'bad' }, { approved: true, dryRun: false })).rejects.toThrow('Invalid');
   });
 });

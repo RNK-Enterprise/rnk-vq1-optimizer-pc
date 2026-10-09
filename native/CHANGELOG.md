@@ -1,5 +1,12 @@
 # Native whole-PC optimizer changelog
 
+## 3.1.2 candidate
+
+- Hardened Windows SMART, pagefile/commit, application-path network shaping,
+  named Job Object lifecycle, and cross-volume hash verification authorities.
+- Added explicit runtime-only package installation, source-preserving move
+  support, and exact signing-fingerprint verification for release installers.
+
 ## Unreleased
 
 - Added live gateway verification, Windows ROG/admin evidence, signed-tag

@@ -24,14 +24,24 @@ jobs:
       - run: npm ci
       - run: npm run audit:prod
       - run: npm run audit:high
-      - run: node scripts/verify-release-provenance.mjs
+      - name: Verify signed release provenance
+        env:
+          RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
+        run: |
+          test -n "$RNK_SIGNING_KEY_FINGERPRINT"
+          node scripts/verify-release-provenance.mjs
       - name: Import release signing key
         env:
           RNK_RELEASE_PUBLIC_KEY: ${{ secrets.RNK_RELEASE_PUBLIC_KEY }}
         run: |
           test -n "$RNK_RELEASE_PUBLIC_KEY"
           printf '%s\n' "$RNK_RELEASE_PUBLIC_KEY" | gpg --batch --import
-      - run: git verify-tag --raw "$GITHUB_REF_NAME"
+      - name: Recheck exact release signer
+        env:
+          RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
+        run: |
+          test -n "$RNK_SIGNING_KEY_FINGERPRINT"
+          git verify-tag --raw "$GITHUB_REF_NAME" | grep -E "VALIDSIG ${RNK_SIGNING_KEY_FINGERPRINT}"
       - run: npm run verify
       - run: git archive --format=tar.gz --prefix=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}/ --output=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz "${GITHUB_SHA}"
       - run: sha256sum "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" > "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256"

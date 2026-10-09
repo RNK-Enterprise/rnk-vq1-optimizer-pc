@@ -20,6 +20,17 @@ Installers refuse before cloning or dependency installation when the target
 volume is below the free-space floor. The default is 5 GiB; Linux and macOS
 accept `--min-free-bytes BYTES`, and Windows accepts `-MinimumFreeBytes BYTES`.
 
+Annotated release tags require the exact RNK signing fingerprint. Set
+`RNK_SIGNING_KEY_FINGERPRINT` or pass `--signing-fingerprint FINGERPRINT` on
+Linux/macOS, or `-ExpectedSigningFingerprint FINGERPRINT` on Windows. The
+installer requires that key in the local GPG keyring, verifies the tag signer,
+and fails closed when the fingerprint is missing or mismatched. The actual RNK
+fingerprint must be supplied by the release owner; this repository does not
+invent or substitute one.
+
+Production installs run `npm ci --omit=dev`; Jest, Babel, ESLint, and other
+development-only packages are not installed into the runtime directory.
+
 The installers require Node.js 20 or newer, Git, and npm. A fresh install uses
 the public optimizer repository by default; pass `--repo URL` on Linux or
 `-RepositoryUrl URL` on Windows to use another source.
@@ -42,6 +53,8 @@ Examples:
 ./install/linux/install.sh --mode headless --run-optimize \
   --gateway https://optimizer.example.invalid/v1/plan
 ./install/linux/install.sh --mode headless --min-free-bytes 1073741824
+./install/linux/install.sh --mode headless --ref v3.1.2 \
+  --signing-fingerprint RNK_SIGNING_FINGERPRINT
 ```
 
 ```powershell
@@ -49,12 +62,15 @@ Examples:
 .\install\windows\install.ps1 -EnvironmentMode headless -RunOptimize \
   -GatewayUrl https://optimizer.example.invalid/v1/plan
 .\install\windows\install.ps1 -EnvironmentMode headless -MinimumFreeBytes 1073741824
-.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.1 -RequireRog
-.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.1 -RunOptimize `
+.\install\windows\install.ps1 -EnvironmentMode interactive -InstallDirectory E:\RNK-Vortex-Optimizer -Ref v3.1.2 `
+  -ExpectedSigningFingerprint RNK_SIGNING_FINGERPRINT
+.\install\windows\install.ps1 -EnvironmentMode interactive -InstallDirectory E:\RNK-Vortex-Optimizer -Ref v3.1.2 -RequireRog
+.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.2 -RunOptimize `
   -GatewayUrl https://optimizer.example.invalid/v1/plan -ApplyOptimize -AllowAdmin
 ```
 
 ```bash
-./install/macos/install.sh --mode interactive --ref v3.1.1
-./install/macos/install.sh --mode headless --ref v3.1.1
+./install/macos/install.sh --mode interactive --ref v3.1.2 \
+  --signing-fingerprint RNK_SIGNING_FINGERPRINT
+./install/macos/install.sh --mode headless --ref v3.1.2
 ```

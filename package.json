@@ -1,6 +1,6 @@
 {
   "name": "rnk-vortex-system-optimizer",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "RNK Vortex System Optimizer - bounded whole-PC optimization with explicit local approvals",
   "type": "module",
   "scripts": {

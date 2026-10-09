@@ -92,7 +92,7 @@ public static class RnkWindowsNetworkCounters
                 finally { handle.Free(); }
                 if (!result.TryGetValue(ownerRow.OwningPid, out var aggregate))
                 {
-                    aggregate = new Dictionary<String, Object> { ["Pid"] = ownerRow.OwningPid, ["BytesReceived"] = (UInt64)0, ["BytesSent"] = (UInt64)0 };
+                    aggregate = new Dictionary<String, Object> { ["Pid"] = ownerRow.OwningPid, ["BytesReceived"] = (UInt64)0, ["BytesSent"] = (UInt64)0, ["Protocol"] = "tcp", ["AddressFamily"] = "ipv4" };
                     result.Add(ownerRow.OwningPid, aggregate);
                 }
                 aggregate["BytesReceived"] = (UInt64)aggregate["BytesReceived"] + data.DataBytesIn;

@@ -11,8 +11,9 @@
 #>
 
 param(
-  [string]$InstallDirectory = "$env:LOCALAPPDATA\RNK-Vortex-Optimizer",
+  [string]$InstallDirectory = $(if ($env:RNK_VORTEX_INSTALL_DIRECTORY) { $env:RNK_VORTEX_INSTALL_DIRECTORY } else { "$env:LOCALAPPDATA\RNK-Vortex-Optimizer" }),
   [string]$Ref = '',
+  [string]$ExpectedSigningFingerprint = $env:RNK_SIGNING_KEY_FINGERPRINT,
   [switch]$RunOptimize,
   [switch]$ApplyOptimize,
   [switch]$AllowAdmin,
@@ -43,6 +44,7 @@ if ($MinimumFreeBytes -lt 0) { throw 'MinimumFreeBytes must be non-negative' }
 if ([string]::IsNullOrWhiteSpace($Ref) -or ($Ref -notmatch '^v\d+\.\d+\.\d+$' -and $Ref -notmatch '^[0-9a-fA-F]{40}$')) {
   throw 'Ref is required and must be a release tag (vX.Y.Z) or a full 40-character commit SHA'
 }
+if (-not [IO.Path]::IsPathRooted($InstallDirectory)) { throw 'InstallDirectory must be an absolute path; pass an explicit destination such as E:\RNK-Vortex-Optimizer' }
 
 if ([string]::IsNullOrWhiteSpace($EnvironmentMode)) {
   if ([Console]::IsInputRedirected) { throw 'EnvironmentMode is required in non-interactive sessions' }
@@ -84,8 +86,15 @@ if ($Ref -match '^[0-9a-fA-F]{40}$') {
 } else {
   git -C $InstallDirectory fetch origin "refs/tags/${Ref}:refs/tags/${Ref}"
   if ((git -C $InstallDirectory cat-file -t $Ref) -ne 'tag') { throw 'Ref is not an annotated tag' }
-  git -C $InstallDirectory verify-tag $Ref | Out-Null
+  $expectedFingerprint = ($ExpectedSigningFingerprint -replace '\s', '').ToUpperInvariant()
+  if ($expectedFingerprint -notmatch '^[0-9A-F]{40}$') { throw 'ExpectedSigningFingerprint or RNK_SIGNING_KEY_FINGERPRINT must be the pinned 40-character RNK signing fingerprint' }
+  if (-not (Get-Command gpg -ErrorAction SilentlyContinue)) { throw 'gpg is required to verify the pinned release signing key' }
+  $keyListing = (gpg --batch --with-colons --list-keys $expectedFingerprint 2>&1 | Out-String)
+  if ($LASTEXITCODE -ne 0 -or $keyListing -notmatch $expectedFingerprint) { throw 'the pinned release signing key is not present in the local trusted keyring' }
+  $verification = (git -C $InstallDirectory verify-tag --raw $Ref 2>&1 | Out-String)
   if ($LASTEXITCODE -ne 0) { throw 'release tag signature could not be verified' }
+  $validSignature = [regex]::Match($verification, '(?m)^\[GNUPG:\] VALIDSIG ([0-9A-F]{40})')
+  if (-not $validSignature.Success -or $validSignature.Groups[1].Value.ToUpperInvariant() -ne $expectedFingerprint) { throw 'release tag signer does not match ExpectedSigningFingerprint' }
   git -C $InstallDirectory checkout --detach "${Ref}^{commit}"
 }
 
@@ -94,7 +103,7 @@ if ($Ref -match '^[0-9a-fA-F]{40}$' -and $resolvedCommit -ne $Ref) {
   throw 'resolved commit does not match requested SHA'
 }
 
-npm --prefix $InstallDirectory ci
+npm --prefix $InstallDirectory ci --omit=dev
 $configRoot = if (-not [string]::IsNullOrWhiteSpace($env:APPDATA)) {
   Join-Path $env:APPDATA 'RNK-Vortex-Optimizer'
 } else {

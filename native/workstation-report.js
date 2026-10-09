@@ -108,7 +108,7 @@ function batterySample(facts) {
 
 function pagefileSample(facts) {
   const pagefile = record(facts.pagefile) ? facts.pagefile : {};
-  return { pressurePercent: nonNegative(pagefile.pressurePercent), allocatedBytes: nonNegative(pagefile.allocatedBytes), currentBytes: nonNegative(pagefile.currentBytes) };
+  return { pressurePercent: nonNegative(pagefile.pressurePercent), allocatedBytes: nonNegative(pagefile.allocatedBytes), currentBytes: nonNegative(pagefile.currentBytes), systemManaged: typeof pagefile.systemManaged === 'boolean' ? pagefile.systemManaged : null, managementStatus: typeof pagefile.managementStatus === 'string' ? pagefile.managementStatus : 'UNKNOWN', commitStatus: typeof pagefile.commitStatus === 'string' ? pagefile.commitStatus : 'UNAVAILABLE' };
 }
 
 function driveSample(facts) {
@@ -253,7 +253,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     thermals: Object.freeze({ peakTemperatureC: maximum(temperatures), throttleEvents }),
     fans: Object.freeze({ peakRpm: maximum(fans.map((item) => item.maximumRpm).filter((value) => value !== null)), latestRpm: last(fans.map((item) => item.maximumRpm)), latestFanCount: last(fans.map((item) => item.fanCount)), observedSamples: count(fans, (item) => item.available) }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
-    pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
+    pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: pagefile.at(-1)?.systemManaged ?? null, managementStatus: pagefile.at(-1)?.managementStatus ?? 'UNKNOWN', commitStatus: pagefile.at(-1)?.commitStatus ?? 'UNAVAILABLE', cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), latest: Object.freeze(drives.at(-1)?.drives || []), observedSamples: count(drives, (item) => item.available) }),
     volumes: Object.freeze({ latest: Object.freeze(volumes.at(-1)?.volumes || []), latestCount: volumes.at(-1)?.volumes.length || 0, minimumFreeBytes: minimum(volumeFree), observedSamples: count(volumes, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null, peakCpuPercent: processResourceRates.peakCpuPercent, peakIoBytesPerSecond: processResourceRates.peakIoBytesPerSecond, latestTopCpu: processResourceRates.latestTopCpu, latestTopIo: processResourceRates.latestTopIo, rateSamples: processResourceRates.rateSamples, counterResetEvents: processResourceRates.counterResetEvents }),
@@ -267,4 +267,3 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     priorities: Object.freeze(recommendations.slice(0, 3))
   });
 }
-

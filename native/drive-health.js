@@ -32,8 +32,13 @@ function healthState(value) {
 
 function drive(row, platform) {
   const mountpoints = Array.isArray(row?.mountpoints) ? row.mountpoints.filter((item) => typeof item === 'string').slice(0, 32) : text(row?.MountPoint) ? [text(row.MountPoint)] : [];
+  const diskNumber = platform === 'win32' && Number.isInteger(Number(row?.DiskNumber ?? row?.Number ?? row?.Index)) && Number(row?.DiskNumber ?? row?.Number ?? row?.Index) >= 0 ? Number(row?.DiskNumber ?? row?.Number ?? row?.Index) : null;
+  const device = text(row?.DeviceID ?? row?.device ?? row?.name ?? row?.Name) || (diskNumber === null ? null : `PhysicalDrive${diskNumber}`);
+  const physicalDevicePath = platform === 'win32' ? smartDeviceFor(device, platform) : null;
   return Object.freeze({
-    device: text(row?.DeviceID ?? row?.device ?? row?.name ?? row?.Name),
+    device,
+    diskNumber,
+    physicalDevicePath,
     model: text(row?.Model ?? row?.FriendlyName ?? row?.model),
     serial: text(row?.SerialNumber ?? row?.serial),
     mediaType: mediaType(row),
@@ -92,7 +97,7 @@ function commandAvailable(commandRunner) { return Boolean(commandRunner && typeo
 export async function collectDriveHealth({ platform = process.platform, commandRunner } = {}) {
   if (!commandAvailable(commandRunner)) return Object.freeze({ version: DRIVE_HEALTH_VERSION, platform, available: false, drives: Object.freeze([]), source: 'unavailable', reason: 'command runner unavailable' });
   const command = platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-PhysicalDisk | Select-Object FriendlyName,SerialNumber,MediaType,Size,HealthStatus,OperationalStatus | ConvertTo-Json -Compress'], { timeoutMs: 5000, maxOutputBytes: 16384 }]
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$physical = @(Get-PhysicalDisk); $disks = @(Get-Disk); $rows = foreach ($disk in $disks) { $match = $physical | Where-Object { $_.SerialNumber -and $disk.SerialNumber -and $_.SerialNumber.Trim() -eq $disk.SerialNumber.Trim() } | Select-Object -First 1; [pscustomobject]@{ DeviceID = ('PhysicalDrive{0}' -f $disk.Number); DiskNumber = [int]$disk.Number; FriendlyName = if ($match) { $match.FriendlyName } else { $disk.FriendlyName }; SerialNumber = $disk.SerialNumber; MediaType = if ($match) { $match.MediaType } else { 'Unspecified' }; Size = [int64]$disk.Size; HealthStatus = $disk.HealthStatus; OperationalStatus = $disk.OperationalStatus } }; @($rows) | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 16384 }]
     : platform === 'linux'
       ? ['lsblk', ['--json', '--bytes', '--nodeps', '--output', 'NAME,TYPE,SIZE,ROTA,MODEL,SERIAL,MOUNTPOINTS'], { timeoutMs: 2500, maxOutputBytes: 65536 }]
       : platform === 'darwin' ? ['diskutil', ['list'], { timeoutMs: 2500, maxOutputBytes: 16384 }] : null;
@@ -142,7 +147,8 @@ export async function collectSmartHealth(device, { platform = process.platform, 
     const output = `${result?.stdout || ''}\n${result?.stderr || ''}`;
     const passed = /SMART overall-health self-assessment test result:\s*PASSED/i.test(output) || /SMART Health Status:\s*OK/i.test(output);
     const failed = /SMART overall-health self-assessment test result:\s*(FAILED|UNKNOWN)/i.test(output) || /SMART Health Status:\s*(FAILED|UNKNOWN)/i.test(output);
-    return Object.freeze({ available: result?.code === 0 || passed || failed, device, health: passed ? 'healthy' : failed ? 'failed' : 'unknown', exitCode: Number.isInteger(result?.code) ? result.code : null, source: 'smartctl', ...parseSmartOutput(output) });
+    const available = passed || failed;
+    return Object.freeze({ available, device, health: passed ? 'healthy' : failed ? 'failed' : 'unknown', reason: available ? null : 'SMART_UNAVAILABLE', exitCode: Number.isInteger(result?.code) ? result.code : null, source: 'smartctl', ...parseSmartOutput(output) });
   } catch (error) { return Object.freeze({ available: false, device, health: 'unknown', reason: error.message }); }
 }
 
@@ -161,8 +167,13 @@ function smartDeviceFor(value, platform) {
 export async function collectSmartHealthForDrives(drives = [], { platform = process.platform, commandRunner, maxDrives = 32 } = {}) {
   if (!Array.isArray(drives)) throw new TypeError('SMART drive inventory must be an array');
   if (!Number.isInteger(maxDrives) || maxDrives < 1 || maxDrives > 32) throw new RangeError('SMART drive limit is out of range');
-  const devices = [...new Set(drives.slice(0, maxDrives).map((item) => smartDeviceFor(item?.device, platform)).filter(Boolean))];
+  const unresolved = [];
+  const devices = [...new Set(drives.slice(0, maxDrives).map((item) => {
+    const raw = item?.physicalDevicePath ?? item?.device ?? (Number.isInteger(item?.diskNumber) && item.diskNumber >= 0 ? `PhysicalDrive${item.diskNumber}` : null);
+    const device = smartDeviceFor(raw, platform);
+    if (!device && platform === 'win32' && item && item.device == null && item.physicalDevicePath == null && item.diskNumber == null) unresolved.push(Object.freeze({ available: false, device: null, health: 'unknown', state: 'SMART_DEVICE_UNRESOLVED', reason: 'SMART_DEVICE_UNRESOLVED' }));
+    return device;
+  }).filter(Boolean))];
   const results = await Promise.all(devices.map((device) => collectSmartHealth(device, { platform, commandRunner })));
-  return Object.freeze({ version: DRIVE_HEALTH_VERSION, platform, available: results.some((item) => item.available), observedCount: results.length, results: Object.freeze(results), source: 'smartctl' });
+  return Object.freeze({ version: DRIVE_HEALTH_VERSION, platform, available: results.some((item) => item.available), observedCount: results.length, unresolvedCount: unresolved.length, results: Object.freeze([...unresolved, ...results]), source: 'smartctl' });
 }
-

@@ -22,6 +22,8 @@ import { collectDarwinSwapPressure, collectLinuxSwapPressure } from './swap-pres
 
 export const STORAGE_PRESSURE_POLICY_VERSION = 1;
 export const STORAGE_PRESSURE_LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
+export const PAGEFILE_MANAGEMENT_STATES = Object.freeze(['ENABLED', 'DISABLED', 'UNKNOWN']);
+export const COMMIT_STATES = Object.freeze(['OBSERVED', 'UNAVAILABLE']);
 export const DEFAULT_STORAGE_PRESSURE_POLICY = Object.freeze({
   warningPercent: 20,
   criticalPercent: 10,
@@ -37,7 +39,7 @@ const WINDOWS_STORAGE_COMMAND = Object.freeze([
   '-NonInteractive',
   '-ExecutionPolicy', 'Bypass',
   '-Command',
-  "$drive = [Environment]::SystemDirectory.Substring(0,2); $disk = Get-CimInstance Win32_LogicalDisk -Filter (\"DeviceID='{0}'\" -f $drive); $pages = @(Get-CimInstance Win32_PageFileUsage | Select-Object Name,AllocatedBaseSize,CurrentUsage,PeakUsage); [pscustomobject]@{drive=$disk.DeviceID; totalBytes=[int64]$disk.Size; freeBytes=[int64]$disk.FreeSpace; pagefiles=$pages} | ConvertTo-Json -Compress"
+  "$drive = [Environment]::SystemDirectory.Substring(0,2); $disk = Get-CimInstance Win32_LogicalDisk -Filter (\"DeviceID='{0}'\" -f $drive); $computer = Get-CimInstance Win32_ComputerSystem; $memory = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory; $pages = @(Get-CimInstance Win32_PageFileUsage | Select-Object Name,AllocatedBaseSize,CurrentUsage,PeakUsage); [pscustomobject]@{drive=$disk.DeviceID; totalBytes=[int64]$disk.Size; freeBytes=[int64]$disk.FreeSpace; automaticManagedPagefile=[bool]$computer.AutomaticManagedPagefile; committedBytes=[int64]$memory.CommittedBytes; commitLimitBytes=[int64]$memory.CommitLimit; freeCommitBytes=[Math]::Max(0, ([int64]$memory.CommitLimit - [int64]$memory.CommittedBytes)); observedAt=(Get-Date).ToUniversalTime().ToString('o'); source='Win32_PageFileUsage+Win32_ComputerSystem+Win32_PerfFormattedData_PerfOS_Memory'; pagefiles=$pages} | ConvertTo-Json -Compress"
 ]);
 
 function nonNegative(value) {
@@ -99,7 +101,9 @@ export function classifyStoragePressure({ freeBytes, totalBytes } = {}, inputPol
   });
 }
 
-function normalizePagefiles(pagefiles) {
+function booleanOrNull(value) { return typeof value === 'boolean' ? value : null; }
+
+function normalizePagefiles(pagefiles, facts = {}) {
   const rows = Array.isArray(pagefiles) ? pagefiles : pagefiles ? [pagefiles] : [];
   const normalized = rows.map((pagefile) => ({
     name: typeof pagefile?.Name === 'string' ? pagefile.Name : null,
@@ -109,13 +113,29 @@ function normalizePagefiles(pagefiles) {
   }));
   const allocatedBytes = normalized.map((item) => item.allocatedBytes).filter((value) => value !== null).reduce((sum, value) => sum + value, 0);
   const currentBytes = normalized.map((item) => item.currentBytes).filter((value) => value !== null).reduce((sum, value) => sum + value, 0);
+  const peakBytes = normalized.map((item) => item.peakBytes).filter((value) => value !== null).reduce((sum, value) => sum + value, 0);
+  const committedBytes = nonNegative(facts.committedBytes);
+  const commitLimitBytes = nonNegative(facts.commitLimitBytes);
+  const freeCommitBytes = nonNegative(facts.freeCommitBytes) ?? (committedBytes !== null && commitLimitBytes !== null ? Math.max(0, commitLimitBytes - committedBytes) : null);
+  const systemManaged = booleanOrNull(facts.automaticManagedPagefile ?? facts.systemManaged);
+  const managementStatus = systemManaged === true ? 'ENABLED' : systemManaged === false ? 'DISABLED' : 'UNKNOWN';
+  const commitStatus = committedBytes !== null && commitLimitBytes !== null && freeCommitBytes !== null ? 'OBSERVED' : 'UNAVAILABLE';
   return Object.freeze({
-    available: normalized.length > 0,
-    systemManaged: true,
+    available: normalized.length > 0 || committedBytes !== null || commitLimitBytes !== null || freeCommitBytes !== null || systemManaged !== null,
+    systemManaged,
+    managementStatus,
     files: Object.freeze(normalized),
-    allocatedBytes: allocatedBytes || null,
-    currentBytes: currentBytes || null,
-    pressurePercent: allocatedBytes > 0 ? Math.min(100, (currentBytes / allocatedBytes) * 100) : null,
+    allocatedBytes: normalized.some((item) => item.allocatedBytes !== null) && allocatedBytes > 0 ? allocatedBytes : null,
+    currentBytes: normalized.some((item) => item.currentBytes !== null) && currentBytes > 0 ? currentBytes : null,
+    peakBytes: normalized.some((item) => item.peakBytes !== null) && peakBytes > 0 ? peakBytes : null,
+    pressurePercent: allocatedBytes > 0 && currentBytes !== null ? Math.min(100, (currentBytes / allocatedBytes) * 100) : null,
+    committedBytes,
+    commitLimitBytes,
+    freeCommitBytes,
+    commitPressurePercent: commitLimitBytes > 0 && committedBytes !== null ? Math.min(100, (committedBytes / commitLimitBytes) * 100) : null,
+    commitStatus,
+    observedAt: typeof facts.observedAt === 'string' && facts.observedAt.trim() ? facts.observedAt.trim() : null,
+    source: typeof facts.source === 'string' && facts.source.trim() ? facts.source.trim() : 'pagefile evidence unavailable',
     cleanup: 'never'
   });
 }
@@ -133,7 +153,7 @@ export function parseWindowsStorageOutput(output, policy = {}) {
   const mount = typeof parsed.drive === 'string' ? parsed.drive : null;
   return {
     storage: [{ mount, device: mount, totalBytes, freeBytes, health: 'unknown', readOnly: false }],
-    pagefile: normalizePagefiles(parsed.pagefiles),
+    pagefile: normalizePagefiles(parsed.pagefiles, parsed),
     pressure: classifyStoragePressure({ totalBytes, freeBytes }, policy)
   };
 }

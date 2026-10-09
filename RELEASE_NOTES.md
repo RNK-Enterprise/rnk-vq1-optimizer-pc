@@ -1,7 +1,30 @@
-# Release Notes — v3.1.1
+# Release Notes — v3.1.2
 
-Status: working release candidate. Odinn sign-off is still required before
-this repository is called release-certified.
+Status: candidate. Odinn sign-off, target-machine proof, a live gateway check,
+and signed-tag/build-attestation verification are still required before this
+repository is called release-certified.
+
+## v3.1.2 candidate changes
+
+- Windows SMART now preserves inventory disk identity through
+  `\\.\PhysicalDriveN`; missing mappings and invalid smartctl output remain
+  explicit unavailable states.
+- Windows pagefile management and commit accounting report observed state,
+  allocation/current/peak usage, commit limit/free commit, timestamps, and
+  source authority without deriving facts from physical RAM.
+- Windows network limiting reports the requested PID, resolved executable,
+  application-path policy, rate, and verification; IPv4/TCP-only counter
+  coverage remains explicit.
+- Windows process limits use a named, queryable Job Object lifecycle and report
+  `RESTART_REQUIRED_TO_RELAX_LIMIT` when active processes cannot be relaxed.
+- Cross-volume placement and browser relocation close and hash both copies
+  before source deletion, return hashes/deletion state, and support preserving
+  the source.
+- Production packages install runtime dependencies only and Windows supports
+  explicit destinations including `E:\\RNK-Vortex-Optimizer`.
+- Release installers and CI can require an exact RNK signing-key fingerprint.
+  The actual fingerprint must be supplied by the release owner; no fingerprint
+  is invented here.
 
 ## PC release surface
 

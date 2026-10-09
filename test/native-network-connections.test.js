@@ -34,6 +34,7 @@ describe('native network connection evidence', () => {
     await expect(collectNetworkConnectionTelemetry({ platform: 'win32', commandRunner: win })).resolves.toMatchObject({ available: true });
     expect(win.run.mock.calls[0][0]).toBe('powershell.exe');
     await expect(collectNetworkConnectionTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: 'tcp ESTAB 0 0 127.0.0.1:1 10.0.0.2:443 users:(("node",pid=2))' }) })).resolves.toMatchObject({ available: true });
+    expect(parseNetworkConnectionTelemetry(undefined, { platform: 'linux' })).toMatchObject({ available: false, connections: [] });
     await expect(collectNetworkConnectionTelemetry({ platform: 'darwin', commandRunner: runner({ code: 0, stdout: '' }) })).resolves.toMatchObject({ available: false });
     await expect(collectNetworkConnectionTelemetry({ platform: 'freebsd', commandRunner: win })).resolves.toMatchObject({ available: false, source: 'platform unsupported' });
     await expect(collectNetworkConnectionTelemetry({ platform: 'linux' })).resolves.toMatchObject({ available: false, source: 'command runner unavailable' });

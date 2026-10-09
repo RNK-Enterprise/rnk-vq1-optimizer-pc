@@ -41,25 +41,27 @@ const RESOURCE_LIMIT_SCRIPT = [
   '[StructLayout(LayoutKind.Sequential)] public struct Extended { public Basic BasicInfo; public Io IoInfo; public UIntPtr ProcessMemory; public UIntPtr JobMemory; public UIntPtr PeakProcess; public UIntPtr PeakJob; }',
   '[StructLayout(LayoutKind.Sequential)] public struct CpuRate { public uint Flags; public uint Rate; }',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr CreateJobObject(IntPtr a, string n);',
+  '[DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr OpenJobObject(uint access, bool inherit, string n);',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);',
+  '[DllImport("kernel32.dll", SetLastError=true)] static extern bool IsProcessInJob(IntPtr process, IntPtr job, out bool result);',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern bool SetInformationJobObject(IntPtr job, int kind, IntPtr info, uint length);',
+  '[DllImport("kernel32.dll", SetLastError=true)] static extern bool QueryInformationJobObject(IntPtr job, int kind, IntPtr info, uint length, out uint returned);',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern bool CloseHandle(IntPtr handle);',
-  'public static int Apply(int pid, long memory, int cpu) {',
-  'if (memory <= 0 && cpu <= 0) return 87;',
-  'IntPtr job = CreateJobObject(IntPtr.Zero, null); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error();',
-  'IntPtr process = OpenProcess(0x0501, false, (uint)pid); if (process == IntPtr.Zero) { int e = Marshal.GetLastWin32Error(); CloseHandle(job); return e; }',
-  'try {',
-  'if (memory > 0) { var info = new Extended(); info.BasicInfo.Flags = 0x100; info.ProcessMemory = (UIntPtr)(ulong)memory; IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); try { Marshal.StructureToPtr(info, ptr, false); if (!SetInformationJobObject(job, 9, ptr, (uint)Marshal.SizeOf(typeof(Extended)))) return Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(ptr); } }',
-  'if (cpu > 0) { var info = new CpuRate { Flags = 1, Rate = (uint)(cpu * 100) }; IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(CpuRate))); try { Marshal.StructureToPtr(info, ptr, false); if (!SetInformationJobObject(job, 15, ptr, (uint)Marshal.SizeOf(typeof(CpuRate)))) return Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(ptr); } }',
-  'if (!AssignProcessToJobObject(job, process)) return Marshal.GetLastWin32Error(); return 0;',
-  '} finally { CloseHandle(process); CloseHandle(job); }',
+  'const uint JobAccess = 0x1F001F; const uint ProcessAccess = 0x1500;',
+  'public static string Name(int pid) { return "Local\\\\RNK-Optimizer-" + pid; }',
+  'static IntPtr OpenOrCreate(string name) { IntPtr job = OpenJobObject(JobAccess, false, name); return job == IntPtr.Zero ? CreateJobObject(IntPtr.Zero, name) : job; }',
+  'static int SetMemory(IntPtr job, long memory) { var info = new Extended(); info.BasicInfo.Flags = 0x100; info.ProcessMemory = (UIntPtr)(ulong)memory; IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); try { Marshal.StructureToPtr(info, ptr, false); return SetInformationJobObject(job, 9, ptr, (uint)Marshal.SizeOf(typeof(Extended))) ? 0 : Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(ptr); } }',
+  'static int SetCpu(IntPtr job, int cpu) { var info = new CpuRate { Flags = 1, Rate = (uint)(cpu * 100) }; IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(CpuRate))); try { Marshal.StructureToPtr(info, ptr, false); return SetInformationJobObject(job, 15, ptr, (uint)Marshal.SizeOf(typeof(CpuRate))) ? 0 : Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(ptr); } }',
+  'public static int Apply(int pid, long memory, int cpu) { if (memory <= 0 && cpu <= 0) return 87; string name = Name(pid); IntPtr job = OpenOrCreate(name); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error(); IntPtr process = OpenProcess(ProcessAccess, false, (uint)pid); if (process == IntPtr.Zero) { int e = Marshal.GetLastWin32Error(); CloseHandle(job); return e; } try { int result = memory > 0 ? SetMemory(job, memory) : 0; if (result != 0) return result; result = cpu > 0 ? SetCpu(job, cpu) : 0; if (result != 0) return result; bool inJob; if (!IsProcessInJob(process, job, out inJob)) return Marshal.GetLastWin32Error(); if (!inJob && !AssignProcessToJobObject(job, process)) return Marshal.GetLastWin32Error(); IntPtr verify = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); try { uint returned; if (!QueryInformationJobObject(job, 9, verify, (uint)Marshal.SizeOf(typeof(Extended)), out returned)) return Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(verify); } return 0; } finally { CloseHandle(process); CloseHandle(job); } }',
+  'public static string Query(int pid) { IntPtr job = OpenJobObject(JobAccess, false, Name(pid)); if (job == IntPtr.Zero) return null; IntPtr info = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); IntPtr cpuInfo = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(CpuRate))); try { uint returned; if (!QueryInformationJobObject(job, 9, info, (uint)Marshal.SizeOf(typeof(Extended)), out returned)) return null; var extended = Marshal.PtrToStructure<Extended>(info); var cpuPercent = 0; if (QueryInformationJobObject(job, 15, cpuInfo, (uint)Marshal.SizeOf(typeof(CpuRate)), out returned)) cpuPercent = (int)(Marshal.PtrToStructure<CpuRate>(cpuInfo).Rate / 100); return "{\\"memoryBytes\\":" + extended.ProcessMemory.ToUInt64() + ",\\"cpuPercent\\":" + cpuPercent + "}"; } finally { Marshal.FreeHGlobal(info); Marshal.FreeHGlobal(cpuInfo); CloseHandle(job); } }',
+  'public static int Release(int pid) { IntPtr job = OpenJobObject(JobAccess, false, Name(pid)); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error(); IntPtr process = OpenProcess(ProcessAccess, false, (uint)pid); try { if (process != IntPtr.Zero) { bool inJob; if (IsProcessInJob(process, job, out inJob) && inJob) return 170; } return 0; } finally { if (process != IntPtr.Zero) CloseHandle(process); CloseHandle(job); } }',
   '} }',
   '"@;',
   'Add-Type -TypeDefinition $source -ErrorAction Stop;',
-  '$memory = 0; $cpu = 0;',
-  'if ($args[2] -eq "memory-bytes") { $memory = [Int64]$args[1] } else { $cpu = [Int32]$args[1] }',
-  '$result = [RnkResourceJob]::Apply([Int32]$args[0], $memory, $cpu); if ($result -ne 0) { exit $result }'
+  '$operation = [string]$args[0]; $pidValue = [Int32]$args[1]; $memory = 0; $cpu = 0;',
+  'if ($operation -eq "apply") { if ($args[3] -eq "memory-bytes") { $memory = [Int64]$args[2] } else { $cpu = [Int32]$args[2] }; $result = [RnkResourceJob]::Apply($pidValue, $memory, $cpu); $payload = if ($result -eq 0) { [RnkResourceJob]::Query($pidValue) } else { $null } } elseif ($operation -eq "query") { $payload = [RnkResourceJob]::Query($pidValue); $result = if ($null -eq $payload) { 2 } else { 0 } } elseif ($operation -eq "release") { $result = [RnkResourceJob]::Release($pidValue); $payload = $null } else { $result = 87; $payload = $null }',
+  'if ($result -ne 0) { exit $result }; $facts = @{ operation=$operation; managedId=[RnkResourceJob]::Name($pidValue); scope="named-job-object"; verified=$true }; if ($payload) { $facts.limits = $payload | ConvertFrom-Json }; $facts | ConvertTo-Json -Compress'
 ].join('\n');
 
 function resultFromCommand(result, operation) {
@@ -71,6 +73,8 @@ function validPid(pid) {
   return Number.isInteger(pid) && pid > 0 && pid <= 2147483647;
 }
 
+function resourceAuthorityId(pid) { return `Local\\RNK-Optimizer-${pid}`; }
+
 function validResourceLimit(action) {
   return action && ['cpu-percent', 'memory-bytes'].includes(action.value)
     && Number.isInteger(action.limit) && action.limit > 0
@@ -79,6 +83,31 @@ function validResourceLimit(action) {
 }
 
 function validGpuPowerLimit(value) { return Number.isFinite(value) && value >= 10 && value <= 2000; }
+
+export function windowsResourceLimitCommands() {
+  return Object.freeze({ script: RESOURCE_LIMIT_SCRIPT, scope: 'named-job-object', lifecycle: Object.freeze(['create-or-open', 'identify', 'query', 'update', 'release', 'verify']) });
+}
+
+function resourceFacts(output) { try { const parsed = JSON.parse(String(output || '')); return parsed && typeof parsed === 'object' ? parsed : null; } catch { return null; } }
+
+async function resourceAuthorityOperation(operation, processId, { commandRunner } = {}) {
+  if (!validPid(processId)) return Object.freeze({ state: 'rejected', verified: false, operation, reason: 'resource authority requires a valid process id' });
+  if (!commandRunner || typeof commandRunner.run !== 'function') return Object.freeze({ state: 'unavailable', verified: false, operation, managedId: resourceAuthorityId(processId), reason: 'command runner unavailable' });
+  try {
+    const result = await commandRunner.run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', RESOURCE_LIMIT_SCRIPT, '--', operation, String(processId), '0', 'cpu-percent'], { timeoutMs: 10000, maxOutputBytes: 8192 });
+    const facts = resourceFacts(result?.stdout);
+    return Object.freeze(result?.code === 0
+      ? { state: operation === 'release' ? 'released' : 'observed', verified: true, operation, managedId: resourceAuthorityId(processId), scope: 'named-job-object', limits: operation === 'query' ? facts?.limits || null : null }
+      : result?.code === 170 && operation === 'release'
+        ? { state: 'restart-required', verified: false, operation, managedId: resourceAuthorityId(processId), scope: 'named-job-object', reason: 'RESTART_REQUIRED_TO_RELAX_LIMIT' }
+      : { state: 'rejected', verified: false, operation, managedId: resourceAuthorityId(processId), reason: result?.stderr || `Windows resource authority ${operation} failed` });
+  } catch (error) {
+    return Object.freeze({ state: 'rejected', verified: false, operation, managedId: resourceAuthorityId(processId), reason: error.message });
+  }
+}
+
+export function queryWindowsResourceLimit(processId, options) { return resourceAuthorityOperation('query', processId, options); }
+export function releaseWindowsResourceLimit(processId, options) { return resourceAuthorityOperation('release', processId, options); }
 
 function approvedPid(context, pid) {
   const list = context?.approvedBackgroundPids;
@@ -136,10 +165,14 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner, fpsControlle
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
           if (action.value === 'io-bytes-per-second') return { ok: false, reason: 'I/O byte-rate limits are not supported by the Windows adapter' };
           if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
-          return resultFromCommand(await commandRunner.run('powershell.exe', [
+          {
+            const result = await commandRunner.run('powershell.exe', [
             '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
-            RESOURCE_LIMIT_SCRIPT, '--', String(pid), String(action.limit), action.value
-          ]), 'set-process-resource-limit');
+            RESOURCE_LIMIT_SCRIPT, '--', 'apply', String(pid), String(action.limit), action.value
+            ]);
+            const outcome = resultFromCommand(result, 'set-process-resource-limit');
+            return result?.code === 0 ? { ...outcome, mechanism: 'named-job-object', managedId: resourceAuthorityId(pid), scope: 'process-job', verified: true } : outcome;
+          }
         case 'set-process-network-limit':
           if (!validPid(action.pid)) return { ok: false, reason: 'network policy requires a valid process id' };
           {

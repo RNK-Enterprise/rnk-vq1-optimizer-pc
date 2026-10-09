@@ -485,7 +485,11 @@ performance.
 target root, protected-root list, and target free-space measurement. It never
 scans by size or moves files during preview. `placement-apply` requires
 `--confirm`; same-volume moves use rename, while cross-volume moves use
-copy-verify-delete and preserve the source if verification fails.
+copy-verify-delete, hashes both sides after the destination is closed, and
+deletes the source only after equal hashes are recorded. Pass
+`--preserve-source` (or `--preserve-source=true`) to keep the source as an
+explicit `PRESERVE_SOURCE=true` equivalent; verification failure always keeps
+the source.
 
 `placement-policy-preview` consumes a prior file-insights scan and an explicit
 category-to-target map, then creates one bounded plan per target volume.

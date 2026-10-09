@@ -10,6 +10,7 @@ describe('native drive health', () => {
   test('parses Windows, Linux, and macOS drive inventory evidence', () => {
     const windows = parseWindowsDriveHealth(JSON.stringify([{ FriendlyName: 'Fast SSD', SerialNumber: 's1', MediaType: 'SSD', Size: '100', HealthStatus: 'Healthy' }, { FriendlyName: 'Archive HDD', MediaType: 0, Size: 200, HealthStatus: 'Warning', MountPoint: 'E:' }, { DeviceID: 'PhysicalDrive2', MediaType: 'HDD', HealthStatus: 'Failed' }]));
     expect(windows).toMatchObject({ version: DRIVE_HEALTH_VERSION, available: true, drives: [{ mediaType: 'ssd', health: 'healthy' }, { mediaType: 'unknown', health: 'degraded', mountpoints: ['E:'] }, { mediaType: 'hdd', health: 'failed' }] });
+    expect(parseWindowsDriveHealth(JSON.stringify([{ DiskNumber: 4, FriendlyName: 'Mapped SSD', HealthStatus: 'Healthy' }, { Number: 5, FriendlyName: 'Numbered' }, { Index: 6, FriendlyName: 'Indexed' }, { DiskNumber: null, Number: 7, FriendlyName: 'Fallback Number' }, { DiskNumber: 'bad', FriendlyName: 'Unmapped' }, { DiskNumber: -1, FriendlyName: 'Negative' }])).drives).toEqual(expect.arrayContaining([expect.objectContaining({ device: 'PhysicalDrive4', diskNumber: 4, physicalDevicePath: '\\\\.\\PhysicalDrive4' }), expect.objectContaining({ device: 'PhysicalDrive5', diskNumber: 5 }), expect.objectContaining({ device: 'PhysicalDrive6', diskNumber: 6 }), expect.objectContaining({ device: 'PhysicalDrive7', diskNumber: 7 }), expect.objectContaining({ device: null, diskNumber: null })]));
     const linux = parseLinuxDriveHealth(JSON.stringify({ blockdevices: [{ name: 'nvme0n1', type: 'disk', size: 1000, rota: false, model: 'NVMe', serial: 'n1', mountpoints: ['/'] }, { name: 'sda', type: 'disk', size: 2000, rota: true }, { name: 'sda1', type: 'part', size: 10, rota: true }] }));
     expect(linux.drives).toMatchObject([{ device: 'nvme0n1', mediaType: 'ssd', health: 'unknown', mountpoints: ['/'] }, { device: 'sda', mediaType: 'hdd' }]);
     const darwin = parseDarwinDriveHealth('/dev/disk0 (internal, physical):\n/dev/disk1 (external):');
@@ -40,6 +41,7 @@ describe('native drive health', () => {
     await expect(collectDriveHealth()).resolves.toMatchObject({ available: false, reason: 'command runner unavailable' });
     const windowsRunner = { run: jest.fn(async () => ({ code: 0, stdout: JSON.stringify({ FriendlyName: 'SSD', MediaType: 'SSD', HealthStatus: 'Healthy' }) })) };
     await expect(collectDriveHealth({ platform: 'win32', commandRunner: windowsRunner })).resolves.toMatchObject({ available: true, drives: [{ mediaType: 'ssd' }] });
+    expect(windowsRunner.run.mock.calls[0][1].at(-1)).toEqual(expect.stringContaining('Get-Disk'));
     const darwinRunner = { run: jest.fn(async () => ({ code: 0, stdout: '/dev/disk0 (internal, physical):' })) };
     await expect(collectDriveHealth({ platform: 'darwin', commandRunner: darwinRunner })).resolves.toMatchObject({ available: true, drives: [{ device: '/dev/disk0' }] });
     const detailedDarwin = { run: jest.fn()
@@ -73,7 +75,9 @@ describe('native drive health', () => {
     const secondary = { run: jest.fn(async () => ({ code: 2, stdout: 'SMART Health Status: OK', stderr: '' })) };
     await expect(collectSmartHealth('/dev/sdg', { platform: 'linux', commandRunner: secondary })).resolves.toMatchObject({ available: true, health: 'healthy' });
     const noCode = { run: jest.fn(async () => ({ stdout: 'unrecognized device' })) };
-    await expect(collectSmartHealth('/dev/sdh', { platform: 'linux', commandRunner: noCode })).resolves.toMatchObject({ available: false, exitCode: null, health: 'unknown' });
+    await expect(collectSmartHealth('/dev/sdh', { platform: 'linux', commandRunner: noCode })).resolves.toMatchObject({ available: false, exitCode: null, health: 'unknown', reason: 'SMART_UNAVAILABLE' });
+    const invalidSmart = { run: jest.fn(async () => ({ code: 0, stdout: 'not SMART output', stderr: '' })) };
+    await expect(collectSmartHealth('/dev/sdi', { platform: 'linux', commandRunner: invalidSmart })).resolves.toMatchObject({ available: false, health: 'unknown', reason: 'SMART_UNAVAILABLE' });
     await expect(collectSmartHealth('/dev/sdd', { platform: 'linux' })).resolves.toMatchObject({ available: false, reason: 'command runner unavailable' });
     await expect(collectSmartHealth()).resolves.toMatchObject({ available: false, reason: 'device path is not approved' });
     const thrown = { run: jest.fn(async () => { throw new Error('smart unavailable'); }) };
@@ -93,10 +97,11 @@ describe('native drive health', () => {
     expect(windows.observedCount).toBe(2);
     expect(runner.run.mock.calls.at(-2)[1][2]).toBe('\\\\.\\PhysicalDrive0');
     expect(runner.run.mock.calls.at(-1)[1][2]).toBe('\\\\.\\PhysicalDrive1');
+    const unresolved = await collectSmartHealthForDrives([{ model: 'missing-index' }, { diskNumber: 3 }], { platform: 'win32', commandRunner: runner });
+    expect(unresolved).toMatchObject({ available: true, observedCount: 1, unresolvedCount: 1, results: [expect.objectContaining({ state: 'SMART_DEVICE_UNRESOLVED' }), expect.objectContaining({ device: '\\\\.\\PhysicalDrive3' })] });
     await expect(collectSmartHealthForDrives(null)).rejects.toThrow('SMART drive inventory must be an array');
     await expect(collectSmartHealthForDrives([], { maxDrives: 0 })).rejects.toThrow('SMART drive limit is out of range');
     await expect(collectSmartHealthForDrives()).resolves.toMatchObject({ available: false, observedCount: 0 });
     await expect(collectSmartHealthForDrives([{}, { device: 'sda' }], { platform: 'freebsd', commandRunner: runner })).resolves.toMatchObject({ available: false, observedCount: 0 });
   });
 });
-

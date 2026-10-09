@@ -12,6 +12,25 @@ import { execFileSync } from 'child_process';
 const RELEASE_TAG = /^v\d+\.\d+\.\d+$/;
 const COMMIT = /^[0-9a-f]{40}$/i;
 const SIGNATURE_MARKER = '-----BEGIN PGP SIGNATURE-----';
+const FINGERPRINT = /^[0-9a-f]{40}$/i;
+
+export function normalizeSigningFingerprint(value) {
+  const normalized = typeof value === 'string' ? value.replace(/\s/g, '').toUpperCase() : '';
+  return FINGERPRINT.test(normalized) ? normalized : null;
+}
+
+export function extractSigningFingerprint(rawOutput) {
+  const match = typeof rawOutput === 'string' ? rawOutput.match(/^\[GNUPG:\] VALIDSIG ([0-9A-F]{40})/mu) : null;
+  return match ? match[1].toUpperCase() : null;
+}
+
+export function validateSigningFingerprint(rawOutput, expectedFingerprint) {
+  const expected = normalizeSigningFingerprint(expectedFingerprint);
+  if (!expected) throw new Error('release signing fingerprint must be a 40-character hexadecimal value');
+  const actual = extractSigningFingerprint(rawOutput);
+  if (actual !== expected) throw new Error('release tag signer does not match the pinned signing fingerprint');
+  return expected;
+}
 
 export function defaultGitExec(file, args) {
   return execFileSync(file, args, { encoding: 'utf8' });
@@ -40,6 +59,9 @@ export function verifyReleaseProvenance({
   const taggedCommit = exec('git', ['rev-list', '-1', `${tag}^{commit}`]).trim();
   const tagType = exec('git', ['cat-file', '-t', tag]).trim();
   const tagContents = exec('git', ['cat-file', '-p', tag]);
-  exec('git', ['verify-tag', tag]);
+  if (env.RNK_SIGNING_KEY_FINGERPRINT) {
+    const rawVerification = exec('git', ['verify-tag', '--raw', tag]);
+    validateSigningFingerprint(rawVerification, env.RNK_SIGNING_KEY_FINGERPRINT);
+  } else exec('git', ['verify-tag', tag]);
   return validateReleaseProvenance({ tag, currentCommit, taggedCommit, tagType, tagContents });
 }

@@ -29,6 +29,8 @@ describe('native file placement', () => {
     expect(outsideDestination.skipped[0].reason).toBe('destination-is-outside-target-root');
     const sameDestination = previewFilePlacement({ files: [{ path: path.join(targetRoot, 'video', 'movie.mkv'), sizeBytes: 1, category: 'video' }], sourceRoots: [targetRoot], targetRoot, targetFreeBytes: 1 });
     expect(sameDestination.skipped[0].reason).toBe('source-already-at-destination');
+    const preservePlan = previewFilePlacement({ files: [{ path: path.join(sourceRoot, 'copy.txt'), sizeBytes: 1 }], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1, preserveSource: true });
+    expect(preservePlan).toMatchObject({ preserveSource: true, moves: [expect.objectContaining({ preserveSource: true })] });
   });
 
   test('returns observation-required or no-safe-moves when evidence or space is unavailable', () => {
@@ -69,7 +71,7 @@ describe('native file placement', () => {
     const source = path.join(sourceRoot, 'copy.bin');
     await fs.writeFile(source, 'copy');
     const plan = previewFilePlacement({ files: [{ path: source, sizeBytes: 4 }], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 10 });
-    const crossFs = { mkdir: fs.mkdir, lstat: jest.fn(async () => { const error = new Error('missing'); error.code = 'ENOENT'; throw error; }), rename: jest.fn(async () => { const error = new Error('cross'); error.code = 'EXDEV'; throw error; }), copyFile: fs.copyFile, stat: fs.stat, unlink: fs.unlink };
+    const crossFs = { mkdir: fs.mkdir, lstat: jest.fn(async () => { const error = new Error('missing'); error.code = 'ENOENT'; throw error; }), rename: jest.fn(async () => { const error = new Error('cross'); error.code = 'EXDEV'; throw error; }), copyFile: fs.copyFile, stat: fs.stat, unlink: fs.unlink, open: fs.open };
     const moved = await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: crossFs });
     expect(moved.moved[0].method).toBe('copy-delete');
     const bad = { ...plan, moves: [{ ...plan.moves[0], source: path.join(root, 'outside.txt') }] };
@@ -88,6 +90,25 @@ describe('native file placement', () => {
     expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: deniedFs })).skipped[0].reason).toBe('denied');
     const renameFailure = { ...crossFs, rename: jest.fn(async () => { throw new Error('rename failed'); }) };
     expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: renameFailure })).skipped[0].reason).toBe('rename failed');
+    const fallbackFs = { mkdir: crossFs.mkdir, lstat: crossFs.lstat, rename: crossFs.rename, copyFile: crossFs.copyFile, stat: crossFs.stat, unlink: crossFs.unlink, readFile: jest.fn(async () => Buffer.from('copy')) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: fallbackFs })).moved[0]).toMatchObject({ method: 'copy-delete', verificationState: 'verified' });
+    await fs.writeFile(source, 'copy');
+    const noHashFs = { ...fallbackFs, readFile: undefined };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: noHashFs })).skipped[0].reason).toBe('copy hash verification unavailable');
+    await fs.writeFile(source, 'copy');
+    const noReadFs = { ...crossFs, open: jest.fn(async () => ({ close: jest.fn(async () => {}) })) };
+    expect((await applyFilePlacement({ ...plan, moves: [{ ...plan.moves[0], destination: path.join(targetRoot, 'no-read.txt') }] }, { approved: true, dryRun: false, fsImpl: noReadFs })).skipped[0].reason).toBe('copy hash verification unavailable');
+    await fs.writeFile(source, 'copy');
+    let oddCalls = 0;
+    const oddFs = { ...crossFs, open: jest.fn(async () => {
+      oddCalls += 1;
+      if (oddCalls === 1) return {};
+      let reads = 0;
+      return { read: jest.fn(async (buffer) => { if (reads++ > 0) return { bytesRead: 0 }; buffer.fill(1, 0, 4); return { bytesRead: 4 }; }), ...(oddCalls === 3 ? { close: jest.fn(async () => {}) } : {}) };
+    }) };
+    expect((await applyFilePlacement({ ...plan, preserveSource: true, moves: [{ ...plan.moves[0], preserveSource: true, destination: path.join(targetRoot, 'odd-handles.txt') }] }, { approved: true, dryRun: false, fsImpl: oddFs })).moved[0]).toMatchObject({ verificationState: 'verified', sourceDeletionState: 'preserved' });
+    const preserved = await applyFilePlacement({ ...plan, preserveSource: true, moves: [{ ...plan.moves[0], preserveSource: true, destination: path.join(targetRoot, 'preserved.txt') }] }, { approved: true, dryRun: false, fsImpl: fallbackFs });
+    expect(preserved.moved[0]).toMatchObject({ verificationState: 'verified', sourceDeletionState: 'preserved' });
+    expect((await rollbackFilePlacement(preserved, { fsImpl: { ...fallbackFs, unlink: jest.fn(async () => {}) } })).restored[0]).toMatchObject({ method: 'delete-copy', sourceDeletionState: 'preserved' });
   });
 });
-

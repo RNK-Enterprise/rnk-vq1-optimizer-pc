@@ -8,6 +8,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { createHash } from 'crypto';
 
 export const FILE_PLACEMENT_VERSION = 1;
 const MAX_ENTRIES = 10000;
@@ -22,7 +23,7 @@ function protectedPath(candidate, roots, pathImpl) { return roots.some((root) =>
 function sourceAllowed(candidate, roots, pathImpl) { return roots.some((root) => inside(root, candidate, pathImpl)); }
 function category(value) { return text(value)?.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'other'; }
 
-export function previewFilePlacement({ files, sourceRoots, targetRoot, protectedRoots = [], targetFreeBytes, maxEntries = 256, pathImpl = path } = {}) {
+export function previewFilePlacement({ files, sourceRoots, targetRoot, protectedRoots = [], targetFreeBytes, maxEntries = 256, preserveSource = false, pathImpl = path } = {}) {
   if (!Array.isArray(files)) throw new TypeError('File placement requires file facts');
   if (!Number.isInteger(maxEntries) || maxEntries < 1 || maxEntries > MAX_ENTRIES) throw new RangeError('File placement maxEntries is out of range');
   const allowedRoots = rootList(sourceRoots, pathImpl, 'File placement source', true);
@@ -45,10 +46,10 @@ export function previewFilePlacement({ files, sourceRoots, targetRoot, protected
     if (!inside(resolvedTarget, destination, pathImpl)) { skipped.push({ file, reason: 'destination-is-outside-target-root' }); continue; }
     if (destination === source) { skipped.push({ file, reason: 'source-already-at-destination' }); continue; }
     if (sizeBytes > remaining) { skipped.push({ file, reason: 'target-volume-lacks-space' }); continue; }
-    moves.push(Object.freeze({ source, destination, sizeBytes, category: category(file.category), reversible: true }));
+    moves.push(Object.freeze({ source, destination, sizeBytes, category: category(file.category), preserveSource: preserveSource === true, reversible: true }));
     remaining -= sizeBytes;
   }
-  return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: moves.length ? 'preview-ready' : 'no-safe-moves', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), protectedRoots: Object.freeze(protectedResolved), moves: Object.freeze(moves), skipped: Object.freeze(skipped), estimatedBytes: free - remaining, remainingFreeBytes: remaining, mutation: 'none' });
+  return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: moves.length ? 'preview-ready' : 'no-safe-moves', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), protectedRoots: Object.freeze(protectedResolved), preserveSource: preserveSource === true, moves: Object.freeze(moves), skipped: Object.freeze(skipped), estimatedBytes: free - remaining, remainingFreeBytes: remaining, mutation: 'none' });
 }
 
 function validPlan(plan, pathImpl) {
@@ -56,13 +57,44 @@ function validPlan(plan, pathImpl) {
   return plan;
 }
 
-async function transfer(source, destination, move, fsImpl) {
-  try { await fsImpl.rename(source, destination); return 'rename'; } catch (error) { if (error?.code !== 'EXDEV') throw error; }
+async function hashFile(file, fsImpl) {
+  if (typeof fsImpl.open === 'function') {
+    const handle = await fsImpl.open(file, 'r');
+    try {
+      if (typeof handle.read !== 'function') throw new Error('copy hash verification unavailable');
+      const hash = createHash('sha256');
+      const buffer = Buffer.allocUnsafe(1024 * 1024);
+      while (true) {
+        const result = await handle.read(buffer, 0, buffer.length, null);
+        if (!result?.bytesRead) break;
+        hash.update(buffer.subarray(0, result.bytesRead));
+      }
+      return hash.digest('hex');
+    } finally { if (typeof handle.close === 'function') await handle.close(); }
+  }
+  if (typeof fsImpl.readFile === 'function') return createHash('sha256').update(await fsImpl.readFile(file)).digest('hex');
+  throw new Error('copy hash verification unavailable');
+}
+
+async function flushFile(file, fsImpl) {
+  if (typeof fsImpl.open !== 'function') return;
+  const handle = await fsImpl.open(file, 'r');
+  try { if (typeof handle.sync === 'function') await handle.sync(); }
+  finally { if (typeof handle.close === 'function') await handle.close(); }
+}
+
+async function transfer(source, destination, move, fsImpl, preserveSource = false) {
+  if (!preserveSource) {
+    try { await fsImpl.rename(source, destination); return { method: 'rename', bytes: move.sizeBytes, verificationState: 'not-required', sourceDeletionState: 'moved-with-rename' }; } catch (error) { if (error?.code !== 'EXDEV') throw error; }
+  }
   await fsImpl.copyFile(source, destination);
+  await flushFile(destination, fsImpl);
   const info = await fsImpl.stat(destination);
-  if (bytes(info.size) !== move.sizeBytes) throw new Error('copy verification failed');
-  await fsImpl.unlink(source);
-  return 'copy-delete';
+  const sourceSha256 = await hashFile(source, fsImpl);
+  const destinationSha256 = await hashFile(destination, fsImpl);
+  if (bytes(info.size) !== move.sizeBytes || sourceSha256 !== destinationSha256) throw new Error('copy verification failed');
+  if (!preserveSource) await fsImpl.unlink(source);
+  return { method: 'copy-delete', bytes: info.size, sourceHash: sourceSha256, destinationHash: destinationSha256, verificationState: 'verified', sourceDeletionState: preserveSource ? 'preserved' : 'deleted' };
 }
 
 export async function applyFilePlacement(plan, { approved = false, dryRun = true, fsImpl = fs, pathImpl = path } = {}) {
@@ -76,8 +108,8 @@ export async function applyFilePlacement(plan, { approved = false, dryRun = true
     try {
       await fsImpl.mkdir(pathImpl.dirname(move.destination), { recursive: true });
       try { await fsImpl.lstat(move.destination); skipped.push({ move, reason: 'destination-exists' }); continue; } catch (error) { if (error?.code !== 'ENOENT') throw error; }
-      const method = await transfer(move.source, move.destination, move, fsImpl);
-      moved.push({ ...move, method });
+      const verification = await transfer(move.source, move.destination, move, fsImpl, move.preserveSource === true || plan.preserveSource === true);
+      moved.push({ ...move, ...verification });
     } catch (error) { skipped.push({ move, reason: error.message }); }
   }
   return Object.freeze({ dryRun: false, moved: Object.freeze(moved), skipped: Object.freeze(skipped) });
@@ -88,8 +120,15 @@ export async function rollbackFilePlacement(result, { fsImpl = fs, pathImpl = pa
   const restored = [];
   const skipped = [];
   for (const move of [...result.moved].reverse()) {
-    try { const method = await transfer(move.destination, move.source, move, fsImpl); restored.push({ ...move, method }); } catch (error) { skipped.push({ move, reason: error.message }); }
+    try {
+      if (move.preserveSource === true || move.sourceDeletionState === 'preserved') {
+        await fsImpl.unlink(move.destination);
+        restored.push({ ...move, method: 'delete-copy', sourceDeletionState: 'preserved' });
+      } else {
+        const verification = await transfer(move.destination, move.source, move, fsImpl);
+        restored.push({ ...move, ...verification });
+      }
+    } catch (error) { skipped.push({ move, reason: error.message }); }
   }
   return Object.freeze({ restored: Object.freeze(restored), skipped: Object.freeze(skipped) });
 }
-

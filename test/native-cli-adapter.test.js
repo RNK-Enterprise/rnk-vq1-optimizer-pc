@@ -166,6 +166,8 @@ describe('native top-level CLI adapter', () => {
     const rollback = jest.fn(() => ({ state: 'rolled-back' }));
     const placementArgs = { files: '[]', 'source-root': root, 'target-root': path.join(root, 'target'), 'protected-root': path.join(root, 'protected') };
     await expect(runPlacementCommand('placement-preview', placementArgs, { preview })).resolves.toEqual(plan);
+    await expect(runPlacementCommand('placement-preview', { ...placementArgs, 'preserve-source': 'true' }, { preview })).resolves.toEqual(plan);
+    expect(preview).toHaveBeenCalledWith(expect.objectContaining({ preserveSource: true }));
     await expect(runPlacementCommand('placement-preview', { files: '[]', 'source-root': root, 'target-root': path.join(root, 'target') }, { preview })).resolves.toEqual(plan);
     await expect(runPlacementCommand('placement-apply', placementArgs, { preview, apply })).rejects.toThrow('requires --confirm');
     await expect(runPlacementCommand('placement-apply', { ...placementArgs, confirm: true }, { preview, apply })).resolves.toMatchObject({ result: { state: 'applied' } });

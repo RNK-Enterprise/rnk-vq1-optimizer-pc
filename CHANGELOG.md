@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.1.2 candidate
+
+- Corrected Windows SMART inventory joins to retain the explicit disk number
+  and `\\.\PhysicalDriveN` authority; unresolved mappings and invalid smartctl
+  output now remain unavailable rather than healthy.
+- Replaced pagefile management assumptions with observed Windows automatic
+  management state, pagefile allocation/current/peak facts, commit accounting,
+  timestamps, and explicit `PAGEFILE_MANAGEMENT`/`COMMIT` states.
+- Named Windows application-path NetQos shaping as
+  `WINDOWS_APP_NETWORK_LIMIT`, returning the requested PID, resolved path,
+  policy, rate, and verification while exposing the IPv4/TCP-only counter
+  boundary.
+- Rebuilt Windows resource limiting around a named Job Object lifecycle with
+  query, update, release, and verification results; active-process relaxation
+  returns `RESTART_REQUIRED_TO_RELAX_LIMIT`.
+- Cross-volume copies now close and hash both sides before source deletion,
+  return hashes and deletion state, and support `--preserve-source`.
+- Production workstation packages and installers use `npm ci --omit=dev`;
+  Windows accepts explicit destinations such as `E:\\RNK-Vortex-Optimizer`.
+- Release provenance can require an exact pinned RNK signing fingerprint and
+  fails closed on missing, unknown, or mismatched keys.
+
 ## Unreleased
 
 - Added live gateway verification, Windows ROG/admin evidence and installer

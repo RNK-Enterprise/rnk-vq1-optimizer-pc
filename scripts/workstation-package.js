@@ -13,6 +13,7 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 
 export const WORKSTATION_PACKAGE_VERSION = 1;
+export const WORKSTATION_RUNTIME_INSTALL_COMMAND = 'npm ci --omit=dev';
 const PLATFORMS = new Set(['win32', 'linux', 'darwin']);
 const RUNTIME_FILES = Object.freeze([
   'native',
@@ -50,6 +51,7 @@ export function buildWorkstationPackagePlan({ platform = process.platform, sourc
     sourceRoot: source,
     outputRoot: output,
     releaseVersion: version,
+    runtimeInstallCommand: WORKSTATION_RUNTIME_INSTALL_COMMAND,
     files: RUNTIME_FILES,
     launcher: launcherName(normalizedPlatform),
     stewardLauncher: stewardLauncherName(normalizedPlatform),
@@ -132,7 +134,7 @@ export async function materializeWorkstationPackage(plan, { fsImpl = fs, pathImp
   if (plan.platform !== 'win32') await fsImpl.chmod(storageGuardLauncherPath, 0o755);
   if (plan.platform !== 'win32') await fsImpl.chmod(networkMonitorLauncherPath, 0o755);
   const files = await packageFileEntries(plan.outputRoot, '.', { fsImpl, pathImpl });
-  const manifest = { packageVersion: plan.version, releaseVersion: plan.releaseVersion, platform: plan.platform, files };
+  const manifest = { packageVersion: plan.version, releaseVersion: plan.releaseVersion, platform: plan.platform, runtimeInstallCommand: WORKSTATION_RUNTIME_INSTALL_COMMAND, files };
   await fsImpl.writeFile(pathImpl.join(plan.outputRoot, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
   return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, stewardLauncherPath, trayLauncherPath, storageGuardLauncherPath, networkMonitorLauncherPath, manifest: Object.freeze(manifest) });
 }
@@ -151,7 +153,7 @@ export async function verifyWorkstationPackage({ root, manifestPath, fsImpl = fs
   const manifestFile = absolute(manifestPath, pathImpl) || pathImpl.join(packageRoot, 'package-manifest.json');
   let manifest;
   try { manifest = JSON.parse(await fsImpl.readFile(manifestFile, 'utf8')); } catch { return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest could not be read' }); }
-  if (manifest?.packageVersion !== WORKSTATION_PACKAGE_VERSION || !Array.isArray(manifest.files) || manifest.files.length === 0) return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest shape is invalid' });
+  if (manifest?.packageVersion !== WORKSTATION_PACKAGE_VERSION || manifest.runtimeInstallCommand !== WORKSTATION_RUNTIME_INSTALL_COMMAND || !Array.isArray(manifest.files) || manifest.files.length === 0) return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest shape is invalid' });
   const expected = [];
   for (const item of manifest.files) {
     const relative = safeManifestPath(item?.path, pathImpl);

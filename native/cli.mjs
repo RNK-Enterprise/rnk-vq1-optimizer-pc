@@ -237,7 +237,8 @@ export async function runPlacementCommand(command, args, { preview = previewFile
     targetRoot: requireOption(args, 'target-root'),
     protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
     targetFreeBytes: numberOption(args, 'target-free-bytes', null),
-    maxEntries: numberOption(args, 'max-entries', 256)
+    maxEntries: numberOption(args, 'max-entries', 256),
+    preserveSource: args['preserve-source'] === true || args['preserve-source'] === 'true'
   });
   if (command === 'placement-preview') return plan;
   if (args.confirm !== true) throw new Error('placement-apply requires --confirm');

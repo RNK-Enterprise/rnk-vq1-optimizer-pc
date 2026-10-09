@@ -4,7 +4,7 @@
  * Contributor: Lisa's Dungeon
  */
 
-import { defaultGitExec, validateReleaseProvenance, verifyReleaseProvenance } from '../scripts/release-provenance.js';
+import { defaultGitExec, extractSigningFingerprint, normalizeSigningFingerprint, validateReleaseProvenance, validateSigningFingerprint, verifyReleaseProvenance } from '../scripts/release-provenance.js';
 
 const commit = 'a'.repeat(40);
 const otherCommit = 'b'.repeat(40);
@@ -64,5 +64,28 @@ describe('release provenance', () => {
     expect(() => validateReleaseProvenance({ tag: 'v3.1.1', currentCommit: commit, taggedCommit: commit, tagType: 'tag' })).toThrow('PGP');
     expect(() => validateReleaseProvenance()).toThrow('vX.Y.Z');
     expect(() => verifyReleaseProvenance({ env: {}, execFileSyncImpl: () => { throw new Error('no tag'); } })).toThrow('no tag');
+  });
+
+  test('requires and verifies an exact pinned signing fingerprint when supplied', () => {
+    const fingerprint = 'A'.repeat(40);
+    const raw = `[GNUPG:] VALIDSIG ${fingerprint} 20261009 0 4 0 1 10 ${fingerprint}`;
+    expect(normalizeSigningFingerprint(` ${fingerprint.toLowerCase()} `)).toBe(fingerprint);
+    expect(normalizeSigningFingerprint(null)).toBeNull();
+    expect(extractSigningFingerprint(raw)).toBe(fingerprint);
+    expect(extractSigningFingerprint('not a signature')).toBeNull();
+    expect(extractSigningFingerprint(null)).toBeNull();
+    expect(validateSigningFingerprint(raw, fingerprint.toLowerCase())).toBe(fingerprint);
+    expect(() => validateSigningFingerprint(raw, 'bad')).toThrow('40-character');
+    expect(() => validateSigningFingerprint(raw, 'B'.repeat(40))).toThrow('does not match');
+    const values = new Map([
+      ['rev-parse HEAD', `${commit}\n`],
+      ['rev-list -1 v3.1.1^{commit}', `${commit}\n`],
+      ['cat-file -t v3.1.1', 'tag\n'],
+      ['cat-file -p v3.1.1', signedContents],
+      ['verify-tag --raw v3.1.1', raw]
+    ]);
+    const exec = jest.fn((file, args) => values.get(args.join(' ')));
+    expect(verifyReleaseProvenance({ env: { GITHUB_REF_NAME: 'v3.1.1', RNK_SIGNING_KEY_FINGERPRINT: fingerprint }, execFileSyncImpl: exec }).signed).toBe(true);
+    expect(exec).toHaveBeenCalledWith('git', ['verify-tag', '--raw', 'v3.1.1']);
   });
 });
