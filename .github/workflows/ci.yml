@@ -26,7 +26,7 @@ jobs:
       - run: npm run audit:high
       - run: npm run pc:vq1:check
       - run: npm run bench -- --json
-      - run: node --check native/cli.mjs
+      - run: for file in native/*.mjs scripts/*.mjs; do node --check "$file"; done
       - run: bash -n install/linux/install.sh
       - run: git diff --check
 
