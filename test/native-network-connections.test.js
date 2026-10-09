@@ -16,6 +16,7 @@ describe('native network connection evidence', () => {
     expect(linux.connections[0]).toMatchObject({ pid: 42, name: 'node', protocol: 'tcp', localPort: '3000', remoteAddress: '10.0.0.2', remotePort: '443' });
     const mac = parseNetworkConnectionTelemetry('COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\nnode 42 odinn 3u IPv4 1 0t0 TCP 127.0.0.1:3000->10.0.0.2:443 (ESTABLISHED)', { platform: 'darwin' });
     expect(mac.connections[0]).toMatchObject({ pid: 42, name: 'node', protocol: 'tcp', state: 'ESTABLISHED' });
+    expect(parseNetworkConnectionTelemetry('malformed mac row', { platform: 'darwin' })).toMatchObject({ available: false, connections: [] });
     expect(parseNetworkConnectionTelemetry('bad', { platform: 'freebsd' })).toMatchObject({ available: false, source: 'platform unsupported' });
     expect(parseNetworkConnectionTelemetry()).toMatchObject({ available: false, platform: 'unknown' });
   });
