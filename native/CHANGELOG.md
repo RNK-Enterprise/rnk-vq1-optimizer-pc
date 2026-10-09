@@ -274,6 +274,10 @@
   assistant, policy, media, and entrypoint dispatch boundaries. The tests keep
   host mutations behind injected approval doubles or explicit refusal paths.
 
+- Corrected the workload-governor documentation so supported Windows/Linux CPU
+  and memory resource-limit authorities are not described as universally
+  unsupported; GPU hard caps remain explicitly unavailable.
+
 - The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
   evidence, pagefile pressure, battery charge/cycles, throttle events,
   abnormal-process events, and cleanup action counts alongside the existing

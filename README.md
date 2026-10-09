@@ -319,9 +319,10 @@ the existing organizer or placement preview before approving a move.
 The workload governor connects gaming/build coexistence policy to the native
 priority authority. It detects only explicit game evidence, excludes protected
 and system processes, previews exact PID operations, and requires explicit
-approval before applying them. Hard CPU, RAM, and GPU caps remain unsupported
-until platform-safe implementations are proven; unsupported results are
-reported rather than presented as enforcement.
+approval before applying them. Hard CPU and RAM limits are delegated to the
+separate platform resource-limit authority where the adapter proves support;
+GPU hard caps remain unsupported. Unsupported results are reported rather than
+presented as enforcement.
 
 `workload-budget-preview` compares explicit per-process CPU, memory, I/O, and
 GPU limits with observed facts. `workload-budget-apply` can apply only the
