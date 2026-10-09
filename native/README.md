@@ -319,7 +319,9 @@ and optional volume label, collects local volume facts, and returns an advisory
 allow/redirect/insufficient-space result. Install the browser-specific example
 manifest from `browser/native-host-manifest.example.json` with an exact
 extension origin. The bridge never receives arbitrary paths, opens a network
-listener, cancels a download, or rewrites a browser destination.
+listener, or rewrites a browser destination. The optional browser adapter can
+explicitly cancel selected redirect or insufficient-space decisions at filename
+determination; cancellation is disabled by default.
 
 `media-player --action play --tracks ... --confirm` uses the selected local
 track from the deterministic queue and delegates only to the fixed platform

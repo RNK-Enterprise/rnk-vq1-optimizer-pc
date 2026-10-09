@@ -8,10 +8,12 @@ import { createDownloadExtension, DOWNLOAD_EXTENSION_VERSION, NATIVE_HOST_NAME }
 
 function browserHarness() {
   const listeners = new Set();
+  const filenameListeners = new Set();
   const notifications = [];
   const ports = [];
+  const cancelled = [];
   const api = {
-    downloads: { onCreated: { addListener: (listener) => listeners.add(listener), removeListener: (listener) => listeners.delete(listener) } },
+    downloads: { onCreated: { addListener: (listener) => listeners.add(listener), removeListener: (listener) => listeners.delete(listener) }, onDeterminingFilename: { addListener: (listener) => filenameListeners.add(listener), removeListener: (listener) => filenameListeners.delete(listener) }, cancel: jest.fn(async (id) => { cancelled.push(id); }) },
     runtime: { connectNative: jest.fn(() => {
       const messageListeners = new Set();
       const port = { postMessage: jest.fn(), disconnect: jest.fn(), onMessage: { addListener: (listener) => messageListeners.add(listener) }, onDisconnect: { addListener: (listener) => listener() }, emit: (value) => messageListeners.forEach((listener) => listener(value)) };
@@ -19,7 +21,7 @@ function browserHarness() {
       return port;
     }) }
   };
-  return { api, listeners, notifications, ports };
+  return { api, listeners, filenameListeners, notifications, ports, cancelled };
 }
 
 describe('browser download guard', () => {
@@ -51,5 +53,29 @@ describe('browser download guard', () => {
     noMountListener({ id: 9, fileSize: 1 });
     h.ports[2].emit({ state: 'insufficient-space' });
     noMount.detach();
+  });
+
+  test('supports explicit bounded cancellation during filename determination', async () => {
+    const h = browserHarness();
+    const extension = createDownloadExtension({ api: h.api, enforceStates: ['insufficient-space'], notify: (item) => h.notifications.push(item) });
+    expect(extension.enforceStates).toEqual(['insufficient-space']);
+    extension.attach();
+    const listener = [...h.filenameListeners][0];
+    const suggest = jest.fn();
+    listener({ id: 12, fileSize: 99 }, suggest);
+    expect(suggest).toHaveBeenCalled();
+    h.ports[0].emit({ state: 'insufficient-space' });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(h.cancelled).toEqual([12]);
+    expect(h.notifications).toEqual([{ downloadId: 12, result: { state: 'insufficient-space' }, action: 'cancelled' }]);
+    extension.detach();
+    expect(h.filenameListeners.size).toBe(0);
+  });
+
+  test('fails closed when enforcement APIs or states are invalid', () => {
+    const h = browserHarness();
+    expect(() => createDownloadExtension({ api: h.api, enforceStates: ['allow'] })).toThrow('enforceStates');
+    expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, cancel: null } }, enforceStates: ['redirect'] })).toThrow('cancellation');
+    expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, onDeterminingFilename: null } }, enforceStates: ['redirect'] })).toThrow('filename determination');
   });
 });

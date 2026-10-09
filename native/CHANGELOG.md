@@ -10,7 +10,8 @@
   results rather than being misrepresented as equivalent controls.
 - Added a bounded browser native-messaging download-preflight bridge and an
   advisory browser adapter. It exchanges only size and mount facts, has no HTTP
-  listener, and does not cancel or rewrite downloads.
+  listener, and now supports explicitly configured cancellation at the browser
+  filename-determination boundary without rewriting downloads.
 - Added bounded NVIDIA GPU power-policy preview/apply for supported Windows and
   Linux hosts when current, minimum, and maximum watt limits are observed;
   universal frame-rate and non-NVIDIA GPU caps remain unsupported.

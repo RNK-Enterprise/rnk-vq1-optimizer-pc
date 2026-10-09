@@ -13,7 +13,7 @@ means the authority deliberately refuses rather than pretending to enforce it.
 | System Drive Guard | Implemented | Windows live cleanup and pressure recovery still need target-machine proof. |
 | Storage and drive health | Implemented | SMART/filesystem results depend on host tools and device permissions. |
 | File organizer and placement | Implemented | Preview, protected roots, copy verification, apply, and rollback are present. |
-| Download Guard | Implemented | It guards explicit roots; it does not intercept browser downloads. |
+| Download Guard | Implemented | Explicit roots, native preflight, and opt-in browser cancellation exist; cross-volume redirection remains outside the authority. |
 | Developer Mode | Implemented | Windows/Linux priority, CPU/RAM/I/O, and optional NVIDIA compute-memory evidence exist; live admin proof remains. |
 | Gaming Mode | Implemented | Foreground evidence, approved background priority changes, and bounded NVIDIA power-cap planning exist; universal GPU/FPS/network caps do not. |
 | Gaming + Build Mode | Implemented | Hard CPU/RAM limits use Windows Job Objects or Linux cgroups; live proof remains. |
@@ -49,9 +49,9 @@ wishlist:
 4. macOS hard CPU/RAM limits. macOS now has bounded process I/O background
    policy; hard CPU/RAM limits remain explicit unsupported results.
 5. Browser/OS-integrated download interception and destination redirection.
-   A native-messaging preflight bridge and advisory browser adapter now exist;
-   browser-specific cancellation and destination redirection remain outside
-   the authority until a safe host contract is proven.
+   Native-messaging preflight and opt-in browser cancellation now exist;
+   cross-volume destination redirection remains outside the authority until a
+   safe browser and host path contract is proven.
 6. Full service/decoder media integration. Local metadata and host handoff are
    implemented; the optimizer does not ship a decoder or service downloader.
 7. Live release evidence: clean-machine install, Windows 11 ROG execution,
