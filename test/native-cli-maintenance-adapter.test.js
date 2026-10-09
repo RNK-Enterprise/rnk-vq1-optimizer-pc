@@ -203,7 +203,8 @@ describe('native CLI maintenance adapter', () => {
     });
     await expect(runStewardDaemonCommand({ path: path.join(root, 'history.jsonl') }, { store, daemonFactory })).resolves.toEqual({ stopped: true });
     await expect(runStewardDaemonCommand({ path: path.join(root, 'history.jsonl'), 'report-output-path': path.join(root, 'daemon.json') }, { store, daemonFactory, adapterFactory: async () => ({}) })).resolves.toEqual({ stopped: true });
-    await expect(runStewardDaemonCommand({ packaged: true }, { store, daemonFactory, adapterFactory: async () => ({}), platform: 'linux', pathResolver: () => ({ state: 'ready', historyPath: path.join(root, 'packaged.jsonl'), reportPath: path.join(root, 'packaged.json') }) })).resolves.toEqual({ stopped: true });
+    await expect(runStewardDaemonCommand({ packaged: true }, { store, daemonFactory, adapterFactory: async () => ({}), platform: 'linux', pathResolver: () => ({ state: 'ready', historyPath: path.join(root, 'packaged.jsonl'), reportPath: path.join(root, 'packaged.html') }) })).resolves.toEqual({ stopped: true });
+    await expect(fs.readFile(path.join(root, 'packaged.html'), 'utf8')).resolves.toContain('<!doctype html>');
     await expect(runStewardDaemonCommand({ packaged: true }, { store, daemonFactory, platform: 'linux', env: {}, pathResolver: () => ({ state: 'invalid-environment', reason: 'missing root' }) })).rejects.toThrow('missing root');
     await expect(runStewardDaemonCommand({ path: path.join(root, 'daemon-invalid.jsonl'), 'observation-interval-seconds': '0' })).rejects.toThrow('interval');
 

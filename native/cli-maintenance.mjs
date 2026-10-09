@@ -274,9 +274,10 @@ export async function runStewardDaemonCommand(args, {
   if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
   const historyPath = defaults?.historyPath || requireOption(args, 'path');
   const reportPath = defaults?.reportPath || args['report-output-path'];
+  const reportFormat = args.format || (defaults ? 'html' : 'json');
   const history = store || historyStoreFromArgs({ ...args, path: historyPath });
   const reportDelivery = typeof reportPath === 'string'
-    ? createWorkstationReportFileDelivery({ filePath: reportPath, format: args.format || 'json' })
+    ? createWorkstationReportFileDelivery({ filePath: reportPath, format: reportFormat })
     : null;
   const daemon = daemonFactory({
     adapter: await adapterFactory(),

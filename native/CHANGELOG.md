@@ -7,6 +7,9 @@
   history and report paths instead of requiring manual path arguments.
 - Added a packaged continuous-steward launcher that runs the existing bounded
   observation and daily-report loop with the same isolated per-user paths.
+- Corrected packaged continuous reports to serialize as HTML by default when
+  the default `.html` destination is used; explicit report formats remain
+  available.
 
 - Added the reproducible cross-platform runtime package boundary and fixed
   Windows, Linux, and macOS dashboard launchers; tray lifecycle remains outside

@@ -17,5 +17,7 @@
   fresh bundle resolves its per-user history and HTML report paths directly.
 - Added matching dashboard and continuous-steward launchers to every runtime
   bundle; both launchers are included in manifest hashing and verification.
+- Set the continuous-steward launcher's default report format to HTML so its
+  default daily report has the declared artifact type.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.
