@@ -205,6 +205,11 @@ automatically.
 running. It writes through a caller-owned delivery callback and does not install
 an operating-system task or claim background service persistence.
 
+Pass `--output-path PATH --format json|markdown` to persist the delivered report
+as a bounded local artifact. `steward-daemon` accepts the corresponding
+`--report-output-path PATH --format json|markdown` option. The file sink is
+local-only and does not upload or notify external services.
+
 `steward-daemon` combines the observation and daily-report loops in one
 long-running process and stops cleanly on process signals. It does not install
 an operating-system service, tray process, scheduler task, or privileged daemon;

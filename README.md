@@ -265,6 +265,11 @@ caller-owned callback (the CLI writes JSON lines to stdout). It is trigger-based
 and remains active only while the command is running; installing an operating
 system scheduler is outside the native authority.
 
+Use `--output-path PATH --format json|markdown` with `steward-schedule`, or
+`--report-output-path PATH --format json|markdown` with `steward-daemon`, to
+persist the daily report as a bounded local artifact. No external delivery is
+performed.
+
 `steward-daemon` combines the observation and daily-report loops in one
 long-running process. It records bounded facts, emits daily reports, and stops
 cleanly on process signals. It does not install an operating-system service,

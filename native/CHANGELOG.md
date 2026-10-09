@@ -11,6 +11,9 @@
 - Added fixed read-only Windows, Linux, and macOS network-connection evidence
   with PID, endpoint, protocol, and state attribution; connection facts remain
   distinct from per-process byte rates and traffic-shaping authority.
+- Added explicit local JSON/Markdown daily-report delivery with bounded output,
+  caller-selected paths, restrictive file mode, and delivery receipts; the
+  scheduler and daemon can persist reports without installing a service.
 - Split the native CLI into bounded argument, maintenance, media, and
   dispatch modules; each source file remains below the 500-line limit without
   changing the command surface or approval defaults.

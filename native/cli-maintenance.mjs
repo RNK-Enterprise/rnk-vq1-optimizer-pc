@@ -20,6 +20,7 @@ import { applyQuarantine, previewQuarantine, rollbackQuarantine } from './quaran
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
 import { createStorageGrowthTracker } from './storage-growth.js';
+import { createWorkstationReportFileDelivery } from './workstation-report-delivery.js';
 import {
   downloadGuardFromArgs,
   historyStoreFromArgs,
@@ -187,12 +188,15 @@ export async function runStewardTrendsCommand(args) {
 
 export async function runStewardScheduleCommand(args) {
   const store = historyStoreFromArgs(args);
+  const deliver = typeof args['output-path'] === 'string'
+    ? createWorkstationReportFileDelivery({ filePath: args['output-path'], format: args.format || 'json' }).deliver
+    : (report) => process.stdout.write(`${JSON.stringify(report)}\n`);
   const scheduler = createDailyWorkstationScheduler({
     store,
     intervalMs: numberOption(args, 'interval-seconds', 900) * 1000,
     windowMs: numberOption(args, 'window-hours', 24) * 60 * 60 * 1000,
     maxSamples: numberOption(args, 'max-samples', 96),
-    deliver: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    deliver,
     onError: (error) => process.stderr.write(`steward scheduler: ${error.message}\n`)
   });
   await scheduler.run();
@@ -207,13 +211,18 @@ export async function runStewardScheduleCommand(args) {
 
 export async function runStewardDaemonCommand(args) {
   const store = historyStoreFromArgs(args);
+  const reportDelivery = typeof args['report-output-path'] === 'string'
+    ? createWorkstationReportFileDelivery({ filePath: args['report-output-path'], format: args.format || 'json' })
+    : null;
   const daemon = createStewardDaemon({
     adapter: (await import('./platform.js')).createPlatformAdapter(),
     store,
     observationIntervalMs: numberOption(args, 'observation-interval-seconds', 900) * 1000,
     reportIntervalMs: numberOption(args, 'report-interval-seconds', 900) * 1000,
     onObservation: (report) => process.stdout.write(`${JSON.stringify({ type: 'observation', report })}\n`),
-    deliver: (report) => process.stdout.write(`${JSON.stringify({ type: 'daily-report', report })}\n`),
+    deliver: (report) => reportDelivery
+      ? reportDelivery.deliver(report)
+      : process.stdout.write(`${JSON.stringify({ type: 'daily-report', report })}\n`),
     onError: (error) => process.stderr.write(`steward daemon: ${error.message}\n`)
   });
   await daemon.collect({ forceReport: args['force-report'] === true });
