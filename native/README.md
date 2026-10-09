@@ -143,9 +143,10 @@ explicit preview targets and does not claim ownership of those files.
 the default age boundary is 24 hours. Both the pressure thresholds and target
 floor are configurable. The Windows collector reports pagefile allocation and
 usage separately, Linux uses byte-accurate `df` plus fixed `free -b` swap
-evidence, and macOS uses normalized 1-KiB `df` facts; `pagefile.sys`,
-`hiberfil.sys`, `swapfile.sys`, and Linux swap are never cleanup targets. Linux
-swap remains unavailable when the host does not expose a valid `free` result.
+evidence, and macOS uses normalized 1-KiB `df` plus fixed `sysctl
+vm.swapusage` swap evidence; `pagefile.sys`, `hiberfil.sys`, `swapfile.sys`,
+Linux swap, and macOS swap are never cleanup targets. Swap remains unavailable
+when the host does not expose a valid result.
 
 The preview only walks fixed roots for explicitly selected categories:
 temporary files, package caches, browser automation caches, GPU/shader caches,

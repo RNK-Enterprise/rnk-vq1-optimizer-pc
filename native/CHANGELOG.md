@@ -4,6 +4,8 @@
 
 - Added fixed shell-free Linux swap observation as separate system-managed
   pagefile evidence; swap remains permanently excluded from cleanup.
+- Extended system-managed swap observation to macOS through fixed `sysctl`
+  `vm.swapusage` facts with the same no-cleanup boundary.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added separate GPU temperature evidence to daily workstation reports, with

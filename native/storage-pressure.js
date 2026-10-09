@@ -18,7 +18,7 @@ import {
   resolveProtectedStorageRoots,
   resolveStorageCategoryRoots
 } from './storage-targets.js';
-import { collectLinuxSwapPressure } from './swap-pressure.js';
+import { collectDarwinSwapPressure, collectLinuxSwapPressure } from './swap-pressure.js';
 
 export const STORAGE_PRESSURE_POLICY_VERSION = 1;
 export const STORAGE_PRESSURE_LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
@@ -202,7 +202,9 @@ export async function collectStoragePressureSnapshot({
       ? parseWindowsStorageOutput(result.stdout, policy)
       : platform === 'linux' ? parseLinuxDfOutput(result.stdout, policy) : parseDarwinDfOutput(result.stdout, policy);
     if (!parsed) throw new Error('storage command returned invalid facts');
-    const pagefile = platform === 'linux' ? await collectLinuxSwapPressure({ commandRunner }) : parsed.pagefile;
+    const pagefile = platform === 'linux'
+      ? await collectLinuxSwapPressure({ commandRunner })
+      : platform === 'darwin' ? await collectDarwinSwapPressure({ commandRunner }) : parsed.pagefile;
     return { available: true, platform, ...parsed, pagefile, collectedAt: new Date(timestamp).toISOString() };
   } catch (error) {
     return { available: false, platform, storage: [], pagefile: normalizePagefiles(), pressure: classifyStoragePressure({}, policy), collectedAt: new Date(timestamp).toISOString(), reason: error.message };

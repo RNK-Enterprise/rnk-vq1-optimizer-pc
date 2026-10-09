@@ -220,7 +220,14 @@ describe('native storage pressure classification and collection', () => {
     const macRunner = { run: jest.fn().mockResolvedValue({ code: 0, stdout: 'fs 1000 500 500 50% /\n' }) };
     const mac = await collectStoragePressureSnapshot({ platform: 'darwin', commandRunner: macRunner, policy: { targetFreeBytes: 0 }, now: () => NOW });
     expect(mac).toMatchObject({ available: true, platform: 'darwin' });
+    expect(mac.pagefile).toMatchObject({ available: false, systemManaged: true, cleanup: 'never' });
     expect(macRunner.run).toHaveBeenCalledWith('df', ['-Pk', '/'], expect.any(Object));
+    const macSwapRunner = { run: jest.fn()
+      .mockResolvedValueOnce({ code: 0, stdout: 'fs 1000 500 500 50% /\n' })
+      .mockResolvedValueOnce({ code: 0, stdout: 'total = 4096.00M used = 1024.00M free = 3072.00M (encrypted)\n' }) };
+    const macSwap = await collectStoragePressureSnapshot({ platform: 'darwin', commandRunner: macSwapRunner, policy: { targetFreeBytes: 0 }, now: () => NOW });
+    expect(macSwap.pagefile).toMatchObject({ available: true, allocatedBytes: 4096 * 1024 ** 2, currentBytes: 1024 * 1024 ** 2, pressurePercent: 25, cleanup: 'never' });
+    expect(macSwapRunner.run).toHaveBeenCalledWith('sysctl', ['-n', 'vm.swapusage'], expect.any(Object));
     await expect(collectStoragePressureSnapshot({ platform: 'freebsd', commandRunner: macRunner, now: () => NOW })).resolves.toMatchObject({ available: false, reason: 'platform unsupported' });
     await expect(collectStoragePressureSnapshot({ platform: 'linux', now: () => NOW })).resolves.toMatchObject({ available: false, reason: 'command runner unavailable' });
     await expect(collectStoragePressureSnapshot({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 1, stderr: 'denied' }) }, now: () => NOW })).resolves.toMatchObject({ available: false, reason: 'denied' });
