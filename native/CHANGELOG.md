@@ -8,6 +8,9 @@
 - Exposed explicit user protected roots on Storage Pressure Guard preview and
   monitor commands so project, model, and document boundaries reach the same
   cleanup authority as built-in protected roots.
+- Added a path-only persistent protected-roots registry with explicit
+  read/add/remove commands; malformed or unavailable registries fail closed,
+  and Storage Pressure Guard can load the registry before planning cleanup.
 - Added fixed shell-free Linux swap observation as separate system-managed
   pagefile evidence; swap remains permanently excluded from cleanup.
 - Extended system-managed swap observation to macOS through fixed `sysctl`

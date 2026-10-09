@@ -24,6 +24,7 @@ import {
   historyStoreFromArgs,
   jsonOption,
   numberOption,
+  protectedRootsStoreFromArgs,
   requireOption,
   storageGuardFromArgs,
   storageOptionsFromArgs,
@@ -32,7 +33,7 @@ import {
 
 export async function runStorageCommand(command, args) {
   const guard = storageGuardFromArgs(args);
-  const preview = await guard.preview(storageOptionsFromArgs(args));
+  const preview = await guard.preview(await storageOptionsFromArgs(args));
   if (command === 'storage-preview') return preview;
   if (args.confirm !== true) throw new Error('storage-cleanup requires --confirm');
   return { preview, result: await guard.cleanup(preview.plan, { approved: true, dryRun: false }) };
@@ -40,7 +41,7 @@ export async function runStorageCommand(command, args) {
 
 export async function runStorageMonitorCommand(args) {
   const guard = storageGuardFromArgs(args);
-  const options = storageOptionsFromArgs(args);
+  const options = await storageOptionsFromArgs(args);
   if (args['auto-clean'] === true && options.enabledCategories.length === 0) {
     throw new Error('storage-monitor --auto-clean requires explicitly enabled categories');
   }
@@ -67,6 +68,14 @@ export async function runStorageMonitorCommand(args) {
     process.once('SIGTERM', stop);
   });
   return { stopped: true };
+}
+
+export async function runProtectedRootsCommand(command, args) {
+  const store = protectedRootsStoreFromArgs(args);
+  if (command === 'protected-roots-read') return store.read();
+  if (args.confirm !== true) throw new Error(`${command} requires --confirm`);
+  const roots = typeof args.root === 'string' ? args.root.split(',').map((value) => value.trim()).filter(Boolean) : [];
+  return command === 'protected-roots-add' ? store.add(roots) : store.remove(roots);
 }
 
 export async function runCacheCommand(command, args) {

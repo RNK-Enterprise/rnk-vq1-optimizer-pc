@@ -36,6 +36,11 @@ node native/cli.mjs storage-cleanup --target-free-gb 5 \
   --enable=temporary-files,package-cache --confirm
 node native/cli.mjs storage-monitor --target-free-gb 5 \
   --enable=temporary-files,package-cache --interval-seconds 60
+node native/cli.mjs protected-roots-add \
+  --protected-store "$HOME/.rnk-optimizer/protected-roots.json" \
+  --root "$HOME/projects,$HOME/models,$HOME/.ssh" --confirm
+node native/cli.mjs protected-roots-read \
+  --protected-store "$HOME/.rnk-optimizer/protected-roots.json"
 node native/cli.mjs organize-preview --root "$HOME/Downloads"
 node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
@@ -164,6 +169,11 @@ and can only act on safe categories that were explicitly enabled; it does not
 authorize Windows Update or abandoned-runtime cleanup. Every real cleanup
 returns an audit record containing the plan ID, estimated bytes, removed bytes,
 and measured before/after free-space recovery.
+
+`protected-roots-add` persists user-selected repository, model, credential, WSL,
+or document roots in a path-only registry. Pass the same `--protected-store`
+to Storage Pressure Guard commands to load it. Registry changes require
+`--confirm`; malformed or unavailable registries fail closed.
 
 The workstation steward also exposes an append-only history store and a
 cross-platform observation monitor. `steward-history` supports read, append,

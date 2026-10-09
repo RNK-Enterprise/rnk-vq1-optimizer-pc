@@ -37,6 +37,7 @@ import {
   runDownloadMonitorCommand,
   runFileInsightsCommand,
   runOrganizerCommand,
+  runProtectedRootsCommand,
   runStewardDaemonCommand,
   runStewardHistoryCommand,
   runStewardMonitorCommand,
@@ -318,6 +319,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'media-player') return runMediaPlayerCommand(args);
   if (command === 'media-panel') return buildMediaPanelPlan(requireOption(args, 'url'));
   if (command === 'storage-monitor') return runStorageMonitorCommand(args);
+  if (['protected-roots-read', 'protected-roots-add', 'protected-roots-remove'].includes(command)) return runProtectedRootsCommand(command, args);
   throw new Error(`Unknown native command: ${command}`);
 }
 

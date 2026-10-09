@@ -12,6 +12,7 @@ import { createStewardHistoryStore } from './steward-history.js';
 import { createStoragePressureGuard } from './storage-pressure.js';
 import { createDownloadGuard } from './download-guard.js';
 import { createMediaLibrary } from './media-library.js';
+import { createProtectedRootsStore } from './protected-roots.js';
 
 function parseValue(raw) {
   const equals = raw.indexOf('=');
@@ -96,12 +97,21 @@ export function storageGuardFromArgs(args) {
   });
 }
 
-export function storageOptionsFromArgs(args) {
+export function protectedRootsStoreFromArgs(args) {
+  return createProtectedRootsStore({ filePath: requireOption(args, 'protected-store') });
+}
+
+export async function storageOptionsFromArgs(args) {
+  const configured = typeof args['protected-store'] === 'string'
+    ? await protectedRootsStoreFromArgs(args).read()
+    : { state: 'ready', roots: [] };
+  if (configured.state !== 'ready') throw new Error(configured.reason || 'protected roots store is unavailable');
+  const requested = typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').map((value) => value.trim()).filter(Boolean) : [];
   return {
     enabledCategories: approvals(args.enable),
     allowUnsafeCategories: args['allow-unsafe'] === true,
     allowAdmin: args['allow-admin'] === true,
-    protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').map((value) => value.trim()).filter(Boolean) : [],
+    protectedRoots: [...configured.roots, ...requested],
     abandonedRuntimeRoots: args['abandoned-root'] ? [args['abandoned-root']] : []
   };
 }
