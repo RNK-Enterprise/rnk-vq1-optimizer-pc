@@ -71,6 +71,9 @@ function cpuGpuSample(facts) {
     cpuPercent: nonNegative(cpu.loadPercent ?? cpu.utilizationPercent),
     gpuPercent: nonNegative(gpu.loadPercent ?? gpu.utilizationPercent),
     gpuTemperatureC: nonNegative(gpu.temperatureC ?? gpu.temperature),
+    gpuThermalThrottling: gpu.thermalThrottling === true
+      ? true
+      : gpu.thermalThrottling === false ? false : null,
     gpuMemoryUsedBytes: nonNegative(gpu.memoryUsedBytes),
     gpuMemoryTotalBytes: nonNegative(gpu.memoryTotalBytes)
   };
@@ -175,6 +178,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const cpuPercent = finiteValues(cpuGpu.map((item) => item.cpuPercent));
   const gpuPercent = finiteValues(cpuGpu.map((item) => item.gpuPercent));
   const gpuTemperatures = finiteValues(cpuGpu.map((item) => item.gpuTemperatureC));
+  const gpuThrottleEvents = count(cpuGpu, (item) => item.gpuThermalThrottling === true);
   const temperatures = finiteValues(thermals.map((item) => item.temperatureC));
   const batteryHealth = finiteValues(batteries.map((item) => item.healthPercent));
   const pagefilePressure = finiteValues(pagefile.map((item) => item.pressurePercent));
@@ -190,6 +194,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   if (memoryEvents) recommendations.push('review-memory-and-pagefile');
   if (pagefileEvents) recommendations.push('review-pagefile-pressure');
   if (throttleEvents) recommendations.push('review-thermal-workload');
+  if (gpuThrottleEvents) recommendations.push('review-gpu-thermal-workload');
   if (abnormalEvents) recommendations.push('review-abnormal-processes');
   if (!samples.length) recommendations.push('collect-workstation-evidence');
   if (!recommendations.length) recommendations.push('no-change');
@@ -202,7 +207,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     sampleCount: samples.length,
     storage: Object.freeze({ minimumFreeBytes: minimum(storageFree), latestFreeBytes: last(storageFree), trendBytes: trend(storageFree), pressureEvents: storageEvents }),
     memory: Object.freeze({ peakUsedBytes: maximum(memoryUsed), peakUsedPercent: maximum(memoryPercent), pressureEvents: memoryEvents }),
-    cpuGpu: Object.freeze({ peakCpuPercent: maximum(cpuPercent), peakGpuPercent: maximum(gpuPercent), peakGpuTemperatureC: maximum(gpuTemperatures), latestGpuTemperatureC: last(gpuTemperatures), latestGpuMemoryUsedBytes: last(finiteValues(cpuGpu.map((item) => item.gpuMemoryUsedBytes))) }),
+    cpuGpu: Object.freeze({ peakCpuPercent: maximum(cpuPercent), peakGpuPercent: maximum(gpuPercent), peakGpuTemperatureC: maximum(gpuTemperatures), latestGpuTemperatureC: last(gpuTemperatures), latestGpuMemoryUsedBytes: last(finiteValues(cpuGpu.map((item) => item.gpuMemoryUsedBytes))), gpuThermalThrottleEvents: gpuThrottleEvents }),
     thermals: Object.freeze({ peakTemperatureC: maximum(temperatures), throttleEvents }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),

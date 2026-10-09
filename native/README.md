@@ -171,6 +171,9 @@ the retained facts into a daily report with storage, memory, CPU/GPU, thermal,
 battery, pagefile, process, network, workload, gaming, and cleanup evidence.
 When supplied by the host, GPU temperature is retained separately from the
 aggregate thermal reading; missing GPU sensors remain unavailable.
+On Windows and Linux, NVIDIA facts also retain the fixed-query thermal-throttle
+reason result when `nvidia-smi` exposes it. Daily reports count those events
+separately; missing or unsupported GPU throttle evidence remains unknown.
 Network evidence includes cumulative interface counters plus derived receive/send
 rates when consecutive counters are available; first samples, missing counters,
 and counter resets remain explicitly unavailable.

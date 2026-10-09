@@ -10,6 +10,9 @@
   active drain evidence from long-term battery-health movement.
 - Added bounded Linux CPU thermal-throttle counter evidence and preserved
   missing throttle sensors as unknown in daily reports.
+- Added fixed NVIDIA GPU thermal-throttle reason evidence on Windows and Linux;
+  unsupported or missing GPU telemetry remains unavailable, and daily reports
+  count observed GPU thermal-throttle events separately from CPU thermal data.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added separate GPU temperature evidence to daily workstation reports, with

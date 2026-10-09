@@ -37,9 +37,16 @@ describe('native system facts', () => {
       utilizationPercent: 50,
       memoryUsedBytes: 1024 * 1024 ** 2,
       memoryTotalBytes: 8192 * 1024 ** 2,
-      temperatureC: 65
+      temperatureC: 65,
+      thermalThrottling: null
     });
-    expect(run).toHaveBeenCalledWith('nvidia-smi', expect.arrayContaining(['--format=csv,noheader,nounits']), { timeoutMs: 2500, maxOutputBytes: 2048 });
+    expect(run).toHaveBeenCalledWith('nvidia-smi', expect.arrayContaining([
+      '--query-gpu=utilization.gpu,memory.total,memory.used,temperature.gpu,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.sw_thermal_slowdown',
+      '--format=csv,noheader,nounits'
+    ]), { timeoutMs: 2500, maxOutputBytes: 2048 });
+    await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: '50,8192,1024,65,1,0' }) } })).resolves.toEqual(expect.objectContaining({ thermalThrottling: true }));
+    await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: '50,8192,1024,65,0,1' }) } })).resolves.toEqual(expect.objectContaining({ thermalThrottling: true }));
+    await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: '50,8192,1024,65,0,0' }) } })).resolves.toEqual(expect.objectContaining({ thermalThrottling: false }));
     await expect(collectGpuFacts({ platform: 'darwin', commandRunner: { run } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 1, stdout: '' }) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: 'bad' }) } })).resolves.toEqual(expect.objectContaining({ available: false }));

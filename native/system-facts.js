@@ -29,6 +29,10 @@ function percentage(used, total) {
   return Math.round((used / total) * 10000) / 100;
 }
 
+function unavailableGpu() {
+  return { available: false, vendor: null, utilizationPercent: null, memoryUsedBytes: null, memoryTotalBytes: null, temperatureC: null, thermalThrottling: null };
+}
+
 export function collectBaseFacts({ platform = process.platform, osImpl = os } = {}) {
   const cpus = typeof osImpl.cpus === 'function' ? osImpl.cpus() : [];
   const totalMemory = typeof osImpl.totalmem === 'function' ? osImpl.totalmem() : null;
@@ -50,7 +54,7 @@ export function collectBaseFacts({ platform = process.platform, osImpl = os } = 
         ? percentage(totalMemory - freeMemory, totalMemory)
         : null
     },
-    gpu: { available: false, vendor: null, utilizationPercent: null, memoryUsedBytes: null, memoryTotalBytes: null, temperatureC: null },
+    gpu: unavailableGpu(),
     collectedAt: new Date().toISOString()
   };
 }
@@ -59,29 +63,33 @@ function parseNvidiaLine(output) {
   const parts = String(output || '').trim().split(',').map((part) => Number(part.trim()));
   if (parts.length < 4 || parts.some((value) => !Number.isFinite(value))) return null;
   const [utilizationPercent, memoryTotalMiB, memoryUsedMiB, temperatureC] = parts;
+  const thermalFlags = parts.slice(4);
   return {
     available: true,
     vendor: 'nvidia',
     utilizationPercent,
     memoryUsedBytes: memoryUsedMiB * 1024 ** 2,
     memoryTotalBytes: memoryTotalMiB * 1024 ** 2,
-    temperatureC
+    temperatureC,
+    thermalThrottling: thermalFlags.length >= 2
+      ? thermalFlags[0] !== 0 || thermalFlags[1] !== 0
+      : null
   };
 }
 
 /** Read optional NVIDIA telemetry without making GPU support a requirement. */
 export async function collectGpuFacts({ platform, commandRunner } = {}) {
   if (!commandRunner || (platform !== 'win32' && platform !== 'linux')) {
-    return { available: false, vendor: null, utilizationPercent: null, memoryUsedBytes: null, memoryTotalBytes: null, temperatureC: null };
+    return unavailableGpu();
   }
   try {
     const result = await commandRunner.run('nvidia-smi', [
-      '--query-gpu=utilization.gpu,memory.total,memory.used,temperature.gpu',
+      '--query-gpu=utilization.gpu,memory.total,memory.used,temperature.gpu,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.sw_thermal_slowdown',
       '--format=csv,noheader,nounits'
     ], { timeoutMs: 2500, maxOutputBytes: 2048 });
-    return result.code === 0 ? (parseNvidiaLine(result.stdout) || { available: false, vendor: null }) : { available: false, vendor: null };
+    return result.code === 0 ? (parseNvidiaLine(result.stdout) || unavailableGpu()) : unavailableGpu();
   } catch {
-    return { available: false, vendor: null };
+    return unavailableGpu();
   }
 }
 
