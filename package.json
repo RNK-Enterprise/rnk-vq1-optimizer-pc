@@ -130,6 +130,7 @@
       "native/cli-utils.mjs",
       "native/cli-media.mjs",
       "native/cli-maintenance.mjs",
+      "native/cli.mjs",
       "scripts/verify-public-boundary.mjs",
       "scripts/verify-release-provenance.mjs",
       "scripts/pc-host-benchmark.mjs"

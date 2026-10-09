@@ -269,6 +269,11 @@
   Tests use bounded temporary roots or injected observation doubles so no live
   cleanup, process control, or scheduled task is performed by the coverage run.
 
+- Added strict ESM-aware coverage for the top-level native CLI adapter, including
+  workload, budget, resource, power, process, startup, drive, network, placement,
+  assistant, policy, media, and entrypoint dispatch boundaries. The tests keep
+  host mutations behind injected approval doubles or explicit refusal paths.
+
 - The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
   evidence, pagefile pressure, battery charge/cycles, throttle events,
   abnormal-process events, and cleanup action counts alongside the existing

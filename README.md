@@ -441,13 +441,12 @@ lines gate over every collected JavaScript (`.js`) runtime authority file in
 script ESM CLI adapters (`.mjs`) are intentionally kept as thin dispatch
 surfaces. `native/cli-utils.mjs`, `native/cli-media.mjs`,
 `scripts/verify-public-boundary.mjs`, `scripts/verify-release-provenance.mjs`,
-`scripts/pc-host-benchmark.mjs`, and `native/cli-maintenance.mjs` are included
-in the strict Jest gate;
-the remaining adapters are covered by ESLint and `node --check` while their
-dedicated coverage is being added. The benchmark adapter remains observational
-tooling; its coverage verifies dispatch behavior, not host-performance claims. The CI workflow
-runs these checks from a clean checkout; unsupported coverage is not presented
-as green.
+`scripts/pc-host-benchmark.mjs`, `native/cli-maintenance.mjs`, and
+`native/cli.mjs` are included in the strict Jest gate. All collected JavaScript
+and ESM adapter files are covered by the same gate; the benchmark adapter
+remains observational tooling, and its coverage verifies dispatch behavior,
+not host-performance claims. The CI workflow runs these checks from a clean
+checkout; unsupported coverage is not presented as green.
 
 The benchmark is observational evidence only. A passing local suite does not
 prove a clean-machine install, Windows execution, a live gateway, or a real
