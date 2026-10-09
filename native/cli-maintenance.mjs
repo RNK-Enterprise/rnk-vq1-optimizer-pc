@@ -45,25 +45,36 @@ export async function runStorageCommand(command, args, { guard = storageGuardFro
 }
 
 export async function runStorageMonitorCommand(args, {
-  guard = storageGuardFromArgs(args),
+  guard,
   growth = createStorageGrowthTracker({
     windowMs: numberOption(args, 'growth-window-hours', 24 * 30) * 60 * 60 * 1000,
     maxEntries: numberOption(args, 'growth-max-entries', 512),
     growthThresholdBytes: numberOption(args, 'growth-threshold-bytes', 1024 ** 2)
   }),
-  monitorFactory = (config) => guard.monitor(config)
+  monitorFactory,
+  commandRunner = createCommandRunner(),
+  platform = process.platform,
+  env = process.env,
+  pathResolver = defaultWorkstationPaths
 } = {}) {
-  const options = await storageOptionsFromArgs(args);
+  const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
+  if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
+  const monitorArgs = defaults && typeof args['protected-store'] !== 'string'
+    ? { ...args, 'protected-store': defaults.protectedRootsPath }
+    : args;
+  const effectiveGuard = guard || storageGuardFromArgs(monitorArgs, { platform, commandRunner, env });
+  const effectiveMonitorFactory = monitorFactory || ((config) => effectiveGuard.monitor(config));
+  const options = await storageOptionsFromArgs(monitorArgs);
   if (args['auto-clean'] === true && options.enabledCategories.length === 0) {
     throw new Error('storage-monitor --auto-clean requires explicitly enabled categories');
   }
   if (args['auto-clean'] === true && (options.allowUnsafeCategories || options.allowAdmin)) {
     throw new Error('storage-monitor --auto-clean only permits safe categories');
   }
-  const monitor = monitorFactory({
+  const monitor = effectiveMonitorFactory({
     intervalMs: numberOption(args, 'interval-seconds', 60) * 1000,
     onSample: async (snapshot) => {
-      const preview = await guard.preview({ ...options, snapshot });
+      const preview = await effectiveGuard.preview({ ...options, snapshot });
       growth.observe({
         timestamp: Date.parse(snapshot.collectedAt),
         freeBytes: snapshot.pressure?.freeBytes,
@@ -72,11 +83,11 @@ export async function runStorageMonitorCommand(args, {
       });
     },
     onChange: async (snapshot) => {
-      const preview = await guard.preview({ ...options, snapshot });
+      const preview = await effectiveGuard.preview({ ...options, snapshot });
       const result = args['auto-clean'] === true
         && (snapshot.pressure?.level === 'critical' || snapshot.pressure?.level === 'emergency')
         && preview.plan.selected.length > 0
-        ? await guard.cleanup(preview.plan, { approved: true, dryRun: false })
+        ? await effectiveGuard.cleanup(preview.plan, { approved: true, dryRun: false })
         : null;
       process.stdout.write(`${JSON.stringify({ snapshot, preview, growth: growth.read(), result })}\n`);
     },

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a packaged System Drive Guard launcher that continuously observes the
+  configured free-space floor with the existing protected-root and approval
+  boundaries; automatic cleanup remains opt-in and category-limited.
 - Added a cross-platform packaged-session user-data path resolver for Windows,
   Linux, and macOS. Packaged dashboard launchers now use isolated per-user
   history and report paths instead of requiring manual path arguments.

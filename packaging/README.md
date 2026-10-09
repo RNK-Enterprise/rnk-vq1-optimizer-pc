@@ -15,8 +15,8 @@ node scripts/workstation-package.js --platform linux --output /opt/rnk-optimizer
 node scripts/workstation-package.js --platform darwin --output /Applications/RNKOptimizer --version 3.1.1
 ```
 
-The output is a runtime bundle, not a signed installer, service registration,
-or tray application. The Windows launchers are `.cmd` files. POSIX launchers
+The output is a runtime bundle, not a signed installer or service registration.
+The Windows launchers are `.cmd` files. POSIX launchers
 use `RNK_NODE` when set and otherwise resolve `node` from `PATH`. The dashboard
 uses the existing approval-gated snapshot and host opener boundary. The
 continuous-steward launcher runs the existing observation/report loop in the
@@ -27,6 +27,12 @@ platform tray host. Windows uses the documented PowerShell Forms tray API,
 macOS uses the documented `osascript` Cocoa status item, and Linux uses the
 fixed `yad` notification host when installed. A missing host utility is
 reported as a refusal; the package does not install a service or listener.
+
+The `rnk-optimizer-storage-guard` launcher continuously monitors the system
+volume with a 5 GB target-free floor by default. It is read-only unless the
+caller explicitly supplies `--auto-clean` and safe category approvals; it uses
+the packaged protected-root registry and never treats pagefile or system
+managed storage as cleanup candidates.
 
 Packaged daily scheduling remains an explicit preview/apply operation. Use the
 runtime CLI with `report-schedule-preview --packaged` to inspect the native

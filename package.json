@@ -45,6 +45,7 @@
     "native:report:open": "node native/cli.mjs report-open",
     "native:steward:dashboard": "node native/cli.mjs steward-dashboard",
     "native:steward:tray": "node native/cli.mjs steward-tray",
+    "native:steward:storage-guard": "node native/cli.mjs storage-monitor --target-free-gb 5 --interval-seconds 60",
     "package:workstation": "node scripts/workstation-package.js",
     "native:filesystem:health": "node native/cli.mjs filesystem-health",
     "native:drive:benchmark": "node native/cli.mjs drive-benchmark",

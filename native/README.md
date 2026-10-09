@@ -36,6 +36,8 @@ node native/cli.mjs storage-cleanup --target-free-gb 5 \
   --enable=temporary-files,package-cache --confirm
 node native/cli.mjs storage-monitor --target-free-gb 5 \
   --enable=temporary-files,package-cache --interval-seconds 60
+node native/cli.mjs storage-monitor --packaged --target-free-gb 5 \
+  --interval-seconds 60
 node native/cli.mjs protected-roots-add \
   --protected-store "$HOME/.rnk-optimizer/protected-roots.json" \
   --root "$HOME/projects,$HOME/models,$HOME/.ssh" --confirm

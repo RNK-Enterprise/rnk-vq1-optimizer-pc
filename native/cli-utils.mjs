@@ -88,11 +88,11 @@ export function storagePolicyFromArgs(args) {
   };
 }
 
-export function storageGuardFromArgs(args) {
+export function storageGuardFromArgs(args, { platform = process.platform, commandRunner = createCommandRunner(), env = process.env } = {}) {
   return createStoragePressureGuard({
-    platform: process.platform,
-    commandRunner: createCommandRunner(),
-    env: process.env,
+    platform,
+    commandRunner,
+    env,
     policy: storagePolicyFromArgs(args)
   });
 }

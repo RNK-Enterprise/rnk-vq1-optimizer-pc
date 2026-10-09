@@ -2,6 +2,8 @@
 
 ## 2026-10-09
 
+- Added the packaged `rnk-optimizer-storage-guard` launcher with a bounded 5 GB
+  target-free default and opt-in safe-category cleanup.
 - Added a reproducible cross-platform runtime package builder.
 - Added fixed Windows, Linux, and macOS dashboard launchers.
 - Added package manifest output and source/output boundary checks.

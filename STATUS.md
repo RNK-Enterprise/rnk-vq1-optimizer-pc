@@ -36,8 +36,8 @@ means the authority deliberately refuses rather than pretending to enforce it.
 These are the actual remaining items, not a second copy of the completed
 wishlist:
 
-1. Packaged cross-platform desktop shell/tray application. A reproducible
-   runtime package and fixed platform launchers now exist; tray lifecycle
+1. Packaged cross-platform desktop shell/tray application. Dashboard, steward,
+   tray, and System Drive Guard launchers now exist; live host/tool proof
    remains.
 2. Platform-native per-process network byte counters and traffic shaping. The
    current network authority reports interface rates and explicit caller

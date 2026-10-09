@@ -92,6 +92,16 @@ describe('native CLI maintenance adapter', () => {
     await expect(runStorageCommand('storage-cleanup', {}, { guard, getOptions: async () => options })).rejects.toThrow('requires --confirm');
     await expect(runStorageMonitorCommand({ 'auto-clean': true })).rejects.toThrow('requires explicitly enabled categories');
     await expect(runStorageMonitorCommand({ 'auto-clean': true, enable: 'user-temp', 'allow-admin': true })).rejects.toThrow('only permits safe categories');
+    await expect(runStorageMonitorCommand({ packaged: true, 'interval-seconds': '1' }, {
+      growth,
+      commandRunner: { run: jest.fn() },
+      pathResolver: () => ({ state: 'ready', protectedRootsPath: path.join(root, 'packaged-protected.json') }),
+      monitorFactory: () => ({ start: async () => { interruptOnStart(() => Promise.resolve()); }, stop: jest.fn() })
+    })).resolves.toEqual({ stopped: true });
+    await expect(runStorageMonitorCommand({ packaged: true }, {
+      guard,
+      pathResolver: () => ({ state: 'invalid-environment', reason: 'missing packaged root' })
+    })).rejects.toThrow('missing packaged root');
   });
 
   test('dispatches cache, organization, and file insight commands', async () => {
