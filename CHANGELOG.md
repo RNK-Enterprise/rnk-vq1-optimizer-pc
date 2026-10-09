@@ -24,6 +24,8 @@
   latest leaders, sampled-rate count, and counter-reset evidence.
 - Added an optional caller-owned language adapter that translates bounded JSON
   into the deterministic assistant without granting model output execution authority.
+- Exposed that adapter through the explicit `assistant-adapted` CLI boundary;
+  its fallback response is caller-supplied JSON, not a network or execution path.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

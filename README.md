@@ -399,6 +399,7 @@ and placement responses are preview plans that retain the existing approval
 boundaries.
 An optional caller-owned language adapter may translate a bounded JSON response
 into a canonical question; the deterministic assistant remains the authority.
+The CLI exposes this boundary as `assistant-adapted` with `--adapter-response`.
 When supplied a workstation report, it also answers which observed process is
 the latest CPU or I/O leader; without sampled report evidence it returns an
 observation-required result.

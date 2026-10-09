@@ -27,6 +27,7 @@ import { createProcessResourceMonitor } from './process-rate.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { applyPlacementPolicy, previewPlacementPolicy, recommendPlacementTargets, rollbackPlacementPolicy } from './file-placement-policy.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
+import { interpretWorkstationQuestionWithAdapter } from './workstation-intent-adapter.js';
 import { approveWorkstationPolicy, buildWorkstationPolicyPlan } from './workstation-policy.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
 import { createPowerMonitor } from './power-monitor.js';
@@ -251,6 +252,13 @@ export async function runAssistantCommand(args, { adapter = createPlatformAdapte
   return interpretWorkstationQuestion(requireOption(args, 'question'), facts, { report });
 }
 
+export async function runAssistantAdapterCommand(args, { adapter = createPlatformAdapter(), generate = null } = {}) {
+  const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await adapter.collectFacts();
+  const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
+  const response = generate || (async () => jsonOption(args, 'adapter-response'));
+  return interpretWorkstationQuestionWithAdapter(requireOption(args, 'question'), { generate: response, facts, report });
+}
+
 export async function runWorkstationPolicyCommand(command, args, { adapter = createPlatformAdapter() } = {}) {
   if (command === 'policy-approve') return approveWorkstationPolicy(jsonOption(args, 'plan'), { approvedIds: textListOption(args, 'approve-ids') });
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await adapter.collectFacts();
@@ -354,6 +362,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'placement-recommend') return runPlacementRecommendationCommand(args);
   if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
+  if (command === 'assistant-adapted') return runAssistantAdapterCommand(args);
   if (['policy-preview', 'policy-approve'].includes(command)) return runWorkstationPolicyCommand(command, args);
   if (command === 'power-monitor') return runPowerMonitorCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);

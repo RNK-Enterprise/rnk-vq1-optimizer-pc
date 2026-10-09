@@ -10,6 +10,7 @@ import path from 'path';
 import {
   agentFromArgs,
   runAssistantCommand,
+  runAssistantAdapterCommand,
   runCli,
   runCliEntrypoint,
   isCliEntrypoint,
@@ -166,6 +167,9 @@ describe('native top-level CLI adapter', () => {
     const adapter = { collectFacts: jest.fn(async () => facts) };
     await expect(runAssistantCommand({ question: 'What should I fix today?', facts: '{}', report: '{"recommendations":[]}' }, { adapter })).resolves.toMatchObject({ intent: 'recommendations' });
     await expect(runAssistantCommand({ question: 'What should I fix today?' }, { adapter })).resolves.toMatchObject({ intent: 'recommendations' });
+    await expect(runAssistantAdapterCommand({ question: 'Why is C: full?', facts: '{}', 'adapter-response': '{"question":"Why is C: full?","confidence":0.9}' }, { adapter })).resolves.toMatchObject({ state: 'delegated', delegated: { intent: 'storage' } });
+    await expect(runAssistantAdapterCommand({ question: 'Why is C: full?', facts: '{}' }, { adapter, generate: async () => ({ question: 'Why is C: full?', confidence: 0.9 }) })).resolves.toMatchObject({ state: 'delegated' });
+    await expect(runAssistantAdapterCommand({ question: 'What should I fix today?', report: '{"recommendations":[]}' }, { adapter, generate: async () => ({ question: 'What should I fix today?', confidence: 0.9 }) })).resolves.toMatchObject({ state: 'delegated', delegated: { intent: 'recommendations' } });
     await expect(runWorkstationPolicyCommand('policy-preview', { facts: '{}', report: '{}' }, { adapter })).resolves.toMatchObject({ state: 'no-change' });
     await expect(runWorkstationPolicyCommand('policy-preview', {}, { adapter })).resolves.toMatchObject({ state: 'no-change' });
     const policy = await runWorkstationPolicyCommand('policy-preview', { facts: '{"storagePressure":{"level":"critical"}}' }, { adapter });
@@ -227,6 +231,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runCli(['placement-recommend'])).rejects.toThrow('--volumes is required');
     await expect(runCli(['placement-policy-preview'])).rejects.toThrow('--scan is required');
     await expect(runCli(['assistant'])).rejects.toThrow('--question is required');
+    await expect(runCli(['assistant-adapted', '--question=Why is C: full?', '--facts={}'])).resolves.toMatchObject({ state: 'refused', evidence: { reason: expect.stringContaining('--adapter-response is required') } });
     await expect(runCli(['policy-approve'])).rejects.toThrow('--plan is required');
     await expect(runCli(['power-monitor', '--auto-apply'])).rejects.toThrow('requires --confirm');
     await expect(runCli(['power-preview'])).rejects.toThrow('--profile is required');

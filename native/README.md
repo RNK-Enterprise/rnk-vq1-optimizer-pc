@@ -459,6 +459,8 @@ observation-required result.
 Hosts may use the optional intent adapter to translate a bounded local response
 into a canonical question; invalid or low-confidence output is refused and no
 adapter output is executed.
+The CLI form is `assistant-adapted --question TEXT --adapter-response JSON`;
+host applications may inject a generator when calling the adapter function.
 
 `policy-preview` combines local facts into bounded storage, memory/pagefile,
 thermal, gaming/build, battery, and process handoffs. `policy-approve` marks
