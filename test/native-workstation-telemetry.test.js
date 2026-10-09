@@ -153,7 +153,19 @@ describe('workstation thermal telemetry', () => {
       '/sys/class/thermal/thermal_zone0/type': 'cpu'
     };
     const linux = await collectThermalTelemetry({ platform: 'linux', fsImpl: fakeFs(files, new Set(['/sys/class/thermal/thermal_zone1/temp'])) });
-    expect(linux).toMatchObject({ available: true, maxTemperatureC: 51, source: 'sysfs' });
+    expect(linux).toMatchObject({ available: true, maxTemperatureC: 51, thermalThrottling: null, throttleEvents: null, source: 'sysfs' });
+    const throttledFiles = {
+      '/sys/class/thermal': [],
+      '/sys/devices/system/cpu': ['cpu0', 'cpu1', 'not-a-cpu'],
+      '/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_count': '2',
+      '/sys/devices/system/cpu/cpu0/thermal_throttle/core_throttle_count': '0',
+      '/sys/devices/system/cpu/cpu1/thermal_throttle/package_throttle_count': 'bad',
+      '/sys/devices/system/cpu/cpu1/thermal_throttle/core_throttle_count': '3'
+    };
+    await expect(collectThermalTelemetry({ platform: 'linux', fsImpl: fakeFs(throttledFiles) })).resolves.toMatchObject({ thermalThrottling: true, throttleEvents: 5 });
+    const stableFiles = { '/sys/class/thermal': [], '/sys/devices/system/cpu': ['cpu0'], '/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_count': '0', '/sys/devices/system/cpu/cpu0/thermal_throttle/core_throttle_count': '0' };
+    await expect(collectThermalTelemetry({ platform: 'linux', fsImpl: fakeFs(stableFiles) })).resolves.toMatchObject({ thermalThrottling: false, throttleEvents: 0 });
+    await expect(collectThermalTelemetry({ platform: 'linux', fsImpl: fakeFs({ '/sys/class/thermal': [] }, new Set(['/sys/devices/system/cpu'])) })).resolves.toMatchObject({ thermalThrottling: null, throttleEvents: null });
     await expect(collectThermalTelemetry({ platform: 'linux', fsImpl: fakeFs({}, new Set(['/sys/class/thermal'])) })).resolves.toMatchObject({ available: false });
     await expect(collectThermalTelemetry({ platform: 'win32', commandRunner: runner({ code: 0, stdout: JSON.stringify({ InstanceName: 'zone', CurrentTemperature: 3000 }) }) })).resolves.toMatchObject({ available: true, source: 'MSAcpi_ThermalZoneTemperature' });
     await expect(collectThermalTelemetry({ platform: 'win32', commandRunner: runner({ code: 1, stderr: 'denied' }) })).resolves.toMatchObject({ source: 'denied' });

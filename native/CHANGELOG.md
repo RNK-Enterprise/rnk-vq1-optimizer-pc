@@ -8,6 +8,8 @@
   `vm.swapusage` facts with the same no-cleanup boundary.
 - Added separate battery charge and discharging-only trends to distinguish
   active drain evidence from long-term battery-health movement.
+- Added bounded Linux CPU thermal-throttle counter evidence and preserved
+  missing throttle sensors as unknown in daily reports.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added separate GPU temperature evidence to daily workstation reports, with

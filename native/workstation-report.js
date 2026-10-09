@@ -78,7 +78,10 @@ function cpuGpuSample(facts) {
 
 function thermalSample(facts) {
   const thermal = record(facts.thermals) ? facts.thermals : record(facts.thermal) ? facts.thermal : {};
-  return { temperatureC: nonNegative(thermal.maxTemperatureC), throttling: thermal.throttling === true || thermal.thermalThrottling === true };
+  const throttling = thermal.throttling === true || thermal.thermalThrottling === true
+    ? true
+    : thermal.throttling === false || thermal.thermalThrottling === false ? false : null;
+  return { temperatureC: nonNegative(thermal.maxTemperatureC), throttling };
 }
 
 function batterySample(facts) {

@@ -201,7 +201,8 @@ and active charge drain remain separate observations.
 `collectSystemFacts()` now includes bounded process, startup, battery, thermal,
 and network telemetry when the host exposes it. Windows uses fixed PowerShell
 queries, Linux uses fixed `ps` plus read-only `/sys`, `/proc`, and startup
-roots, and macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
+roots; Linux thermal telemetry also reads bounded CPU thermal-throttle counters
+when exposed. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
 Missing sensors and unsupported platforms remain `available: false`; no
 telemetry path grants process-stop, startup-disable, file-delete, or
 network-control authority.

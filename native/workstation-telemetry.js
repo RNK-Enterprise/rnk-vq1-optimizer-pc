@@ -160,13 +160,32 @@ export function parseThermalTelemetry(output, { platform = 'unknown' } = {}) {
 
 async function collectLinuxThermals(fsImpl) {
   let names;
-  try { names = await fsImpl.readdir('/sys/class/thermal'); } catch { return Object.freeze({ available: false, zones: EMPTY, maxTemperatureC: null, source: 'sysfs' }); }
+  try { names = await fsImpl.readdir('/sys/class/thermal'); } catch { return Object.freeze({ available: false, zones: EMPTY, maxTemperatureC: null, thermalThrottling: null, throttleEvents: null, source: 'sysfs' }); }
   const zones = [];
   for (const name of names.filter((item) => /^thermal_zone\d+$/.test(item)).slice(0, 32)) {
     try { const temp = await fsImpl.readFile(`/sys/class/thermal/${name}/temp`, 'utf8'); const type = await fsImpl.readFile(`/sys/class/thermal/${name}/type`, 'utf8'); zones.push(normalizeThermal({ name: type.trim(), temp }, 'linux')); } catch { /* unavailable zone */ }
   }
   const valid = zones.filter((row) => row.temperatureC !== null);
-  return Object.freeze({ available: valid.length > 0, zones: Object.freeze(valid), maxTemperatureC: valid.length ? Math.max(...valid.map((row) => row.temperatureC)) : null, source: 'sysfs' });
+  const throttle = await collectLinuxThrottleCounters(fsImpl);
+  return Object.freeze({ available: valid.length > 0, zones: Object.freeze(valid), maxTemperatureC: valid.length ? Math.max(...valid.map((row) => row.temperatureC)) : null, ...throttle, source: 'sysfs' });
+}
+
+async function collectLinuxThrottleCounters(fsImpl) {
+  let names;
+  try { names = await fsImpl.readdir('/sys/devices/system/cpu'); } catch { return { thermalThrottling: null, throttleEvents: null }; }
+  const cpuNames = names.filter((item) => /^cpu\d+$/.test(item)).slice(0, 256);
+  const counts = [];
+  for (const name of cpuNames) {
+    for (const file of ['package_throttle_count', 'core_throttle_count']) {
+      try {
+        const value = number(await fsImpl.readFile(`/sys/devices/system/cpu/${name}/thermal_throttle/${file}`, 'utf8'));
+        if (value !== null) counts.push(value);
+      } catch { /* unavailable counter */ }
+    }
+  }
+  if (!counts.length) return { thermalThrottling: null, throttleEvents: null };
+  const throttleEvents = counts.reduce((sum, value) => sum + value, 0);
+  return { thermalThrottling: throttleEvents > 0, throttleEvents };
 }
 
 export async function collectThermalTelemetry({ platform = process.platform, commandRunner, fsImpl = fs } = {}) {

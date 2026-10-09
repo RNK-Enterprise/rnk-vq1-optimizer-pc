@@ -8,6 +8,8 @@
   `sysctl vm.swapusage` facts without granting swap cleanup authority.
 - Added separate battery charge and discharging-only trends to distinguish
   active drain evidence from long-term battery-health movement.
+- Added bounded Linux CPU thermal-throttle counter evidence and preserved
+  missing throttle sensors as unknown in daily reports.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added a bounded trigger-based daily report scheduler with one-delivery-per-day
