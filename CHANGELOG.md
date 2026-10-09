@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Removed the private VQ client, protocol, persistence, browser host, and
+  sibling-stack completeness gate from the public PC checkout; the public
+  surface now contains only native PC authority, PC analysis engines, and the
+  bounded local media host.
+- Corrected the public engine inventory documentation to 38 engines, 152
+  turbos, and 190 libraries.
 - Clarified the public verification boundary: the strict Jest 100% gate covers
   every collected JavaScript authority module, while all ESM CLI adapters are
   independently linted and syntax-checked without being misreported as Jest
@@ -100,12 +106,12 @@
   planning without decoder or download authority.
 - Added bounded multi-day workstation trend reporting for storage, battery,
   thermals, memory, and drive-failure evidence.
-- Corrected the public mesh inventory documentation to match the strict PC
-  completeness gate: 34 engines, 136 turbos, and 170 libraries.
+- Corrected the public mesh inventory documentation to match the public PC
+  catalog: 38 engines, 152 turbos, and 190 libraries.
 - Added the analysis-only workstation-health engine family for daily reports,
   resource pressure, storage trends, workload contention, and cleanup audits.
-- Kept the public PC mesh separate from the private VQ1 stack and retained the
-  strict 100% runtime coverage gate.
+- Kept the public PC mesh independent from sibling repositories and retained
+  the strict 100% runtime coverage gate.
 - Added the Storage Pressure Guard workflow for continuous system-drive
   monitoring, exact bounded cleanup previews, safe-category opt-in cleanup,
   separate pagefile evidence, protected paths, and measured cleanup audits.

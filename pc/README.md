@@ -1,33 +1,10 @@
 # PC integration
 
-The browser host under `scripts/pc-host.js` handles browser capabilities and
-embedded applications. The native whole-PC agent under `native/` handles
-Windows/Linux facts, process and power controls, and explicit cache cleanup.
-
-## Integration
-
-```js
-import { createPcOptimizer } from '../scripts/pc-host.js';
-
-const optimizer = createPcOptimizer({
-  serverUrl: 'https://optimizer.example.invalid/v1/plan',
-  hostOptions: {
-    runtimeAdapter: {
-      async apply(action, environment) {
-        // Connect only approved action types to the local application.
-        localPerformanceController.apply(action, environment);
-      }
-    }
-  }
-});
-
-runButton.addEventListener('click', () => optimizer.client.run());
-```
-
-The adapter is optional. Without one, validated actions are retained in the
-host state so the embedding application can consume
-`host.getAppliedState()`. The client uses browser `localStorage` by default
-and falls back to memory when browser storage is unavailable.
+The native whole-PC agent under `native/` handles Windows/Linux/macOS facts,
+process and power controls, storage pressure, workload policy, and explicit
+cleanup or organization approvals. The public browser surface is limited to
+the local media host below; it does not contain a remote optimizer client or
+private stack protocol.
 
 ## Local music host
 
@@ -38,16 +15,12 @@ through the host `HTMLAudioElement`. It never accepts remote URLs, arbitrary
 filesystem paths, or downloads. Hosts without browser audio or object-URL
 support return explicit `unsupported` evidence.
 
-## Browser-host boundaries
+## Browser boundary
 
-- Server responses are data-only plans. The client validates the protocol,
-  action allow-list, and bounds before applying anything.
-- Browser support does not execute shell commands, alter arbitrary processes,
-  or claim operating-system tuning.
-- Metrics are consent-aware and bounded. Missing signals remain null or
-  false; the host never invents hardware or network facts.
-- Execution is trigger-based. A host application decides when to call
-  `client.run()`; this integration does not install a polling loop.
+- The media host accepts only user-selected local `File` or `Blob` objects.
+- It does not execute shell commands, alter processes, fetch remote URLs, or
+  claim operating-system tuning.
+- Unsupported browser APIs return explicit `unsupported` evidence.
 
 For whole-PC changes, use the native CLI. The native path is preview-first and
 keeps file organization outside automatic optimization.

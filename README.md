@@ -2,9 +2,9 @@
 
 This repository is the public PC optimizer release. It contains native
 Windows/Linux/macOS action authority, a cross-platform facts layer for Windows,
-Linux, and macOS where supported, a PC browser host, and the PC analysis
-engine tree. The native agent measures the host and applies only bounded,
-locally validated actions.
+Linux, and macOS where supported, a browser-owned local media host, and the PC
+analysis engine tree. The native agent measures the host and applies only
+bounded, locally validated actions.
 
 ## Safety model
 
@@ -77,8 +77,8 @@ limits use a fixed Job Object authority. Linux uses cgroup-v2 `cpu.max` and
 address-space fallback for unavailable memory control; neither platform claims
 a portable GPU cap. CPU affinity is supported only through fixed
 balanced/performance masks for explicitly approved processes. NVIDIA facts are observational only. The
-browser host under `scripts/pc-host.js` does not execute operating-system
-commands.
+browser media host under `scripts/pc-media-player.js` does not execute
+operating-system commands.
 
 ## Install from an immutable release
 
@@ -421,7 +421,6 @@ npm test
 npm run lint
 npm run bench -- --json
 npm run native:facts
-npm run pc:vq1:check
 ```
 
 The Jest configuration is a strict 100% statements, branches, functions, and

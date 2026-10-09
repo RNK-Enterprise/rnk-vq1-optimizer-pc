@@ -3,8 +3,8 @@
 ## Scope
 
 This checkout is the public PC optimizer release. It contains the native
-Windows/Linux authority, the PC browser surface, the PC analysis engines, and
-the local typed mesh.
+Windows/Linux/macOS authority, the browser-owned local media surface, the PC
+analysis engines, and the local typed mesh.
 
 ## Control flow
 
@@ -47,8 +47,8 @@ the explicit admin flag, and destructive actions require a matching approval.
 
 ## Local PC mesh
 
-`pc/mesh.js` exposes typed command and event routes for 37 engines, 37
-dedicated engine libraries, 148 turbos, and 148 dedicated turbo libraries.
+`pc/mesh.js` exposes typed command and event routes for 38 engines, 38
+dedicated engine libraries, 152 turbos, and 152 dedicated turbo libraries.
 Every node is lazy-loaded. Engine execution requires one of the declared
 trigger paths. Dispatch creates an immutable review envelope and rejects
 unknown nodes, routes, triggers, clocks, and payload shapes.
