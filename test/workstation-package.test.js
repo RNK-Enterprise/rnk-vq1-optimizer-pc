@@ -6,6 +6,7 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { buildWorkstationPackagePlan, isEntrypoint, materializeWorkstationPackage, packageWorkstation, parseWorkstationPackageArgs, renderWorkstationLauncher, renderWorkstationStewardLauncher, renderWorkstationStorageGuardLauncher, renderWorkstationTrayLauncher, runIfEntrypoint, runWorkstationPackage, setExitCode, verifyWorkstationPackage, WORKSTATION_PACKAGE_VERSION } from '../scripts/workstation-package.js';
 
 describe('workstation package boundary', () => {
@@ -122,7 +123,7 @@ describe('workstation package boundary', () => {
     expect(setExitCode(2, target)).toBe(2);
     expect(target.exitCode).toBe(2);
     expect(isEntrypoint('file:///tmp/package.js', '')).toBe(false);
-    expect(isEntrypoint('file:///tmp/package.js', '/tmp/package.js')).toBe(true);
+    expect(isEntrypoint(pathToFileURL('/tmp/package.js').href, '/tmp/package.js')).toBe(true);
     await expect(runIfEntrypoint({ entrypoint: false, run: jest.fn() })).resolves.toBe(0);
     await expect(runIfEntrypoint({ entrypoint: true, run: jest.fn().mockResolvedValue(3) })).resolves.toBe(3);
     await expect(runIfEntrypoint()).resolves.toBe(0);

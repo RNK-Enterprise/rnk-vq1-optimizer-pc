@@ -31,8 +31,8 @@ describe('native cache cleaner', () => {
 
   test('resolves only known platform roots', () => {
     const env = { HOME: '/home/tester', LOCALAPPDATA: 'C:\\Users\\tester\\AppData\\Local' };
-    expect(defaultCacheRoots({ platform: 'linux', env, osImpl: { tmpdir: () => '/tmp' } })['user-temp']).toEqual(['/tmp/rnk-vortex-optimizer']);
-    expect(defaultCacheRoots({ platform: 'linux', env, osImpl: { tmpdir: () => '/tmp' } })['shader-cache']).toEqual([
+    expect(defaultCacheRoots({ platform: 'linux', env, osImpl: { tmpdir: () => '/tmp' }, pathImpl: path.posix })['user-temp']).toEqual(['/tmp/rnk-vortex-optimizer']);
+    expect(defaultCacheRoots({ platform: 'linux', env, osImpl: { tmpdir: () => '/tmp' }, pathImpl: path.posix })['shader-cache']).toEqual([
       '/home/tester/.cache/mesa_shader_cache', '/home/tester/.cache/nvidia/GLCache'
     ]);
     expect(defaultCacheRoots({ platform: 'win32', env, osImpl: { tmpdir: () => '/tmp' } })['shader-cache']).toHaveLength(3);
@@ -149,7 +149,7 @@ describe('native cache cleaner', () => {
 
     const fallbackRoots = defaultCacheRoots({ platform: 'win32', env: {}, osImpl: {} });
     expect(fallbackRoots['user-temp']).toEqual([]);
-    expect(defaultCacheRoots({ platform: 'linux', env: { USERPROFILE: '/profile' }, osImpl: { tmpdir: () => root } })['shader-cache'][0]).toContain('/profile');
+    expect(defaultCacheRoots({ platform: 'linux', env: { USERPROFILE: '/profile' }, osImpl: { tmpdir: () => root }, pathImpl: path.posix })['shader-cache'][0]).toContain('/profile');
     expect(defaultCacheRoots()['app-cache']).toEqual([]);
     const exactRoot = await guarded.clean({ roots: [root], items: [{ path: root, kind: 'directory' }] }, { approved: true, dryRun: false });
     expect(exactRoot.skipped[0].reason).toBe('outside-approved-root');

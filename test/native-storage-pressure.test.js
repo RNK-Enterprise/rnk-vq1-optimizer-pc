@@ -38,24 +38,24 @@ async function olden(file, timestamp = NOW - 48 * 60 * 60 * 1000) {
   await fs.utimes(file, timestamp / 1000, timestamp / 1000);
 }
 
-function envFor(root) {
-  const local = path.join(root, 'local');
-  const user = path.join(root, 'user');
+function envFor(root, pathImpl = path) {
+  const local = pathImpl.join(root, 'local');
+  const user = pathImpl.join(root, 'user');
   return {
-    TEMP: path.join(root, 'temp'),
-    TMP: path.join(root, 'tmp'),
+    TEMP: pathImpl.join(root, 'temp'),
+    TMP: pathImpl.join(root, 'tmp'),
     LOCALAPPDATA: local,
     USERPROFILE: user,
     HOME: user,
-    SystemRoot: path.join(root, 'windows'),
-    PROJECTS_ROOT: path.join(root, 'projects'),
-    MODELS_ROOT: path.join(root, 'models'),
-    CREDENTIALS_ROOT: path.join(root, 'credentials'),
-    WSL_DATA_ROOT: path.join(root, 'wsl'),
-    ACTIVE_RUNTIME_ROOT: path.join(root, 'active-runtime'),
-    CODEX_RUNTIME_ROOT: path.join(root, 'codex-runtime'),
-    OPENCODE_RUNTIME_ROOT: path.join(root, 'opencode-runtime'),
-    RUNTIMES_ROOT: path.join(root, 'runtimes')
+    SystemRoot: pathImpl.join(root, 'windows'),
+    PROJECTS_ROOT: pathImpl.join(root, 'projects'),
+    MODELS_ROOT: pathImpl.join(root, 'models'),
+    CREDENTIALS_ROOT: pathImpl.join(root, 'credentials'),
+    WSL_DATA_ROOT: pathImpl.join(root, 'wsl'),
+    ACTIVE_RUNTIME_ROOT: pathImpl.join(root, 'active-runtime'),
+    CODEX_RUNTIME_ROOT: pathImpl.join(root, 'codex-runtime'),
+    OPENCODE_RUNTIME_ROOT: pathImpl.join(root, 'opencode-runtime'),
+    RUNTIMES_ROOT: pathImpl.join(root, 'runtimes')
   };
 }
 
@@ -97,32 +97,32 @@ describe('native storage target policy', () => {
 
   test('resolves only explicit known roots and protected roots', () => {
     const root = '/tmp/rnk-storage';
-    const env = envFor(root);
+    const env = envFor(root, path.posix);
     const categories = resolveStorageCategoryRoots({
-      platform: 'win32', env, abandonedRuntimeRoots: [path.join(root, 'abandoned'), path.join(root, 'abandoned')]
+      platform: 'win32', env, pathImpl: path.posix, abandonedRuntimeRoots: [path.posix.join(root, 'abandoned'), path.posix.join(root, 'abandoned')]
     });
-    expect(categories['temporary-files']).toEqual([env.TEMP, env.TMP, path.join(env.LOCALAPPDATA, 'Temp')]);
-    expect(categories['package-cache']).toContain(path.join(env.USERPROFILE, '.npm'));
+    expect(categories['temporary-files']).toEqual([env.TEMP, env.TMP, path.posix.join(env.LOCALAPPDATA, 'Temp')]);
+    expect(categories['package-cache']).toContain(path.posix.join(env.USERPROFILE, '.npm'));
     expect(categories['browser-automation-cache']).toHaveLength(6);
-    expect(categories['browser-automation-cache']).toContain(path.join(env.LOCALAPPDATA, 'ms-playwright'));
+    expect(categories['browser-automation-cache']).toContain(path.posix.join(env.LOCALAPPDATA, 'ms-playwright'));
     expect(categories['gpu-shader-cache']).toHaveLength(5);
     expect(categories['windows-update-download'][0]).toContain('SoftwareDistribution');
-    expect(categories['abandoned-runtime-remnants']).toEqual([path.join(root, 'abandoned')]);
+    expect(categories['abandoned-runtime-remnants']).toEqual([path.posix.join(root, 'abandoned')]);
     expect(resolveStorageCategoryRoots()).toHaveProperty('temporary-files');
-    expect(resolveStorageCategoryRoots({ platform: 'win32', env: {} })['windows-update-download'][0]).toContain('C:');
-    expect(resolveStorageCategoryRoots({ platform: 'linux', env: {} })['windows-update-download']).toEqual([]);
-    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { HOME: root } })['package-cache']).toContain(path.join(root, '.npm'));
-    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { HOME: root } })['package-cache']).toContain(path.join(root, '.cargo', 'registry', 'cache'));
-    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { USERPROFILE: root } })['package-cache']).toContain(path.join(root, '.npm'));
-    expect(resolveStorageCategoryRoots({ platform: 'linux', env: {}, abandonedRuntimeRoots: 'not-a-list' })['temporary-files']).toEqual([]);
-    expect(defaultProtectedStorageRoots({ platform: 'win32', env }).some((item) => item.endsWith('System32'))).toBe(true);
-    expect(defaultProtectedStorageRoots({ platform: 'win32', env })).toEqual(expect.arrayContaining([
-      path.join(root, 'active-runtime'), path.join(root, 'codex-runtime'), path.join(root, 'opencode-runtime'), path.join(root, 'runtimes')
+    expect(resolveStorageCategoryRoots({ platform: 'win32', env: {}, pathImpl: path.posix })['windows-update-download'][0]).toContain('C:');
+    expect(resolveStorageCategoryRoots({ platform: 'linux', env: {}, pathImpl: path.posix })['windows-update-download']).toEqual([]);
+    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { HOME: root }, pathImpl: path.posix })['package-cache']).toContain(path.posix.join(root, '.npm'));
+    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { HOME: root }, pathImpl: path.posix })['package-cache']).toContain(path.posix.join(root, '.cargo', 'registry', 'cache'));
+    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { USERPROFILE: root }, pathImpl: path.posix })['package-cache']).toContain(path.posix.join(root, '.npm'));
+    expect(resolveStorageCategoryRoots({ platform: 'linux', env: {}, pathImpl: path.posix, abandonedRuntimeRoots: 'not-a-list' })['temporary-files']).toEqual([]);
+    expect(defaultProtectedStorageRoots({ platform: 'win32', env, pathImpl: path.posix }).some((item) => item.endsWith('System32'))).toBe(true);
+    expect(defaultProtectedStorageRoots({ platform: 'win32', env, pathImpl: path.posix })).toEqual(expect.arrayContaining([
+      path.posix.join(root, 'active-runtime'), path.posix.join(root, 'codex-runtime'), path.posix.join(root, 'opencode-runtime'), path.posix.join(root, 'runtimes')
     ]));
-    expect(defaultProtectedStorageRoots({ platform: 'linux', env: {} })).toEqual([]);
+    expect(defaultProtectedStorageRoots({ platform: 'linux', env: {}, pathImpl: path.posix })).toEqual([]);
     expect(defaultProtectedStorageRoots()).toEqual(expect.any(Array));
-    expect(defaultProtectedStorageRoots({ platform: 'win32', env: { HOME: root, WINDIR: '/windows' } })).toContain('/windows/System32');
-    expect(resolveProtectedStorageRoots({ env, protectedRoots: [path.join(root, 'projects'), path.join(root, 'extra')] })).toContain(path.join(root, 'extra'));
+    expect(defaultProtectedStorageRoots({ platform: 'win32', env: { HOME: root, WINDIR: '/windows' }, pathImpl: path.posix })).toContain('/windows/System32');
+    expect(resolveProtectedStorageRoots({ env, pathImpl: path.posix, protectedRoots: [path.posix.join(root, 'projects'), path.posix.join(root, 'extra')] })).toContain(path.posix.join(root, 'extra'));
     expect(resolveProtectedStorageRoots()).toEqual(expect.any(Array));
   });
 
@@ -333,6 +333,21 @@ describe('native storage cleanup preview and execution', () => {
     expect(racePreview.raceCount).toBeGreaterThan(0);
     await expect(previewStorageCleanup({ snapshot: snapshot(), enabledCategories: ['not-a-category'] })).rejects.toThrow('Unsupported storage category');
     await expect(previewStorageCleanup({ snapshot: snapshot(), now: () => NaN })).rejects.toThrow('clock');
+  });
+
+  test('normalizes malformed file sizes and stops at the entry bound', async () => {
+    const root = '/tmp/rnk-storage-bound';
+    const fsImpl = {
+      readdir: jest.fn(async () => [{ name: 'bad-size.tmp' }, { name: 'not-visited.tmp' }]),
+      lstat: jest.fn(async () => ({ isSymbolicLink: () => false, isDirectory: () => false, isFile: () => true, size: 'bad', mtimeMs: NOW - 48 * 60 * 60 * 1000 }))
+    };
+    const preview = await previewStorageCleanup({
+      platform: 'linux', env: { TEMP: root }, fsImpl, pathImpl: path.posix, snapshot: snapshot({ pressure: pressure({ level: 'normal', reclaimableBytesNeeded: 0 }) }),
+      enabledCategories: ['temporary-files'], policy: { targetFreeBytes: 0, maxEntries: 1, maxDepth: 0 }, now: () => NOW
+    });
+    expect(preview.candidates).toHaveLength(1);
+    expect(preview.candidates[0]).toMatchObject({ path: `${root}/bad-size.tmp`, sizeBytes: 0 });
+    expect(fsImpl.lstat).toHaveBeenCalledTimes(1);
   });
 
   test('builds bounded plans only at critical or emergency pressure', () => {

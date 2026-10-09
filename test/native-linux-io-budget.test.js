@@ -5,6 +5,7 @@
  */
 
 import { applyLinuxIoBudget, MAX_LINUX_IO_BYTES_PER_SECOND, validLinuxBlockDevice } from '../native/linux-io-budget.js';
+import path from 'path';
 
 describe('native Linux I/O budget authority', () => {
   test('validates bounded block-device evidence', async () => {
@@ -23,7 +24,7 @@ describe('native Linux I/O budget authority', () => {
       mkdir: jest.fn(async () => {}),
       writeFile: jest.fn(async () => {})
     };
-    await expect(applyLinuxIoBudget(123, 4096, '8:0', { fsImpl, cgroupRoot: '/test-cgroup' })).resolves.toEqual(expect.objectContaining({ ok: true, mechanism: 'cgroup-v2-io.max', group: '/test-cgroup/rnk-optimizer-123', device: '8:0', limit: 4096 }));
+    await expect(applyLinuxIoBudget(123, 4096, '8:0', { fsImpl, pathImpl: path.posix, cgroupRoot: '/test-cgroup' })).resolves.toEqual(expect.objectContaining({ ok: true, mechanism: 'cgroup-v2-io.max', group: '/test-cgroup/rnk-optimizer-123', device: '8:0', limit: 4096 }));
     expect(fsImpl.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/io.max', '8:0 rbps=4096 wbps=4096');
     expect(fsImpl.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/cgroup.procs', '123');
     await expect(applyLinuxIoBudget(123, 4096, '8:0', { fsImpl: { readFile: jest.fn(async () => 'cpu memory'), mkdir: jest.fn(), writeFile: jest.fn() } })).resolves.toEqual({ ok: false, reason: 'Linux cgroup I/O controller is unavailable' });

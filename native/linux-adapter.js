@@ -62,44 +62,44 @@ function approvedPid(context, pid) {
   return Array.isArray(list) ? list.includes(pid) : list instanceof Set ? list.has(pid) : false;
 }
 
-function cgroupName(root, pid) { return path.join(root, `rnk-optimizer-${pid}`); }
+function cgroupName(root, pid, pathImpl) { return pathImpl.join(root, `rnk-optimizer-${pid}`); }
 
-async function applyCpuCgroupLimit(pid, limit, { fsImpl, cgroupRoot }) {
+async function applyCpuCgroupLimit(pid, limit, { fsImpl, pathImpl, cgroupRoot }) {
   try {
-    const controllers = String(await fsImpl.readFile(path.join(cgroupRoot, 'cgroup.controllers'))).split(/\s+/).filter(Boolean);
+    const controllers = String(await fsImpl.readFile(pathImpl.join(cgroupRoot, 'cgroup.controllers'))).split(/\s+/).filter(Boolean);
     if (!controllers.includes('cpu')) return { ok: false, reason: 'Linux cgroup CPU controller is unavailable' };
-    const group = cgroupName(cgroupRoot, pid);
+    const group = cgroupName(cgroupRoot, pid, pathImpl);
     await fsImpl.mkdir(group, { recursive: true });
     const period = 100000;
     const quota = Math.max(1000, Math.floor(period * limit / 100));
-    await fsImpl.writeFile(path.join(group, 'cpu.max'), `${quota} ${period}`);
-    await fsImpl.writeFile(path.join(group, 'cgroup.procs'), String(pid));
+    await fsImpl.writeFile(pathImpl.join(group, 'cpu.max'), `${quota} ${period}`);
+    await fsImpl.writeFile(pathImpl.join(group, 'cgroup.procs'), String(pid));
     return { ok: true, operation: 'set-process-resource-limit', mechanism: 'cgroup-v2', group, quota, period };
   } catch (error) {
     return { ok: false, reason: error?.message || 'Linux cgroup CPU limit failed' };
   }
 }
 
-async function applyMemoryCgroupLimit(pid, limit, { fsImpl, cgroupRoot }) {
+async function applyMemoryCgroupLimit(pid, limit, { fsImpl, pathImpl, cgroupRoot }) {
   let controllers;
   try {
-    controllers = String(await fsImpl.readFile(path.join(cgroupRoot, 'cgroup.controllers'))).split(/\s+/).filter(Boolean);
+    controllers = String(await fsImpl.readFile(pathImpl.join(cgroupRoot, 'cgroup.controllers'))).split(/\s+/).filter(Boolean);
   } catch {
     return { ok: false, fallback: true, reason: 'Linux cgroup memory controller is unavailable' };
   }
   if (!controllers.includes('memory')) return { ok: false, fallback: true, reason: 'Linux cgroup memory controller is unavailable' };
   try {
-    const group = cgroupName(cgroupRoot, pid);
+    const group = cgroupName(cgroupRoot, pid, pathImpl);
     await fsImpl.mkdir(group, { recursive: true });
-    await fsImpl.writeFile(path.join(group, 'memory.max'), String(limit));
-    await fsImpl.writeFile(path.join(group, 'cgroup.procs'), String(pid));
+    await fsImpl.writeFile(pathImpl.join(group, 'memory.max'), String(limit));
+    await fsImpl.writeFile(pathImpl.join(group, 'cgroup.procs'), String(pid));
     return { ok: true, operation: 'set-process-resource-limit', mechanism: 'cgroup-v2', group, limit };
   } catch (error) {
     return { ok: false, reason: error?.message || 'Linux cgroup memory limit failed' };
   }
 }
 
-export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length, fsImpl = fs, cgroupRoot = '/sys/fs/cgroup' } = {}) {
+export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length, fsImpl = fs, pathImpl = path, cgroupRoot = '/sys/fs/cgroup' } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') throw new TypeError('Linux adapter requires a command runner');
   if (!cacheCleaner || typeof cacheCleaner.preview !== 'function' || typeof cacheCleaner.clean !== 'function') {
     throw new TypeError('Linux adapter requires a cache cleaner');
@@ -144,9 +144,9 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         case 'set-process-resource-limit':
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
           if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
-          if (action.value === 'cpu-percent') return applyCpuCgroupLimit(pid, action.limit, { fsImpl, cgroupRoot });
-          if (action.value === 'io-bytes-per-second') return applyLinuxIoBudget(pid, action.limit, action.device, { fsImpl, cgroupRoot });
-          const memoryCgroup = await applyMemoryCgroupLimit(pid, action.limit, { fsImpl, cgroupRoot });
+          if (action.value === 'cpu-percent') return applyCpuCgroupLimit(pid, action.limit, { fsImpl, pathImpl, cgroupRoot });
+          if (action.value === 'io-bytes-per-second') return applyLinuxIoBudget(pid, action.limit, action.device, { fsImpl, pathImpl, cgroupRoot });
+          const memoryCgroup = await applyMemoryCgroupLimit(pid, action.limit, { fsImpl, pathImpl, cgroupRoot });
           if (memoryCgroup.ok || memoryCgroup.fallback !== true) return memoryCgroup;
           return resultFromCommand(await commandRunner.run('prlimit', ['--pid', String(pid), `--as=${action.limit}:${action.limit}`]), 'set-process-resource-limit');
         case 'set-gpu-policy':

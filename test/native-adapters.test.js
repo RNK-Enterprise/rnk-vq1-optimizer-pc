@@ -8,6 +8,7 @@ import { createLinuxAdapter } from '../native/linux-adapter.js';
 import { createWindowsAdapter } from '../native/windows-adapter.js';
 import { createMacosAdapter } from '../native/macos-adapter.js';
 import { createPlatformAdapter } from '../native/platform.js';
+import path from 'path';
 
 const valid = {
   power: { type: 'set-power-profile', key: 'power.profile', value: 'performance' },
@@ -100,28 +101,28 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(false);
     const cgroupFs = { readFile: jest.fn(async () => 'cpu memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => {}) };
-    const cgroupAdapter = createLinuxAdapter({ ...h, fsImpl: cgroupFs, cgroupRoot: '/test-cgroup' });
+    const cgroupAdapter = createLinuxAdapter({ ...h, fsImpl: cgroupFs, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(cgroupAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, mechanism: 'cgroup-v2', group: '/test-cgroup/rnk-optimizer-123', quota: 50000, period: 100000 });
     await expect(cgroupAdapter.applyAction({ ...valid.cpuLimit, limit: 1 }, { targetPid: 123 })).resolves.toMatchObject({ ok: true, quota: 1000 });
     await expect(cgroupAdapter.applyAction(valid.memoryLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, mechanism: 'cgroup-v2', limit: valid.memoryLimit.limit });
     const ioCgroupFs = { readFile: jest.fn(async () => 'cpu memory io'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => {}) };
-    const ioCgroupAdapter = createLinuxAdapter({ ...h, fsImpl: ioCgroupFs, cgroupRoot: '/test-cgroup' });
+    const ioCgroupAdapter = createLinuxAdapter({ ...h, fsImpl: ioCgroupFs, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(ioCgroupAdapter.applyAction(valid.ioLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, mechanism: 'cgroup-v2-io.max', device: '8:0' });
     await expect(ioCgroupAdapter.applyAction({ ...valid.ioLimit, device: 'bad' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'resource limit value is invalid' });
     expect(cgroupFs.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/cpu.max', '50000 100000');
     expect(cgroupFs.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/memory.max', String(valid.memoryLimit.limit));
     expect(cgroupFs.writeFile).toHaveBeenCalledWith('/test-cgroup/rnk-optimizer-123/cgroup.procs', '123');
-    const noCpu = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'memory'), mkdir: jest.fn(), writeFile: jest.fn() }, cgroupRoot: '/test-cgroup' });
+    const noCpu = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'memory'), mkdir: jest.fn(), writeFile: jest.fn() }, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(noCpu.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'Linux cgroup CPU controller is unavailable' });
-    const writeFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'cpu'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw new Error('write denied'); }) }, cgroupRoot: '/test-cgroup' });
+    const writeFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'cpu'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw new Error('write denied'); }) }, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(writeFailure.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'write denied' });
-    const unknownFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'cpu'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw {}; }) }, cgroupRoot: '/test-cgroup' });
+    const unknownFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'cpu'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw {}; }) }, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(unknownFailure.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'Linux cgroup CPU limit failed' });
-    const memoryFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw new Error('memory write denied'); }) }, cgroupRoot: '/test-cgroup' });
+    const memoryFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw new Error('memory write denied'); }) }, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(memoryFailure.applyAction(valid.memoryLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'memory write denied' });
-    const unknownMemoryFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw {}; }) }, cgroupRoot: '/test-cgroup' });
+    const unknownMemoryFailure = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => { throw {}; }) }, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(unknownMemoryFailure.applyAction(valid.memoryLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'Linux cgroup memory limit failed' });
-    const noMemory = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'cpu'), mkdir: jest.fn(), writeFile: jest.fn() }, cgroupRoot: '/test-cgroup' });
+    const noMemory = createLinuxAdapter({ ...h, fsImpl: { readFile: jest.fn(async () => 'cpu'), mkdir: jest.fn(), writeFile: jest.fn() }, pathImpl: path.posix, cgroupRoot: '/test-cgroup' });
     await expect(noMemory.applyAction(valid.memoryLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true });
     expect(h.calls).toEqual(expect.arrayContaining([['prlimit', ['--pid', '123', '--as=1073741824:1073741824']]]));
     expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 0 }, { targetPid: 123 })).ok).toBe(false);

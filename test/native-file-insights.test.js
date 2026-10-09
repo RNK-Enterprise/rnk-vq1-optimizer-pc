@@ -43,7 +43,7 @@ describe('native file insights', () => {
       '/root/disk.iso': { size: 20, mtimeMs: 1000 },
       '/root/repo/source.js': { size: 10, mtimeMs: 1000 }
     };
-    const result = await scanFileInsights('/root', { fsImpl: fsFixture(entries, stats), protectedRoots: [{ ignored: true }, '/root/repo'], hashFiles: true, largeFileBytes: 100, minAgeHours: 1, now: () => 3600000, hashFileImpl: async (file) => file.endsWith('zip') ? hash : 'bad' });
+    const result = await scanFileInsights('/root', { fsImpl: fsFixture(entries, stats), pathImpl: path.posix, protectedRoots: [{ ignored: true }, '/root/repo'], hashFiles: true, largeFileBytes: 100, minAgeHours: 1, now: () => 3600000, hashFileImpl: async (file) => file.endsWith('zip') ? hash : 'bad' });
     expect(result).toMatchObject({ version: FILE_INSIGHTS_VERSION, entryCount: 7, mutation: 'none', protectedCount: 1, symlinkCount: 1 });
     expect(result.incomplete[0].category).toBe('incomplete-download');
     expect(result.staleInstallers[0].name).toBe('old.exe');
@@ -55,7 +55,7 @@ describe('native file insights', () => {
 
   test('builds review-only move suggestions and reports bounded failures', async () => {
     const scan = { root: '/root', policy: { minAgeHours: 10, largeFileBytes: 100 }, entries: [{ path: '/root/setup.exe', category: 'installer', ageHours: 20, sizeBytes: 10, protected: false }, { path: '/root/model.gguf', category: 'model', ageHours: 1, sizeBytes: 200, protected: false }, { path: '/root/readme', category: 'other', ageHours: 1, sizeBytes: 1, protected: false }, { path: '/root/partial.part', category: 'incomplete-download', ageHours: 1, sizeBytes: 1, protected: false }, { path: '/root/secret.zip', category: 'archive', ageHours: 20, sizeBytes: 20, protected: true }], duplicates: [{ sha256: hash, paths: ['/root/a', '/root/b'] }] };
-    const plan = buildFileInsightPlan(scan, { targetRoot: '/archive' });
+    const plan = buildFileInsightPlan(scan, { targetRoot: '/archive', pathImpl: path.posix });
     expect(plan).toMatchObject({ version: FILE_INSIGHTS_VERSION, targetRoot: '/archive', requiresApproval: true, mutation: 'none' });
     expect(plan.review).toEqual(expect.arrayContaining([expect.objectContaining({ reason: 'stale-installer', destination: '/archive/installer/setup.exe' }), expect.objectContaining({ reason: 'large-file', destination: '/archive/model/model.gguf' })]));
     expect(plan.review).not.toEqual(expect.arrayContaining([expect.objectContaining({ path: '/root/secret.zip' })]));
@@ -67,8 +67,8 @@ describe('native file insights', () => {
     await expect(scanFileInsights('/root', { minAgeHours: -1 })).rejects.toThrow('policy');
     await expect(scanFileInsights('/root', { now: 1 })).rejects.toThrow('clock');
     await expect(scanFileInsights('/root', { now: () => NaN })).rejects.toThrow('clock');
-    await expect(scanFileInsights('/bad', { fsImpl: fsFixture({}), now: () => 0 })).resolves.toMatchObject({ entryCount: 0, unreadableRoots: 1 });
-    await expect(scanFileInsights('/root', { fsImpl: fsFixture({}), protectedRoots: {}, now: () => 0 })).resolves.toMatchObject({ entryCount: 0 });
+    await expect(scanFileInsights('/bad', { fsImpl: fsFixture({}), pathImpl: path.posix, now: () => 0 })).resolves.toMatchObject({ entryCount: 0, unreadableRoots: 1 });
+    await expect(scanFileInsights('/root', { fsImpl: fsFixture({}), pathImpl: path.posix, protectedRoots: {}, now: () => 0 })).resolves.toMatchObject({ entryCount: 0 });
     const edgeEntries = {
       '/edge': [
         { name: 'nested', isDirectory: () => true, isSymbolicLink: () => false },
@@ -81,8 +81,8 @@ describe('native file insights', () => {
       ]
     };
     const edgeFs = fsFixture(edgeEntries, { '/edge/bad-size.bin': { size: 'bad', mtimeMs: NaN }, '/limit/one.bin': { size: 1, mtimeMs: 0 } });
-    await expect(scanFileInsights('/edge', { fsImpl: edgeFs, maxDepth: 0, now: () => 0 })).resolves.toMatchObject({ entryCount: 1, entries: [{ sizeBytes: 0, ageHours: null, modifiedAt: null, hashState: 'not-requested' }] });
-    await expect(scanFileInsights('/limit', { fsImpl: edgeFs, maxEntries: 1, now: () => 0 })).resolves.toMatchObject({ entryCount: 1, truncated: true });
+    await expect(scanFileInsights('/edge', { fsImpl: edgeFs, pathImpl: path.posix, maxDepth: 0, now: () => 0 })).resolves.toMatchObject({ entryCount: 1, entries: [{ sizeBytes: 0, ageHours: null, modifiedAt: null, hashState: 'not-requested' }] });
+    await expect(scanFileInsights('/limit', { fsImpl: edgeFs, pathImpl: path.posix, maxEntries: 1, now: () => 0 })).resolves.toMatchObject({ entryCount: 1, truncated: true });
     expect(() => buildFileInsightPlan(null)).toThrow('scan is required');
   });
 
@@ -94,10 +94,10 @@ describe('native file insights', () => {
       const hashed = await scanFileInsights(root, { hashFiles: true, now: () => Date.now() });
       expect(hashed.duplicates).toHaveLength(1);
       const entries = [{ name: 'large.zip', isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false }];
-      const limited = await scanFileInsights('/root', { fsImpl: fsFixture({ '/root': entries }, { '/root/large.zip': { size: 10, mtimeMs: 0 } }), hashFiles: true, maxHashBytes: 1, now: () => 0 });
+      const limited = await scanFileInsights('/root', { fsImpl: fsFixture({ '/root': entries }, { '/root/large.zip': { size: 10, mtimeMs: 0 } }), pathImpl: path.posix, hashFiles: true, maxHashBytes: 1, now: () => 0 });
       expect(limited.entries[0].hashState).toBe('too-large-to-hash');
-      await expect(scanFileInsights('/race', { fsImpl: { readdir: async () => entries, stat: async () => { throw new Error('race'); } }, now: () => 0 })).resolves.toMatchObject({ entryCount: 0, raceCount: 1 });
-      const badHash = await scanFileInsights('/hash', { fsImpl: fsFixture({ '/hash': entries }, { '/hash/large.zip': { size: 1, mtimeMs: 0 } }), hashFiles: true, hashFileImpl: async () => { throw new Error('locked'); }, now: () => 0 });
+      await expect(scanFileInsights('/race', { fsImpl: { readdir: async () => entries, stat: async () => { throw new Error('race'); } }, pathImpl: path.posix, now: () => 0 })).resolves.toMatchObject({ entryCount: 0, raceCount: 1 });
+      const badHash = await scanFileInsights('/hash', { fsImpl: fsFixture({ '/hash': entries }, { '/hash/large.zip': { size: 1, mtimeMs: 0 } }), pathImpl: path.posix, hashFiles: true, hashFileImpl: async () => { throw new Error('locked'); }, now: () => 0 });
       expect(badHash.entries[0].hashState).toBe('unavailable');
     } finally {
       await fs.rm(root, { recursive: true, force: true });

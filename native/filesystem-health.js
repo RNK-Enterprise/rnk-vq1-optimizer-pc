@@ -22,7 +22,7 @@ export function buildFilesystemHealthPlan(root, { platform = process.platform, p
   if (!candidate) return Object.freeze({ version: FILESYSTEM_HEALTH_VERSION, platform, state: 'refused', root: null, reason: 'explicit local filesystem root is required' });
   const resolved = pathImpl.resolve(candidate);
   if (platform === 'win32') {
-    const match = resolved.match(/^([A-Za-z]):(?:\\|$)/);
+    const match = resolved.match(/^([A-Za-z]):\\$/);
     if (!match) return Object.freeze({ version: FILESYSTEM_HEALTH_VERSION, platform, state: 'refused', root: resolved, reason: 'Windows filesystem health requires a drive root' });
     return Object.freeze({ version: FILESYSTEM_HEALTH_VERSION, platform, state: 'plan-ready', root: resolved, operation: 'inspect-filesystem-health', command: Object.freeze({ file: 'powershell.exe', args: Object.freeze(['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', `Get-Volume -DriveLetter ${match[1]} | Select-Object DriveLetter,FileSystem,HealthStatus,Size,SizeRemaining | ConvertTo-Json -Compress`]) }), mutation: 'none' });
   }

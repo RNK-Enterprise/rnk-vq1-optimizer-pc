@@ -29,7 +29,7 @@ describe('native drive benchmark', () => {
     expect(fsImpl.rm).toHaveBeenCalledWith('/tmp/rnk-bench', { recursive: true, force: true });
     await expect(benchmarkDrive({ bytes: 4096, fsImpl })).resolves.toMatchObject({ version: DRIVE_BENCHMARK_VERSION, root: expect.any(String) });
     await expect(benchmarkDrive()).resolves.toMatchObject({ version: DRIVE_BENCHMARK_VERSION, verified: true });
-    await expect(benchmarkDrive({ root: '/tmp', bytes: 4096, fsImpl: undefined, pathImpl: undefined, now: undefined })).resolves.toMatchObject({ version: DRIVE_BENCHMARK_VERSION, verified: true });
-    await expect(benchmarkDrive({ root: '/tmp', bytes: 4096, fsImpl: { ...fsImpl, mkdtemp: jest.fn().mockRejectedValue(new Error('denied')) } })).rejects.toThrow('denied');
+    await expect(benchmarkDrive({ root: os.tmpdir(), bytes: 4096, fsImpl: undefined, pathImpl: undefined, now: undefined })).resolves.toMatchObject({ version: DRIVE_BENCHMARK_VERSION, verified: true });
+    await expect(benchmarkDrive({ root: os.tmpdir(), bytes: 4096, fsImpl: { ...fsImpl, mkdtemp: jest.fn().mockRejectedValue(new Error('denied')) } })).rejects.toThrow('denied');
   });
 });

@@ -9,18 +9,18 @@ import path from 'path';
 
 describe('native report viewer', () => {
   test('builds fixed local HTML opener plans and refuses unsafe paths', () => {
-    expect(buildReportViewerPlan('/tmp/report.html', { platform: 'linux' })).toMatchObject({ version: REPORT_VIEWER_VERSION, state: 'review-ready', command: { file: 'xdg-open', args: ['/tmp/report.html'] }, mutation: 'none' });
+    expect(buildReportViewerPlan('/tmp/report.html', { platform: 'linux', pathImpl: path.posix })).toMatchObject({ version: REPORT_VIEWER_VERSION, state: 'review-ready', command: { file: 'xdg-open', args: ['/tmp/report.html'] }, mutation: 'none' });
     expect(buildReportViewerPlan('C:\\reports\\daily.htm', { platform: 'win32', pathImpl: path.win32 })).toMatchObject({ state: 'review-ready', command: { file: 'explorer.exe' } });
-    expect(buildReportViewerPlan('https://example.test/report.html', { platform: 'linux' })).toMatchObject({ state: 'refused' });
-    expect(buildReportViewerPlan('/tmp/report.json', { platform: 'linux' })).toMatchObject({ state: 'refused' });
-    expect(buildReportViewerPlan('/tmp/report.html\0bad', { platform: 'linux' })).toMatchObject({ state: 'refused' });
-    expect(buildReportViewerPlan('/tmp/report.html', { platform: 'freebsd' })).toMatchObject({ state: 'unsupported-platform' });
+    expect(buildReportViewerPlan('https://example.test/report.html', { platform: 'linux', pathImpl: path.posix })).toMatchObject({ state: 'refused' });
+    expect(buildReportViewerPlan('/tmp/report.json', { platform: 'linux', pathImpl: path.posix })).toMatchObject({ state: 'refused' });
+    expect(buildReportViewerPlan('/tmp/report.html\0bad', { platform: 'linux', pathImpl: path.posix })).toMatchObject({ state: 'refused' });
+    expect(buildReportViewerPlan('/tmp/report.html', { platform: 'freebsd', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform' });
     expect(buildReportViewerPlan()).toMatchObject({ state: 'refused' });
     expect(buildReportViewerPlan('')).toMatchObject({ state: 'refused' });
   });
 
   test('requires approval, applies through the fixed opener, and fails closed', async () => {
-    const plan = buildReportViewerPlan('/tmp/report.html', { platform: 'linux' });
+    const plan = buildReportViewerPlan('/tmp/report.html', { platform: 'linux', pathImpl: path.posix });
     await expect(applyReportViewer(plan)).rejects.toThrow('command runner');
     expect(await applyReportViewer({ ...plan, state: 'unsupported-platform', reason: 'blocked' }, { commandRunner: { run: jest.fn() } })).toMatchObject({ state: 'refused', reason: 'blocked' });
     expect(await applyReportViewer({ ...plan, state: 'unsupported-platform' }, { commandRunner: { run: jest.fn() } })).toMatchObject({ state: 'refused', reason: 'report viewer plan is not ready' });

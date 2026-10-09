@@ -5,6 +5,7 @@
  */
 
 import { scanPublicBoundary, PUBLIC_BOUNDARY_VERSION } from '../native/public-boundary.js';
+import path from 'path';
 
 function fakeFs(files, directories = {}) {
   return {
@@ -31,18 +32,18 @@ describe('public checkout boundary', () => {
       ],
       '/repo/nested': [{ name: 'readme.md', isFile: () => true }]
     });
-    await expect(scanPublicBoundary({ root: '/repo', fsImpl })).resolves.toMatchObject({ version: PUBLIC_BOUNDARY_VERSION, state: 'clean', scannedFiles: 2, skippedFiles: 0, matches: [] });
+    await expect(scanPublicBoundary({ root: '/repo', fsImpl, pathImpl: path.posix })).resolves.toMatchObject({ version: PUBLIC_BOUNDARY_VERSION, state: 'clean', scannedFiles: 2, skippedFiles: 0, matches: [] });
     expect(fsImpl.readFile).toHaveBeenCalledTimes(2);
     await expect(scanPublicBoundary()).resolves.toMatchObject({ state: 'clean' });
   });
 
   test('reports forbidden matches, incomplete bounds, and malformed options', async () => {
     const fsImpl = fakeFs({ '/repo/bad.txt': `safe\n${['fo', 'undry'].join('')}` }, { '/repo': [{ name: 'bad.txt', isFile: () => true }] });
-    await expect(scanPublicBoundary({ root: '/repo', fsImpl })).resolves.toMatchObject({ state: 'forbidden-reference', matches: [{ path: 'bad.txt', line: 2 }] });
+    await expect(scanPublicBoundary({ root: '/repo', fsImpl, pathImpl: path.posix })).resolves.toMatchObject({ state: 'forbidden-reference', matches: [{ path: 'bad.txt', line: 2 }] });
     const oversized = fakeFs({ '/repo/large.txt': 'large' }, { '/repo': [{ name: 'large.txt', isFile: () => true }] });
-    await expect(scanPublicBoundary({ root: '/repo', fsImpl: oversized, maxBytes: 1 })).resolves.toMatchObject({ state: 'incomplete', scannedFiles: 0, skippedFiles: 1 });
+    await expect(scanPublicBoundary({ root: '/repo', fsImpl: oversized, pathImpl: path.posix, maxBytes: 1 })).resolves.toMatchObject({ state: 'incomplete', scannedFiles: 0, skippedFiles: 1 });
     const bounded = fakeFs({ '/repo/one.txt': 'one', '/repo/two.txt': 'two' }, { '/repo': [{ name: 'one.txt', isFile: () => true }, { name: 'two.txt', isFile: () => true }] });
-    await expect(scanPublicBoundary({ root: '/repo', fsImpl: bounded, maxFiles: 1 })).resolves.toMatchObject({ state: 'clean', scannedFiles: 1 });
+    await expect(scanPublicBoundary({ root: '/repo', fsImpl: bounded, pathImpl: path.posix, maxFiles: 1 })).resolves.toMatchObject({ state: 'clean', scannedFiles: 1 });
     await expect(scanPublicBoundary({ root: '', fsImpl })).rejects.toThrow('Public boundary root is required');
     await expect(scanPublicBoundary({ root: '/repo', fsImpl, maxFiles: 0 })).rejects.toThrow('Public boundary file limit is out of range');
     await expect(scanPublicBoundary({ root: '/repo', fsImpl, maxBytes: 0 })).rejects.toThrow('Public boundary byte limit is out of range');
@@ -53,9 +54,9 @@ describe('public checkout boundary', () => {
     await expect(scanPublicBoundary({ root: '/repo', fsImpl })).resolves.toMatchObject({ state: 'unavailable', reason: 'permission denied' });
     const statFailure = fakeFs({}, { '/repo': [{ name: 'broken.txt', isFile: () => true }] });
     statFailure.stat = jest.fn(async () => { throw new Error('stat failed'); });
-    await expect(scanPublicBoundary({ root: '/repo', fsImpl: statFailure })).resolves.toMatchObject({ state: 'unavailable', reason: 'stat failed' });
+    await expect(scanPublicBoundary({ root: '/repo', fsImpl: statFailure, pathImpl: path.posix })).resolves.toMatchObject({ state: 'unavailable', reason: 'stat failed' });
     const readFailure = fakeFs({}, { '/repo': [{ name: 'broken.txt', isFile: () => true }] });
     readFailure.readFile = jest.fn(async () => { throw new Error('read failed'); });
-    await expect(scanPublicBoundary({ root: '/repo', fsImpl: readFailure })).resolves.toMatchObject({ state: 'unavailable', reason: 'read failed' });
+    await expect(scanPublicBoundary({ root: '/repo', fsImpl: readFailure, pathImpl: path.posix })).resolves.toMatchObject({ state: 'unavailable', reason: 'read failed' });
   });
 });

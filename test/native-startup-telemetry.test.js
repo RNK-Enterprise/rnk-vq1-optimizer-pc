@@ -51,10 +51,10 @@ describe('startup collectors', () => {
       '/Library/LaunchDaemons': []
     };
     const fsImpl = { readdir: jest.fn(async (root) => roots[root] || []) };
-    const linux = await collectStartupTelemetry({ platform: 'linux', env: { HOME: '/home/test' }, fsImpl, pathImpl: path });
+    const linux = await collectStartupTelemetry({ platform: 'linux', env: { HOME: '/home/test' }, fsImpl, pathImpl: path.posix });
     expect(linux).toMatchObject({ version: 1, platform: 'linux', available: true, source: 'fixed-startup-roots', unreadableRoots: 0 });
     expect(linux.entries.map((item) => item.name)).toEqual(['one', 'two']);
-    const mac = await collectStartupTelemetry({ platform: 'darwin', env: { HOME: '/home/test' }, fsImpl, pathImpl: path });
+    const mac = await collectStartupTelemetry({ platform: 'darwin', env: { HOME: '/home/test' }, fsImpl, pathImpl: path.posix });
     expect(mac).toMatchObject({ platform: 'darwin', available: true });
     expect(mac.entries.map((item) => item.name)).toEqual(['agent', 'daemon']);
     expect(await collectStartupTelemetry({ platform: 'linux', env: {}, fsImpl: { readdir: async () => [] } })).toMatchObject({ available: false });
@@ -63,9 +63,9 @@ describe('startup collectors', () => {
 
   test('reports unreadable roots and bounded inventory', async () => {
     const fsImpl = { readdir: jest.fn(async (root) => { if (root === '/etc/xdg/autostart') throw new Error('denied'); return [entry('one.desktop')]; }) };
-    await expect(collectStartupTelemetry({ platform: 'linux', env: { HOME: '/home/test' }, fsImpl })).resolves.toMatchObject({ available: true, unreadableRoots: 1 });
+    await expect(collectStartupTelemetry({ platform: 'linux', env: { HOME: '/home/test' }, fsImpl, pathImpl: path.posix })).resolves.toMatchObject({ available: true, unreadableRoots: 1 });
     const many = Array.from({ length: 130 }, (_, index) => entry(`${index}.desktop`));
-    await expect(collectStartupTelemetry({ platform: 'linux', env: { HOME: '/home/test' }, fsImpl: { readdir: async () => many } })).resolves.toMatchObject({ available: true, entries: expect.any(Array) });
+    await expect(collectStartupTelemetry({ platform: 'linux', env: { HOME: '/home/test' }, fsImpl: { readdir: async () => many }, pathImpl: path.posix })).resolves.toMatchObject({ available: true, entries: expect.any(Array) });
   });
 
   test('uses fixed Windows command and fails closed', async () => {

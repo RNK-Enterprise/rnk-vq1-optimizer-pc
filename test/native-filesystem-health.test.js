@@ -12,7 +12,7 @@ describe('native filesystem health', () => {
     expect(buildFilesystemHealthPlan('https://example.com')).toMatchObject({ state: 'refused' });
     expect(buildFilesystemHealthPlan('/tmp/../etc', { platform: 'linux' })).toMatchObject({ state: 'refused' });
     expect(buildFilesystemHealthPlan('C:\\', { platform: 'win32', pathImpl: path.win32 })).toMatchObject({ state: 'plan-ready', command: { file: 'powershell.exe' } });
-    expect(buildFilesystemHealthPlan('C:\\folder', { platform: 'win32' })).toMatchObject({ state: 'refused', reason: 'Windows filesystem health requires a drive root' });
+    expect(buildFilesystemHealthPlan('C:\\folder', { platform: 'win32', pathImpl: path.win32 })).toMatchObject({ state: 'refused', reason: 'Windows filesystem health requires a drive root' });
     expect(buildFilesystemHealthPlan('/mnt/data', { platform: 'linux' })).toMatchObject({ state: 'plan-ready', command: { file: 'findmnt' } });
     expect(buildFilesystemHealthPlan('/Volumes/data', { platform: 'darwin' })).toMatchObject({ state: 'plan-ready', command: { file: 'diskutil' } });
     expect(buildFilesystemHealthPlan('/data', { platform: 'freebsd' })).toMatchObject({ state: 'unsupported-platform' });

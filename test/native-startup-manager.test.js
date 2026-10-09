@@ -41,7 +41,7 @@ describe('native startup manager', () => {
     expect(previewStartupMutation({ platform: 'unknown', startup: { entries: [{ name: 'Other', location: '/tmp/other.desktop' }] } }, { name: 'Other', location: '/tmp/other.desktop', protectedNames: 'not-a-list' })).toMatchObject({ platform: 'unknown', state: 'plan-ready' });
     const darwinPlan = previewStartupMutation({ platform: 'darwin', startup: { entries: [{ name: 'Agent', location: '/home/test/Library/LaunchAgents/agent.plist', command: 'agent' }] } }, { name: 'Agent', location: '/home/test/Library/LaunchAgents/agent.plist' });
     expect(darwinPlan).toMatchObject({ state: 'plan-ready', platform: 'darwin' });
-    await expect(applyStartupMutation(darwinPlan, { approved: true, dryRun: false, fsImpl: regularFs(), env: {} })).resolves.toMatchObject({ state: 'rejected', reason: 'startup path is outside the fixed platform roots' });
+    await expect(applyStartupMutation(darwinPlan, { approved: true, dryRun: false, fsImpl: regularFs(), pathImpl: path.posix, env: {} })).resolves.toMatchObject({ state: 'rejected', reason: 'startup path is outside the fixed platform roots' });
     const unknownPlan = previewStartupMutation({ platform: 'freebsd', startup: { entries: [{ name: 'Other', location: '/tmp/other.desktop' }] } }, { name: 'Other', location: '/tmp/other.desktop' });
     expect(unknownPlan).toMatchObject({ state: 'plan-ready', platform: 'freebsd' });
     expect(previewStartupMutation({ startup: { entries: [{ name: 'NoCommand', location: '/tmp/no-command.desktop' }] } }, { name: 'NoCommand', location: '/tmp/no-command.desktop' })).toMatchObject({ state: 'plan-ready', platform: 'unknown', entry: { command: null } });
@@ -55,34 +55,34 @@ describe('native startup manager', () => {
     const fsImpl = regularFs({ rename });
     expect(await applyStartupMutation(plan, { dryRun: true })).toMatchObject({ state: 'preview', applied: false });
     await expect(applyStartupMutation(plan, { approved: false, dryRun: false })).resolves.toMatchObject({ state: 'approval-required' });
-    const applied = await applyStartupMutation(plan, { approved: true, dryRun: false, fsImpl, env: { HOME: '/home/test' } });
-    expect(applied).toMatchObject({ state: 'applied', applied: true, receipt: { action: 'restore-startup-entry', source: path.resolve(linuxLocation) } });
-    expect(rename).toHaveBeenCalledWith(path.resolve(linuxLocation), `${path.resolve(linuxLocation)}.rnk-disabled`);
+    const applied = await applyStartupMutation(plan, { approved: true, dryRun: false, fsImpl, pathImpl: path.posix, env: { HOME: '/home/test' } });
+    expect(applied).toMatchObject({ state: 'applied', applied: true, receipt: { action: 'restore-startup-entry', source: path.posix.resolve(linuxLocation) } });
+    expect(rename).toHaveBeenCalledWith(path.posix.resolve(linuxLocation), `${path.posix.resolve(linuxLocation)}.rnk-disabled`);
     const restoreFs = { lstat: jest.fn(async () => { throw { code: 'ENOENT' }; }), rename: jest.fn(async () => {}) };
     expect(await restoreStartupMutation(applied.receipt, { approved: true, dryRun: false, fsImpl: restoreFs })).toMatchObject({ state: 'restored', restored: true });
     expect(restoreFs.rename).toHaveBeenCalledWith(applied.receipt.destination, applied.receipt.source);
     await expect(restoreStartupMutation(applied.receipt, { approved: false, dryRun: false })).resolves.toMatchObject({ state: 'approval-required' });
     expect(await restoreStartupMutation(applied.receipt, { dryRun: true })).toMatchObject({ state: 'preview', restored: false });
     const darwinPlan = previewStartupMutation({ platform: 'darwin', startup: { entries: [{ name: 'Agent', location: '/home/test/Library/LaunchAgents/agent.plist', command: 'agent' }] } }, { name: 'Agent', location: '/home/test/Library/LaunchAgents/agent.plist' });
-    expect(await applyStartupMutation(darwinPlan, { approved: true, dryRun: false, fsImpl: regularFs(), env: { HOME: '/home/test' } })).toMatchObject({ state: 'applied' });
+    expect(await applyStartupMutation(darwinPlan, { approved: true, dryRun: false, fsImpl: regularFs(), pathImpl: path.posix, env: { HOME: '/home/test' } })).toMatchObject({ state: 'applied' });
   });
 
   test('refuses unsafe POSIX paths and filesystem conditions', async () => {
     const unsupported = previewStartupMutation({ platform: 'freebsd', startup: { entries: [{ name: 'Other', location: '/tmp/other.desktop' }] } }, { name: 'Other', location: '/tmp/other.desktop' });
     await expect(applyStartupMutation(unsupported, { approved: true, dryRun: false })).resolves.toMatchObject({ state: 'rejected', reason: 'unsupported startup platform: freebsd' });
     const outside = previewStartupMutation({ platform: 'linux', startup: { entries: [{ name: 'Other', location: '/tmp/other.desktop' }] } }, { name: 'Other', location: '/tmp/other.desktop' });
-    await expect(applyStartupMutation(outside, { approved: true, dryRun: false, fsImpl: regularFs(), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup path is outside the fixed platform roots' });
+    await expect(applyStartupMutation(outside, { approved: true, dryRun: false, fsImpl: regularFs(), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup path is outside the fixed platform roots' });
     const system = previewStartupMutation({ platform: 'linux', startup: { entries: [{ name: 'System', location: '/etc/xdg/autostart/system.desktop', command: 'system' }] } }, { name: 'System', location: '/etc/xdg/autostart/system.desktop' });
-    await expect(applyStartupMutation(system, { approved: true, dryRun: false, fsImpl: regularFs(), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'admin-required' });
-    expect((await applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs(), env: { HOME: '/home/test' } })).state).toBe('applied');
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ source: 'symlink' }), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup entry must be a regular non-symlink file' });
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ source: 'directory' }), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup entry must be a regular non-symlink file' });
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ source: 'error' }), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'source denied' });
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs(), env: {} })).resolves.toMatchObject({ state: 'applied' });
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ destination: 'exists' }), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup disabled destination already exists' });
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ destination: 'error' }), env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'destination denied' });
+    await expect(applyStartupMutation(system, { approved: true, dryRun: false, fsImpl: regularFs(), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'admin-required' });
+    expect((await applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs(), pathImpl: path.posix, env: { HOME: '/home/test' } })).state).toBe('applied');
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ source: 'symlink' }), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup entry must be a regular non-symlink file' });
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ source: 'directory' }), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup entry must be a regular non-symlink file' });
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ source: 'error' }), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'source denied' });
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs(), pathImpl: path.posix, env: {} })).resolves.toMatchObject({ state: 'applied' });
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ destination: 'exists' }), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'startup disabled destination already exists' });
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: regularFs({ destination: 'error' }), pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'destination denied' });
     const renameError = regularFs({ rename: async () => { throw new Error('rename denied'); } });
-    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: renameError, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'rename denied' });
+    await expect(applyStartupMutation(system, { approved: true, allowAdmin: true, dryRun: false, fsImpl: renameError, pathImpl: path.posix, env: { HOME: '/home/test' } })).resolves.toMatchObject({ state: 'rejected', reason: 'rename denied' });
   });
 
   test('uses only allow-listed Windows Run registry locations', async () => {

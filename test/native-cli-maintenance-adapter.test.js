@@ -192,9 +192,9 @@ describe('native CLI maintenance adapter', () => {
 
     const protectedStore = path.join(root, 'protected.json');
     await expect(runProtectedRootsCommand('protected-roots-read', { 'protected-store': protectedStore })).resolves.toMatchObject({ roots: [] });
-    await expect(runProtectedRootsCommand('protected-roots-add', { 'protected-store': protectedStore, root: `${root}/a,${root}/b`, confirm: true })).resolves.toMatchObject({ roots: expect.arrayContaining([`${root}/a`, `${root}/b`]) });
-    await expect(runProtectedRootsCommand('protected-roots-remove', { 'protected-store': protectedStore, root: `${root}/a`, confirm: true })).resolves.toMatchObject({ roots: [`${root}/b`] });
-    await expect(runProtectedRootsCommand('protected-roots-remove', { 'protected-store': protectedStore, confirm: true })).resolves.toMatchObject({ roots: [`${root}/b`] });
+    await expect(runProtectedRootsCommand('protected-roots-add', { 'protected-store': protectedStore, root: `${path.join(root, 'a')},${path.join(root, 'b')}`, confirm: true })).resolves.toMatchObject({ roots: expect.arrayContaining([path.join(root, 'a'), path.join(root, 'b')]) });
+    await expect(runProtectedRootsCommand('protected-roots-remove', { 'protected-store': protectedStore, root: path.join(root, 'a'), confirm: true })).resolves.toMatchObject({ roots: [path.join(root, 'b')] });
+    await expect(runProtectedRootsCommand('protected-roots-remove', { 'protected-store': protectedStore, confirm: true })).resolves.toMatchObject({ roots: [path.join(root, 'b')] });
     await expect(runProtectedRootsCommand('protected-roots-add', { 'protected-store': protectedStore })).rejects.toThrow('requires --confirm');
   });
 

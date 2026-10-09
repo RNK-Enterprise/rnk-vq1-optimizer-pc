@@ -5,6 +5,7 @@
 
 import { applyWorkstationShell, buildWorkstationShellPlan, WORKSTATION_SHELL_VERSION } from '../native/workstation-shell.js';
 import { defaultWorkstationPaths, WORKSTATION_PATHS_VERSION } from '../native/workstation-paths.js';
+import path from 'path';
 
 describe('workstation shell session', () => {
   test('resolves isolated platform user-data paths for packaged sessions', () => {
@@ -21,21 +22,21 @@ describe('workstation shell session', () => {
   });
 
   test('builds fixed cross-platform dashboard sessions', () => {
-    expect(buildWorkstationShellPlan({ platform: 'linux', historyPath: '/tmp/history.jsonl', reportPath: '/tmp/report.html', cliPath: '/app/native/cli.mjs', nodePath: '/usr/bin/node' })).toMatchObject({ version: WORKSTATION_SHELL_VERSION, state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'xdg-open', args: ['/tmp/report.html'] }] });
+    expect(buildWorkstationShellPlan({ platform: 'linux', historyPath: '/tmp/history.jsonl', reportPath: '/tmp/report.html', cliPath: '/app/native/cli.mjs', nodePath: '/usr/bin/node', pathImpl: path.posix })).toMatchObject({ version: WORKSTATION_SHELL_VERSION, state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'xdg-open', args: ['/tmp/report.html'] }] });
     expect(buildWorkstationShellPlan({ platform: 'win32', historyPath: 'C:\\data\\history.jsonl', reportPath: 'C:\\data\\report.html', cliPath: 'C:\\app\\native\\cli.mjs', nodePath: 'C:\\node\\node.exe', pathImpl: { isAbsolute: (value) => /^[A-Z]:\\/.test(value) } })).toMatchObject({ state: 'review-ready', commands: [{ file: 'C:\\node\\node.exe' }, { file: 'explorer.exe' }] });
-    expect(buildWorkstationShellPlan({ historyPath: 1, reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs' })).toMatchObject({ state: 'invalid-input' });
+    expect(buildWorkstationShellPlan({ historyPath: 1, reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input' });
   });
 
   test('refuses invalid or unsupported targets', () => {
     expect(buildWorkstationShellPlan()).toMatchObject({ state: 'invalid-input' });
-    expect(buildWorkstationShellPlan({ historyPath: 'relative', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs' })).toMatchObject({ state: 'invalid-input' });
-    expect(buildWorkstationShellPlan({ historyPath: '/tmp/history', reportPath: '/tmp/report.txt', cliPath: '/app/cli.mjs' })).toMatchObject({ state: 'invalid-input', reason: expect.stringContaining('HTML') });
-    expect(buildWorkstationShellPlan({ platform: 'freebsd', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs' })).toMatchObject({ state: 'unsupported-platform' });
-    expect(buildWorkstationShellPlan({ platform: null, historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs' })).toMatchObject({ state: 'unsupported-platform', platform: 'unknown' });
+    expect(buildWorkstationShellPlan({ historyPath: 'relative', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input' });
+    expect(buildWorkstationShellPlan({ historyPath: '/tmp/history', reportPath: '/tmp/report.txt', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input', reason: expect.stringContaining('HTML') });
+    expect(buildWorkstationShellPlan({ platform: 'freebsd', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform' });
+    expect(buildWorkstationShellPlan({ platform: null, historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform', platform: 'unknown' });
   });
 
   test('applies only approved plans through two fixed commands', async () => {
-    const plan = buildWorkstationShellPlan({ platform: 'linux', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs' });
+    const plan = buildWorkstationShellPlan({ platform: 'linux', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix });
     const run = jest.fn(async () => ({ code: 0 }));
     await expect(applyWorkstationShell(plan)).resolves.toMatchObject({ state: 'refused' });
     await expect(applyWorkstationShell(plan, { approved: true, dryRun: true })).resolves.toMatchObject({ state: 'preview' });

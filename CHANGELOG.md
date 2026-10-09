@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Hardened cross-platform test authorities with explicit POSIX and Windows path
+  injection, added Linux cgroup path portability, and extended media-session
+  path authority across simulated hosts.
+- Corrected Windows filesystem-health validation to require an actual drive root,
+  added deterministic storage-pressure bound and malformed-size coverage, and
+  accommodated bounded host benchmark/CLI operations with explicit test timeouts.
 - Added an independent per-file coverage verifier that fails on any uncovered
   statement, branch, function, or executable line; the global Jest threshold
   can no longer hide a weak file behind another file's coverage.

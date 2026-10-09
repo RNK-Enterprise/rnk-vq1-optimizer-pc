@@ -10,6 +10,7 @@
 import { createCommandRunner } from './command-runner.js';
 import { createMediaPlayer } from './media-player.js';
 import { applyMediaPlayback, buildMediaPlaybackPlan } from './media-playback.js';
+import path from 'path';
 
 export const MEDIA_SESSION_VERSION = 1;
 
@@ -19,6 +20,7 @@ export function createMediaSession({
   queue = [],
   initial = {},
   platform = process.platform,
+  pathImpl = path,
   commandRunner = createCommandRunner(),
   fsImpl,
   approved = false,
@@ -31,7 +33,7 @@ export function createMediaSession({
   async function play() {
     const before = player.read();
     if (!before.track) return Object.freeze({ version: MEDIA_SESSION_VERSION, state: 'refused', player: before, reason: 'media queue has no selected track' });
-    const plan = buildMediaPlaybackPlan(before.track, { platform });
+    const plan = buildMediaPlaybackPlan(before.track, { platform, pathImpl });
     if (plan.state !== 'plan-ready') return Object.freeze({ version: MEDIA_SESSION_VERSION, state: 'refused', player: before, plan, reason: plan.reason });
     const result = await applyMediaPlayback(plan, { commandRunner, fsImpl, approved, dryRun });
     if (result.state === 'applied') player.command('play');

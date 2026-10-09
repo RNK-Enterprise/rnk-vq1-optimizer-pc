@@ -4,25 +4,27 @@
  */
 
 import { applyWorkstationTray, buildWorkstationTrayPlan, WORKSTATION_TRAY_VERSION } from '../native/workstation-tray.js';
+import path from 'path';
 
 describe('workstation tray authority', () => {
   const base = { historyPath: '/tmp/history.jsonl', reportPath: '/tmp/dashboard.html', cliPath: '/app/native/cli.mjs', nodePath: '/usr/bin/node' };
 
   test('builds fixed platform tray plans', () => {
-    expect(buildWorkstationTrayPlan({ ...base, platform: 'win32' })).toMatchObject({ version: WORKSTATION_TRAY_VERSION, state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'powershell.exe' } ] });
+    expect(buildWorkstationTrayPlan({ ...base, platform: 'win32', pathImpl: path.posix })).toMatchObject({ version: WORKSTATION_TRAY_VERSION, state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'powershell.exe' } ] });
     const windows = buildWorkstationTrayPlan({ ...base, platform: 'win32', nodePath: 'C:\\node\\node.exe', historyPath: 'C:\\data\\history.jsonl', reportPath: "C:\\data\\odinn's.html", cliPath: 'C:\\app\\cli.mjs', pathImpl: { isAbsolute: (value) => /^[A-Z]:\\/.test(value), resolve: (value) => value } });
     expect(windows).toMatchObject({ state: 'review-ready', commands: [{ file: 'C:\\node\\node.exe' }, { file: 'powershell.exe' } ] });
-    expect(buildWorkstationTrayPlan({ ...base, platform: 'linux', reportPath: "/tmp/odinn's.html" })).toMatchObject({ state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'yad' } ] });
-    expect(buildWorkstationTrayPlan({ ...base, platform: 'darwin' })).toMatchObject({ state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'osascript' }] });
-    expect(buildWorkstationTrayPlan({ ...base, platform: 'freebsd' })).toMatchObject({ state: 'unsupported-platform' });
-    expect(buildWorkstationTrayPlan({ ...base, platform: null })).toMatchObject({ state: 'unsupported-platform', platform: 'unknown' });
+    expect(buildWorkstationTrayPlan({ ...base, platform: 'linux', reportPath: "/tmp/odinn's.html", pathImpl: path.posix })).toMatchObject({ state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'yad' } ] });
+    expect(buildWorkstationTrayPlan({ ...base, platform: 'darwin', pathImpl: path.posix })).toMatchObject({ state: 'review-ready', commands: [{ file: '/usr/bin/node' }, { file: 'osascript' }] });
+    expect(buildWorkstationTrayPlan({ ...base, platform: 'freebsd', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform' });
+    expect(buildWorkstationTrayPlan({ ...base, platform: null, pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform', platform: 'unknown' });
+    expect(buildWorkstationTrayPlan({ pathImpl: path.posix })).toMatchObject({ state: 'invalid-input' });
     expect(buildWorkstationTrayPlan()).toMatchObject({ state: 'invalid-input' });
-    expect(buildWorkstationTrayPlan({ ...base, historyPath: 'relative' })).toMatchObject({ state: 'invalid-input' });
-    expect(buildWorkstationTrayPlan({ ...base, reportPath: '/tmp/dashboard.txt' })).toMatchObject({ state: 'invalid-input', reason: expect.stringContaining('HTML') });
+    expect(buildWorkstationTrayPlan({ ...base, historyPath: 'relative', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input' });
+    expect(buildWorkstationTrayPlan({ ...base, reportPath: '/tmp/dashboard.txt', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input', reason: expect.stringContaining('HTML') });
   });
 
   test('requires approval and verifies both snapshot and tray stages', async () => {
-    const plan = buildWorkstationTrayPlan({ ...base, platform: 'linux' });
+    const plan = buildWorkstationTrayPlan({ ...base, platform: 'linux', pathImpl: path.posix });
     const run = jest.fn(async () => ({ code: 0 }));
     await expect(applyWorkstationTray({})).resolves.toMatchObject({ state: 'refused' });
     await expect(applyWorkstationTray(plan)).resolves.toMatchObject({ state: 'approval-required' });

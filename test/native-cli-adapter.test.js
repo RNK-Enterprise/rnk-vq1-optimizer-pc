@@ -267,5 +267,5 @@ describe('native top-level CLI adapter', () => {
     await expect(runCliEntrypoint({ entrypoint: true, target: entrypointTarget })).resolves.toBe(0);
     process.argv = savedArgv;
     expect(isCliEntrypoint('file:///tmp/cli.mjs', '')).toBe(false);
-  });
+  }, 30000);
 });

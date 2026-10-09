@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { pathToFileURL } from 'url';
 import { encodeBrowserMessage, handleBrowserMessage, MAX_BROWSER_MESSAGE_BYTES, runBrowserBridge } from '../native/browser-bridge.js';
 import { isBrowserBridgeEntrypoint, runBrowserBridgeEntrypoint, runBrowserBridgeProcess, runIfBrowserBridgeEntrypoint, setBrowserBridgeExitCode, writeBrowserBridgeError } from '../native/browser-bridge.mjs';
 
@@ -73,8 +74,8 @@ describe('native browser bridge', () => {
   });
 
   test('exposes a safe native-host entrypoint boundary', async () => {
-    expect(isBrowserBridgeEntrypoint('file:///host.mjs', '/host.mjs')).toBe(true);
-    expect(isBrowserBridgeEntrypoint('file:///host.mjs', '/other.mjs')).toBe(false);
+    expect(isBrowserBridgeEntrypoint(pathToFileURL('/host.mjs').href, '/host.mjs')).toBe(true);
+    expect(isBrowserBridgeEntrypoint(pathToFileURL('/host.mjs').href, '/other.mjs')).toBe(false);
     expect(isBrowserBridgeEntrypoint('file:///host.mjs')).toBe(false);
     await expect(runIfBrowserBridgeEntrypoint()).resolves.toEqual({ state: 'skipped' });
     await expect(runIfBrowserBridgeEntrypoint({ entrypoint: false })).resolves.toEqual({ state: 'skipped' });

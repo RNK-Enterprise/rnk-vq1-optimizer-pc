@@ -117,5 +117,5 @@ describe('PC host benchmark', () => {
     expect(result.domains.powerState.evidence.before.available).toBe(false);
     const defaultResult = await runHostBenchmark();
     expect(defaultResult.appliedSystemActions).toEqual([]);
-  });
+  }, 30000);
 });

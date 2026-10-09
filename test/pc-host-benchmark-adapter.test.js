@@ -49,5 +49,5 @@ describe('PC host benchmark command adapter', () => {
     expect(stderr).toHaveBeenCalledWith('default failure\n');
     stdout.mockRestore();
     stderr.mockRestore();
-  });
+  }, 30000);
 });
