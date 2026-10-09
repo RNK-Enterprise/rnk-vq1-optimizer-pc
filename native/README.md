@@ -230,6 +230,9 @@ and network telemetry when the host exposes it. Windows uses fixed PowerShell
 queries, Linux uses fixed `ps` plus read-only `/sys`, `/proc`, and startup
 roots; Linux thermal telemetry also reads bounded CPU thermal-throttle counters
 when exposed. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
+Windows battery telemetry combines `Win32_Battery` with the read-only `root/wmi`
+capacity and cycle-count classes when those classes are present; absent classes
+remain unavailable rather than being inferred.
 Known exact process names are classified as `developer`, `runtime`, or `model`
 for workload policy and process explanations; unrecognized names remain
 `unknown` and are never treated as safe or protected by guesswork.

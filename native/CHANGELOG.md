@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Corrected Windows battery evidence to combine `Win32_Battery` with the
+  read-only `BatteryStaticData`, `BatteryFullChargedCapacity`, and
+  `BatteryCycleCount` WMI classes so design capacity, full-charge capacity,
+  and cycle count are reported when the host exposes them.
 - Added bounded storage-growth evidence for repeated free-space and
   reclaimable-category observations; the live storage monitor now reports
   growing categories without adding scan, delete, or move authority.

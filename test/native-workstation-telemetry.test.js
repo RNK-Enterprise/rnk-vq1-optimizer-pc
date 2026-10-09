@@ -130,6 +130,10 @@ describe('workstation battery telemetry', () => {
   test('uses fixed Windows and macOS commands and refuses unknown platforms', async () => {
     const win = runner({ code: 0, stdout: JSON.stringify({ EstimatedChargeRemaining: 50 }) });
     await expect(collectBatteryTelemetry({ platform: 'win32', commandRunner: win })).resolves.toMatchObject({ available: true });
+    const windowsCommand = win.run.mock.calls[0][1].join(' ');
+    expect(windowsCommand).toEqual(expect.stringContaining('BatteryStaticData'));
+    expect(windowsCommand).toEqual(expect.stringContaining('BatteryFullChargedCapacity'));
+    expect(windowsCommand).toEqual(expect.stringContaining('BatteryCycleCount'));
     await expect(collectBatteryTelemetry({ platform: 'darwin', commandRunner: runner({ code: 0, stdout: '75%' }) })).resolves.toMatchObject({ available: true });
     await expect(collectBatteryTelemetry({ platform: 'win32', commandRunner: runner({ code: 1, stderr: 'denied' }) })).resolves.toMatchObject({ source: 'denied' });
     await expect(collectBatteryTelemetry({ platform: 'darwin', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toMatchObject({ source: 'missing' });

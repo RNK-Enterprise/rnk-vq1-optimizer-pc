@@ -25,6 +25,18 @@ const INFERRED_PROCESS_ROLES = new Map([
   ['ollama', 'model'], ['llama-server', 'model'], ['llama.cpp', 'model'],
   ['koboldcpp', 'model'], ['lmstudio', 'model'], ['comfyui', 'model']
 ]);
+const WINDOWS_BATTERY_COMMAND = [
+  '$basic=@(Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object -First 1);',
+  '$static=@(Get-CimInstance -Namespace root/wmi -ClassName BatteryStaticData -ErrorAction SilentlyContinue | Select-Object -First 1);',
+  '$full=@(Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue | Select-Object -First 1);',
+  '$cycle=@(Get-CimInstance -Namespace root/wmi -ClassName BatteryCycleCount -ErrorAction SilentlyContinue | Select-Object -First 1);',
+  '$designed=$null;if($static.Count){$designed=$static[0].DesignedCapacity};',
+  '$charged=$null;if($full.Count){$charged=$full[0].FullChargedCapacity};',
+  '$cycles=$null;if($cycle.Count){$cycles=$cycle[0].CycleCount};',
+  '$name="battery";$status="unknown";$charge=$null;if($basic.Count){$name=$basic[0].Name;$status=$basic[0].Status;$charge=$basic[0].EstimatedChargeRemaining};',
+  '$row=[pscustomobject]@{Name=$name;Status=$status;EstimatedChargeRemaining=$charge;DesignedCapacity=$designed;FullChargeCapacity=$charged;CycleCount=$cycles};',
+  '$row | ConvertTo-Json -Compress'
+].join('');
 
 function number(value) { const parsed = typeof value === 'string' && value.trim() ? Number(value) : value; return Number.isFinite(parsed) && parsed >= 0 ? parsed : null; }
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
@@ -177,7 +189,7 @@ export async function collectBatteryTelemetry({ platform = process.platform, com
   if (platform === 'linux') return collectLinuxBatteries(fsImpl);
   if (!commandAvailable(commandRunner)) return Object.freeze({ available: false, batteries: EMPTY, source: 'command runner unavailable' });
   const command = platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-CimInstance Win32_Battery | Select-Object Name,Status,EstimatedChargeRemaining,DesignCapacity,FullChargeCapacity | ConvertTo-Json -Compress'], { timeoutMs: 5000, maxOutputBytes: 8192 }]
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', WINDOWS_BATTERY_COMMAND], { timeoutMs: 5000, maxOutputBytes: 8192 }]
     : platform === 'darwin' ? ['pmset', ['-g', 'batt'], { timeoutMs: 2500, maxOutputBytes: 8192 }] : null;
   if (!command) return Object.freeze({ available: false, batteries: EMPTY, source: 'platform unsupported' });
   try {
