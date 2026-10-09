@@ -9,5 +9,5 @@ will keep its own engine, dedicated engine library, four independent turbos,
 four dedicated turbo libraries, trigger rules, and local mesh endpoints.
 The engine, library, turbo, and mesh layers are analysis-only; no native
 execution boundary has been connected. The four existing system-facts turbo
-libraries are separate from the 34 engine-library count. The mesh uses typed
+libraries are separate from the 38 engine-library count. The mesh uses typed
 in-process command/event routes only and does not open external transport.

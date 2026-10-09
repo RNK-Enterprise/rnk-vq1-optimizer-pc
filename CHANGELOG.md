@@ -6,6 +6,8 @@
   sibling-stack completeness gate from the public PC checkout; the public
   surface now contains only native PC authority, PC analysis engines, and the
   bounded local media host.
+- Added a CI guard that rejects reintroduction of forbidden sibling-stack
+  references into the public checkout.
 - Corrected the public engine inventory documentation to 38 engines, 152
   turbos, and 190 libraries.
 - Clarified the public verification boundary: the strict Jest 100% gate covers

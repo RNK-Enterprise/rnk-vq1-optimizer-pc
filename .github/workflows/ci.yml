@@ -24,10 +24,16 @@ jobs:
       - run: npm run lint
       - run: npm run audit:prod
       - run: npm run audit:high
-      - run: npm run pc:vq1:check
       - run: npm run bench -- --json
       - run: for file in native/*.mjs scripts/*.mjs; do node --check "$file"; done
       - run: bash -n install/linux/install.sh
+      - name: Reject private-stack references
+        run: |
+          if rg -n -i 'foundry|vortex quantum|scripts/vq|check-pc-vq1|pc-host\.js' \
+            --glob '!package-lock.json' --glob '!.git/**' --glob '!.github/**' .; then
+            echo 'private-stack reference found in public checkout' >&2
+            exit 1
+          fi
       - run: git diff --check
 
   windows-installer:
