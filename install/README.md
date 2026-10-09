@@ -1,6 +1,6 @@
 # PC installation
 
-The Linux and Windows installers clone or update the optimizer directly from
+The Linux, macOS, and Windows installers clone or update the optimizer directly from
 Git. Before any clone, update, dependency installation, or facts collection,
 they require the user to select an environment mode:
 
@@ -37,4 +37,9 @@ Examples:
 .\install\windows\install.ps1 -EnvironmentMode interactive
 .\install\windows\install.ps1 -EnvironmentMode headless -RunOptimize \
   -GatewayUrl https://optimizer.example.invalid/v1/plan
+```
+
+```bash
+./install/macos/install.sh --mode interactive --ref v3.1.1
+./install/macos/install.sh --mode headless --ref v3.1.1
 ```

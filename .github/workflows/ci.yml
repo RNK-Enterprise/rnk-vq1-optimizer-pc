@@ -24,6 +24,7 @@ jobs:
       - run: npm run audit:prod
       - run: npm run audit:high
       - run: bash -n install/linux/install.sh
+      - run: bash -n install/macos/install.sh
       - run: git diff --check
 
   windows-installer:
