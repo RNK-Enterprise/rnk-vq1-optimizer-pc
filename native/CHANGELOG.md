@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added an approval-gated, reversible user-level daily-report scheduler for
+  Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
+  schedule artifacts are fixed, local, and cleaned up on failed installation.
 - Extended organizer preview/apply plans with protected-root precedence so
   project, model, credential, WSL, and user-designated paths cannot be moved;
   organizer CLI commands now accept the same comma-separated protected roots.

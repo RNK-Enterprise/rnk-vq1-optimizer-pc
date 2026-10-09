@@ -55,6 +55,11 @@ node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
 node native/cli.mjs steward-schedule --path "$HOME/.rnk-optimizer/history.jsonl" \
   --interval-seconds 900
+node native/cli.mjs report-schedule-preview --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --output-path "$HOME/.rnk-optimizer/daily-report.json" --time 09:00
+node native/cli.mjs report-schedule-apply --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --output-path "$HOME/.rnk-optimizer/daily-report.json" --time 09:00 --confirm
+node native/cli.mjs report-schedule-restore --receipt '{"version":1,"action":"remove-daily-report-schedule"}' --confirm
 node native/cli.mjs steward-daemon --path "$HOME/.rnk-optimizer/history.jsonl" \
   --observation-interval-seconds 900 --report-interval-seconds 900
 node native/cli.mjs steward-trends --path "$HOME/.rnk-optimizer/history.jsonl" \
@@ -209,7 +214,11 @@ automatically.
 
 `steward-schedule` delivers one report per UTC day while its trigger loop is
 running. It writes through a caller-owned delivery callback and does not install
-an operating-system task or claim background service persistence.
+an operating-system task. `report-schedule-preview` builds an exact user-level
+schedule plan, and `report-schedule-apply --confirm` installs it through Windows
+Task Scheduler, a Linux systemd user timer, or a macOS launchd agent. The receipt
+from apply is consumed by `report-schedule-restore --confirm`; failed artifact
+installation is cleaned up and no privileged service is created.
 
 Pass `--output-path PATH --format json|markdown` to persist the delivered report
 as a bounded local artifact. `steward-daemon` accepts the corresponding

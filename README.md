@@ -133,6 +133,10 @@ node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
 node native/cli.mjs steward-schedule --path "$HOME/.rnk-optimizer/history.jsonl" \
   --interval-seconds 900
+node native/cli.mjs report-schedule-preview --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --output-path "$HOME/.rnk-optimizer/daily-report.json" --time 09:00
+node native/cli.mjs report-schedule-apply --path "$HOME/.rnk-optimizer/history.jsonl" \
+  --output-path "$HOME/.rnk-optimizer/daily-report.json" --time 09:00 --confirm
 node native/cli.mjs steward-daemon --path "$HOME/.rnk-optimizer/history.jsonl" \
   --observation-interval-seconds 900 --report-interval-seconds 900
 node native/cli.mjs steward-trends --path "$HOME/.rnk-optimizer/history.jsonl" \
@@ -267,8 +271,10 @@ evidence and never infers health from silence.
 
 `steward-schedule` delivers at most one report per UTC day through a
 caller-owned callback (the CLI writes JSON lines to stdout). It is trigger-based
-and remains active only while the command is running; installing an operating
-system scheduler is outside the native authority.
+and remains active only while the command is running. The separate
+`report-schedule-preview`/`report-schedule-apply` authority installs an explicit
+user-level Windows Task Scheduler task, Linux systemd user timer, or macOS
+launchd agent; restore consumes its receipt and no privileged service is used.
 
 Use `--output-path PATH --format json|markdown` with `steward-schedule`, or
 `--report-output-path PATH --format json|markdown` with `steward-daemon`, to

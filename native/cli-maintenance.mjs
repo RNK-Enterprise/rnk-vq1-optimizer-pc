@@ -7,6 +7,7 @@
  * Each command delegates to a bounded authority module.
  */
 
+import { fileURLToPath } from 'url';
 import { createCacheCleaner } from './cache-cleaner.js';
 import { createCommandRunner } from './command-runner.js';
 import { applyOrganization, previewOrganization } from './organizer.js';
@@ -21,6 +22,7 @@ import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
 import { createStorageGrowthTracker } from './storage-growth.js';
 import { createWorkstationReportFileDelivery } from './workstation-report-delivery.js';
+import { applyReportSchedule, previewReportSchedule, restoreReportSchedule } from './report-scheduler.js';
 import {
   downloadGuardFromArgs,
   historyStoreFromArgs,
@@ -177,10 +179,37 @@ export async function runStewardMonitorCommand(args) {
 
 export async function runStewardReportCommand(args) {
   const store = historyStoreFromArgs(args);
-  return buildDailyWorkstationReport(await store.read(), {
+  const report = buildDailyWorkstationReport(await store.read(), {
     windowMs: numberOption(args, 'window-hours', 24) * 60 * 60 * 1000,
     maxSamples: numberOption(args, 'max-samples', 96)
   });
+  if (typeof args['output-path'] !== 'string') return report;
+  const delivery = createWorkstationReportFileDelivery({ filePath: args['output-path'], format: args.format || 'json' });
+  return { report, delivery: await delivery.deliver(report) };
+}
+
+export async function runReportScheduleCommand(command, args) {
+  if (command === 'report-schedule-restore') {
+    return restoreReportSchedule(jsonOption(args, 'receipt'), {
+      approved: true,
+      dryRun: args.confirm !== true,
+      commandRunner: createCommandRunner()
+    });
+  }
+  const plan = previewReportSchedule({
+    platform: process.platform,
+    nodePath: process.execPath,
+    cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)),
+    historyPath: requireOption(args, 'path'),
+    outputPath: requireOption(args, 'output-path'),
+    format: args.format || 'json',
+    time: args.time || '09:00',
+    taskName: args['task-name'] || undefined,
+    env: process.env
+  });
+  if (command === 'report-schedule-preview') return plan;
+  if (args.confirm !== true) throw new Error('report-schedule-apply requires --confirm');
+  return { plan, result: await applyReportSchedule(plan, { approved: true, dryRun: false, commandRunner: createCommandRunner() }) };
 }
 
 export async function runStewardTrendsCommand(args) {
