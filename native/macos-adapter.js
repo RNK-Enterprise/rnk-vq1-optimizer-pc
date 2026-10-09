@@ -28,6 +28,9 @@ export function createMacosAdapter({ commandRunner, cacheCleaner } = {}) {
         case 'set-process-priority':
           if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
           return resultFromCommand(await commandRunner.run('renice', ['-n', NICE_VALUES[action.value], '-p', String(pid)]), 'set-process-priority');
+        case 'set-process-io-priority':
+          if (!validPid(pid)) return { ok: false, reason: 'target process id is unavailable' };
+          return resultFromCommand(await commandRunner.run('taskpolicy', [action.value === 'low' ? '-b' : '-B', '-p', String(pid)]), 'set-process-io-priority');
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'darwin' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });
@@ -35,7 +38,6 @@ export function createMacosAdapter({ commandRunner, cacheCleaner } = {}) {
         case 'stop-approved-process':
           if (!validPid(pid) || context.allowProcessStop !== true || !approvedPid(context, pid)) return { ok: false, reason: 'process stop requires an approved background process id' };
           return resultFromCommand(await commandRunner.run('kill', ['-TERM', String(pid)]), 'stop-approved-process');
-        case 'set-process-io-priority':
         case 'set-process-affinity':
         case 'set-process-resource-limit':
         case 'set-gpu-policy':

@@ -5,6 +5,9 @@
 - Packaged System Drive Guard observations now persist to the isolated append-only
   workstation history, including pressure, pagefile, eligible bytes, plan ID, and
   before/after cleanup audit facts without expanding cleanup authority.
+- Added fixed macOS `taskpolicy` background/unbackground I/O priority actions for
+  approved process targets; hard CPU and memory caps remain explicit unsupported
+  results rather than being misrepresented as equivalent controls.
 - Added a packaged System Drive Guard launcher that continuously observes the
   configured free-space floor with the existing protected-root and approval
   boundaries; automatic cleanup remains opt-in and category-limited.

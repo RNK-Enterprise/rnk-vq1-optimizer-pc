@@ -181,13 +181,16 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.priority, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction({ ...valid.priority, value: 'high' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.io, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.io, value: 'normal' }, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.io, { targetPid: 0 })).ok).toBe(false);
     expect((await adapter.applyAction(valid.cache, { approved: true })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: new Set([123]) })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: [123] })).ok).toBe(true);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: true, approvedBackgroundPids: {} })).ok).toBe(false);
     expect((await adapter.applyAction(valid.stop, { targetPid: 123, allowProcessStop: false, approvedBackgroundPids: [123] })).ok).toBe(false);
     expect((await adapter.applyAction(valid.priority, { targetPid: 0 })).ok).toBe(false);
-    for (const action of [valid.power, valid.io, valid.affinity, valid.cpuLimit, valid.memoryLimit, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
+    for (const action of [valid.power, valid.affinity, valid.cpuLimit, valid.memoryLimit, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect((await adapter.applyAction({ type: 'unknown' })).ok).toBe(false);
     h.commandRunner.run.mockResolvedValue({ code: 1, stderr: 'denied' });
     await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'denied' });
@@ -196,6 +199,8 @@ describe('native adapters', () => {
     expect(h.calls).toEqual(expect.arrayContaining([
       ['renice', ['-n', '10', '-p', '123']],
       ['renice', ['-n', '-5', '-p', '123']],
+      ['taskpolicy', ['-b', '-p', '123']],
+      ['taskpolicy', ['-B', '-p', '123']],
       ['kill', ['-TERM', '123']]
     ]));
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'darwin' }));

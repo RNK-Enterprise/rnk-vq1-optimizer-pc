@@ -395,8 +395,9 @@ types; Windows currently reports I/O priority as unsupported. Linux CPU limits
 use a dedicated cgroup-v2 group when the host exposes the CPU controller, and
 Linux memory limits use a dedicated cgroup-v2 `memory.max` group when the
 memory controller is available, otherwise the bounded `prlimit` address-space
-fallback; macOS hard resource limits remain explicit
-unsupported results. CPU and memory hard limits are available through the
+fallback; macOS hard CPU and memory limits remain explicit unsupported results.
+macOS process I/O priority uses the fixed `taskpolicy` background policy for
+approved targets. CPU and memory hard limits are available through the
 separate resource-limit authority when the adapter proves support. GPU hard
 caps remain unsupported, and the governor does not claim an exact restore
 without pre-change priority evidence.
