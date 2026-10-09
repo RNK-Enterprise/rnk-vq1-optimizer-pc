@@ -96,7 +96,7 @@ export async function collectVolumeStorage({ platform = process.platform, comman
   const command = platform === 'win32'
     ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-Volume | Where-Object { $_.DriveLetter -and $_.Size -ne $null } | Select-Object DriveLetter,FileSystem,HealthStatus,Size,SizeRemaining,IsReadOnly,DriveType | ConvertTo-Json -Compress'], { timeoutMs: 5000, maxOutputBytes: 32768 }]
     : platform === 'linux'
-      ? ['df', ['-P', '-B1', '--output=source,size,avail,target'], { timeoutMs: 2500, maxOutputBytes: 32768 }]
+      ? ['df', ['-B1', '--output=source,size,avail,target'], { timeoutMs: 2500, maxOutputBytes: 32768 }]
       : platform === 'darwin' ? ['df', ['-Pk'], { timeoutMs: 2500, maxOutputBytes: 32768 }] : null;
   if (!command) return result(platform, [], 'unsupported', 'platform unsupported');
   try {

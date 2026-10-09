@@ -4,6 +4,8 @@
 
 - Added an explicit bounded multi-drive SMART observer that reuses validated
   inventory devices without changing normal inventory-only facts collection.
+- Corrected the Linux mounted-volume command so GNU `df` no longer receives the
+  mutually exclusive `-P` and `--output` flags.
 - Added the bounded cross-platform `volume-storage` observer and system-facts
   integration for mounted-volume free/total/used evidence. PowerShell
   `Get-Volume`, Linux `df`, and macOS `df` remain fixed read-only commands;

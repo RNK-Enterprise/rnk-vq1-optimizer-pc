@@ -41,6 +41,7 @@ describe('native volume storage', () => {
     expect(windows.run).toHaveBeenCalledWith('powershell.exe', expect.arrayContaining(['-Command', expect.stringContaining('Get-Volume')]), expect.any(Object));
     const linux = { run: jest.fn(async () => ({ code: 0, stdout: 'Filesystem 1B-blocks Avail Mounted on\n/dev/sda 100 50 /' })) };
     await expect(collectVolumeStorage({ platform: 'linux', commandRunner: linux })).resolves.toMatchObject({ available: true, volumes: [{ mount: '/' }] });
+    expect(linux.run).toHaveBeenCalledWith('df', ['-B1', '--output=source,size,avail,target'], expect.any(Object));
     const darwin = { run: jest.fn(async () => ({ code: 0, stdout: 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/disk0 100 20 80 20% /' })) };
     await expect(collectVolumeStorage({ platform: 'darwin', commandRunner: darwin })).resolves.toMatchObject({ available: true, volumes: [{ mount: '/', freeBytes: 81920 }] });
     await expect(collectVolumeStorage({ platform: 'freebsd', commandRunner: linux })).resolves.toMatchObject({ available: false, reason: 'platform unsupported' });

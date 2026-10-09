@@ -417,11 +417,14 @@ engine or domain -> evidence -> decision -> measured host result
 
 ```bash
 npm ci
-npm test
-npm run lint
-npm run bench -- --json
+npm run verify
 npm run native:facts
 ```
+
+`npm run verify` is the reproducible public-checkout gate. It runs the strict
+100% Jest coverage gate, lint, every ESM syntax check, the bounded public
+identity scan, and the observational host benchmark. The CI workflow invokes
+the same command from a clean checkout.
 
 The Jest configuration is a strict 100% statements, branches, functions, and
 lines gate over every collected JavaScript (`.js`) runtime authority file in

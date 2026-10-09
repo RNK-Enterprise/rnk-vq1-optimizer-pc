@@ -7,6 +7,7 @@
     "test": "jest --coverage --verbose",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "verify": "npm test -- --runInBand && npm run lint && node --check native/cli.mjs && node --check native/cli-maintenance.mjs && node --check native/cli-media.mjs && node --check native/cli-utils.mjs && node --check scripts/pc-host-benchmark.mjs && node --check scripts/verify-release-provenance.mjs && node --check scripts/verify-public-boundary.mjs && node scripts/verify-public-boundary.mjs && npm run bench -- --json",
     "bench": "node scripts/pc-host-benchmark.mjs",
     "lint": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs",
     "lint:fix": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs --fix",

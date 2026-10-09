@@ -19,7 +19,7 @@ describe('native command runner', () => {
   test('never enables a shell and bounds output', async () => {
     const child = childProcess();
     const spawnFile = jest.fn(() => child);
-    const runner = createCommandRunner({ spawnFile, env: { SAFE: '1', OPTIMIZER_GATEWAY_TOKEN: 'secret', VQ_CLUSTER_TOKEN: 'secret2' } });
+    const runner = createCommandRunner({ spawnFile, env: { SAFE: '1', OPTIMIZER_GATEWAY_TOKEN: 'secret', REMOTE_CLUSTER_TOKEN: 'secret2' } });
     const resultPromise = runner.run('safe-tool', [1, 'two'], { maxOutputBytes: 4 });
     child.stdout.emit('data', 'abcdef');
     child.stderr.emit('data', '123456');
@@ -34,9 +34,9 @@ describe('native command runner', () => {
   });
 
   test('scrubs credential-shaped environment keys without mutating the source', () => {
-    const source = { PATH: '/bin', OPTIMIZER_GATEWAY_TOKEN: 'one', VQ_API_KEY: 'two', HOME: '/tmp' };
+    const source = { PATH: '/bin', OPTIMIZER_GATEWAY_TOKEN: 'one', REMOTE_API_KEY: 'two', HOME: '/tmp' };
     expect(scrubChildEnvironment(source)).toEqual({ PATH: '/bin', HOME: '/tmp' });
-    expect(source).toEqual({ PATH: '/bin', OPTIMIZER_GATEWAY_TOKEN: 'one', VQ_API_KEY: 'two', HOME: '/tmp' });
+    expect(source).toEqual({ PATH: '/bin', OPTIMIZER_GATEWAY_TOKEN: 'one', REMOTE_API_KEY: 'two', HOME: '/tmp' });
     expect(scrubChildEnvironment(null)).toEqual({});
     expect(scrubChildEnvironment()).toBeDefined();
   });

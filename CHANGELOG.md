@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added the reproducible `npm run verify` gate and bounded public-checkout
+  identity scanner used by CI and local verification.
+
+## Unreleased
+
 - Removed the private client, protocol, persistence, browser host, and
   sibling-stack completeness gate from the public PC checkout; the public
   surface now contains only native PC authority, PC analysis engines, and the
