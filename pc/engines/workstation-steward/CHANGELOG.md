@@ -11,3 +11,5 @@
   keeping I/O priority and GPU observation-only.
 - Updated Linux CPU capability reporting to reflect the approved cgroup-v2
   hard-limit adapter when the host exposes its CPU controller.
+- Added per-platform unsupported budget dimensions to gaming/build handoff
+  actions so macOS and other partial-capability plans cannot imply hard caps.

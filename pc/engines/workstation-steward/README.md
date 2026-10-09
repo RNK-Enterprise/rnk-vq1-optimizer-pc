@@ -13,6 +13,7 @@ the adapter implements it: Windows CPU/memory and Linux cgroup-v2 CPU/memory. I/
 priority-only and GPU remains observational. Runtime host proof is still
 required before release certification. File moves, cleanup, process controls,
 and media actions are previewed and require explicit approval.
+Each plan also lists unsupported budget dimensions for its selected platform.
 
 Protected assets always win. Repositories, credentials, models, WSL data,
 active runtimes, and user-selected paths are never inferred as disposable.
