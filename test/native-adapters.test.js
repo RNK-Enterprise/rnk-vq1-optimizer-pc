@@ -64,10 +64,14 @@ describe('native adapters', () => {
     expect(owner).toHaveBeenCalledWith('powershell.exe', expect.arrayContaining(['hold', '123']), expect.objectContaining({ detached: true, stdio: 'ignore' }));
     const noUnrefAdapter = createWindowsAdapter({ ...harness(), processSpawner: () => ({}) });
     await expect(noUnrefAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ owner: { state: 'started' } });
+    const unavailableOwnerAdapter = createWindowsAdapter({ ...harness(), processSpawner: null });
+    await expect(unavailableOwnerAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ owner: { state: 'not-started', reason: 'persistent owner launcher unavailable' } });
     const failedOwnerAdapter = createWindowsAdapter({ ...harness(), processSpawner: () => { throw new Error('owner launch failed'); } });
     await expect(failedOwnerAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ owner: { state: 'failed', reason: 'owner launch failed' } });
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
+    try { expect(createWindowsAdapter(harness()).platform).toBe('win32'); } finally { Object.defineProperty(process, 'platform', { value: originalPlatform }); }
+    Object.defineProperty(process, 'platform', { value: 'linux' });
     try { expect(createWindowsAdapter(harness()).platform).toBe('win32'); } finally { Object.defineProperty(process, 'platform', { value: originalPlatform }); }
   });
 
