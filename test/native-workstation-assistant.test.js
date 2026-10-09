@@ -7,6 +7,7 @@ import { interpretWorkstationQuestion, WORKSTATION_ASSISTANT_VERSION } from '../
 
 const facts = {
   storage: [{ mount: 'C:', freeBytes: 4, totalBytes: 100 }],
+  volumes: { available: true, volumes: [{ mount: 'C:', freeBytes: 4, totalBytes: 100 }, { mount: 'E:', freeBytes: 40, totalBytes: 1000 }] },
   storagePressure: { level: 'critical' },
   memory: { usedPercent: 92 },
   pagefile: { pressure: true },
@@ -19,7 +20,7 @@ const facts = {
 
 describe('workstation assistant', () => {
   test('answers storage, memory, thermal, battery, history, and workload questions from facts', () => {
-    expect(interpretWorkstationQuestion('Why is my C: drive full?', facts)).toMatchObject({ version: WORKSTATION_ASSISTANT_VERSION, intent: 'storage', state: 'answered', evidence: { pressure: { level: 'critical' } } });
+    expect(interpretWorkstationQuestion('Why is my C: drive full?', facts)).toMatchObject({ version: WORKSTATION_ASSISTANT_VERSION, intent: 'storage', state: 'answered', evidence: { pressure: { level: 'critical' }, volumes: [{ mount: 'C:' }, { mount: 'E:' }] } });
     expect(interpretWorkstationQuestion('What is eating my RAM?', facts)).toMatchObject({ intent: 'memory', evidence: { topProcesses: expect.arrayContaining([expect.objectContaining({ name: 'model' })]), pagefile: { pressure: true } } });
     expect(interpretWorkstationQuestion('Why did the laptop get hot?', facts)).toMatchObject({ intent: 'thermals', state: 'answered', recommendations: ['reduce-sustained-load', 'check-cooling'] });
     expect(interpretWorkstationQuestion('How hot is the GPU?', { thermals: { maxTemperatureC: 70 }, gpu: { temperatureC: 95 } })).toMatchObject({ intent: 'thermals', answer: 'The highest observed thermal reading is 95 C.' });

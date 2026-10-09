@@ -24,10 +24,16 @@ function topProcesses(facts) {
     .slice(0, MAX_PROCESSES));
 }
 
+function storageRows(value) {
+  return rows(value).map((item) => ({ mount: text(item.mount) || 'unknown', freeBytes: number(item.freeBytes), totalBytes: number(item.totalBytes), usedBytes: number(item.usedBytes) }));
+}
+
 function storageAnswer(facts) {
-  const storage = rows(facts.storage).map((item) => ({ mount: text(item.mount) || 'unknown', freeBytes: number(item.freeBytes), totalBytes: number(item.totalBytes), usedBytes: number(item.usedBytes) }));
+  const storage = storageRows(facts.storage);
+  const volumes = storageRows(facts.volumes?.volumes);
+  const observed = volumes.length ? volumes : storage;
   const pressure = record(facts.storagePressure) ? facts.storagePressure : null;
-  return Object.freeze({ intent: 'storage', state: storage.length || pressure ? 'answered' : 'observation-required', answer: pressure ? `System storage pressure is ${text(pressure.level) || 'unknown'}.` : 'Storage pressure evidence is unavailable.', evidence: Object.freeze({ storage: Object.freeze(storage), pressure }), recommendations: Object.freeze(storage.length ? ['review-reclaimable-categories', 'preserve-protected-paths'] : ['collect-storage-evidence']) });
+  return Object.freeze({ intent: 'storage', state: observed.length || pressure ? 'answered' : 'observation-required', answer: pressure ? `System storage pressure is ${text(pressure.level) || 'unknown'}.` : 'Storage pressure evidence is unavailable.', evidence: Object.freeze({ storage: Object.freeze(storage), volumes: Object.freeze(volumes), pressure }), recommendations: Object.freeze(observed.length ? ['review-reclaimable-categories', 'preserve-protected-paths'] : ['collect-storage-evidence']) });
 }
 
 function memoryAnswer(facts) {

@@ -9,6 +9,8 @@
 - Added read-only placement recommendations that combine explicit volume
   free-space, health, writability, protection, and SSD/HDD evidence before
   suggesting capacity-media destinations for models and archives.
+- Extended the deterministic workstation assistant's storage answers to retain
+  bounded mounted-volume evidence alongside system-drive pressure facts.
 - Added an approval-gated, reversible user-level daily-report scheduler for
   Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
   schedule artifacts are fixed, local, and cleaned up on failed installation.
