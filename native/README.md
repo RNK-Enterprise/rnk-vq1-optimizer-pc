@@ -344,8 +344,10 @@ measurement or authorize traffic shaping.
 
 `network-monitor` provides a reusable trigger loop around a caller-owned
 platform sampler. It emits stable, started, continued, and stopped contention
-events, preserves the sample source, and remains observation-only. It does not
-intercept traffic or claim bandwidth enforcement.
+events, preserves the sample source, and remains observation-only. The native
+CLI exposes it as `network-monitor`; missing per-process counters remain
+explicitly unavailable and do not become guessed rates. It does not intercept
+traffic or claim bandwidth enforcement.
 
 `network-rate-monitor` derives interface receive/send rates from consecutive
 platform counters. The first sample, missing counters, and counter resets stay

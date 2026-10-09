@@ -17,6 +17,7 @@ import { createStewardMonitor } from './steward-monitor.js';
 import { createDailyWorkstationScheduler } from './steward-scheduler.js';
 import { createStewardDaemon } from './steward-daemon.js';
 import { createDownloadMonitor } from './download-monitor.js';
+import { createNetworkMonitor } from './network-monitor.js';
 import { applyQuarantine, previewQuarantine, rollbackQuarantine } from './quarantine.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
@@ -357,6 +358,36 @@ export async function runDownloadMonitorCommand(args, {
   });
   process.stdout.write(`${JSON.stringify(await monitor.observe(root))}\n`);
   monitor.start(root, (report) => process.stdout.write(`${JSON.stringify(report)}\n`));
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
+export async function runNetworkMonitorCommand(args, {
+  adapter,
+  monitorFactory = createNetworkMonitor
+} = {}) {
+  if (!adapter || typeof adapter.collectFacts !== 'function') throw new TypeError('network monitor requires a platform adapter');
+  const monitor = monitorFactory({
+    collectSample: async () => {
+      const facts = await adapter.collectFacts();
+      return {
+        samples: facts.networkProcesses?.processes || [],
+        gamePid: numberOption(args, 'game-pid', null),
+        latencyMs: numberOption(args, 'latency-ms', null),
+        source: facts.networkProcesses?.source || 'platform-network-facts'
+      };
+    },
+    intervalMs: numberOption(args, 'interval-seconds', 5) * 1000,
+    downloadThresholdBytesPerSecond: numberOption(args, 'download-threshold-bytes-per-second', 1024 * 1024),
+    onReport: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    onError: (error) => process.stderr.write(`network monitor: ${error.message}\n`)
+  });
+  await monitor.collect();
+  monitor.start();
   await new Promise((resolve) => {
     const stop = () => { monitor.stop(); resolve(); };
     process.once('SIGINT', stop);

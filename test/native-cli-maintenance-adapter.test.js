@@ -11,6 +11,7 @@ import {
   runCacheCommand,
   runDownloadCommand,
   runDownloadMonitorCommand,
+  runNetworkMonitorCommand,
   runFileInsightsCommand,
   runOrganizerCommand,
   runReportScheduleCommand,
@@ -292,6 +293,19 @@ describe('native CLI maintenance adapter', () => {
     });
     await expect(runDownloadMonitorCommand({ root, 'interval-seconds': '1' }, { guard, monitorFactory: downloadMonitorFactory, storageSnapshot: async () => ({ pressure: { level: 'normal' } }), commandRunner: { run: jest.fn() } })).resolves.toEqual({ stopped: true });
     await expect(runDownloadMonitorCommand({ root, 'interval-seconds': '0' })).rejects.toThrow('interval');
+    const networkMonitorFactory = (config) => ({
+      async collect() {
+        await expect(config.collectSample()).resolves.toMatchObject({ gamePid: 7, latencyMs: 80, source: 'nethogs' });
+        await config.onReport({ state: 'contention-review' });
+      },
+      start() { config.onError(new Error('network warning')); interruptOnStart(() => Promise.resolve()); },
+      stop: jest.fn()
+    });
+    await expect(runNetworkMonitorCommand({ 'interval-seconds': '1', 'game-pid': '7', 'latency-ms': '80', 'download-threshold-bytes-per-second': '10' }, { adapter: { collectFacts: async () => ({ networkProcesses: { source: 'nethogs', processes: [] } }) }, monitorFactory: networkMonitorFactory })).resolves.toEqual({ stopped: true });
+    await expect(runNetworkMonitorCommand({ 'interval-seconds': '0' }, { adapter: { collectFacts: async () => ({}) } })).rejects.toThrow('interval');
+    await expect(runNetworkMonitorCommand({})).rejects.toThrow('platform adapter');
+    setImmediate(() => process.emit('SIGINT'));
+    await expect(runNetworkMonitorCommand({ 'interval-seconds': '1' }, { adapter: { collectFacts: async () => ({ networkProcesses: { processes: [] } }) } })).resolves.toEqual({ stopped: true });
     expect(stdout).toHaveBeenCalled();
   });
 });

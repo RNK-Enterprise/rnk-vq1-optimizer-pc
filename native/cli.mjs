@@ -39,6 +39,7 @@ import {
   runCacheCommand,
   runDownloadCommand,
   runDownloadMonitorCommand,
+  runNetworkMonitorCommand,
   runFileInsightsCommand,
   runOrganizerCommand,
   runProtectedRootsCommand,
@@ -355,7 +356,8 @@ export async function runCli(argv = process.argv.slice(2), {
   adapter = createPlatformAdapter({ commandRunner, platform }),
   cacheCleaner,
   storageGuard,
-  downloadGuard
+  downloadGuard,
+  networkMonitorFactory
 } = {}) {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
@@ -381,6 +383,7 @@ export async function runCli(argv = process.argv.slice(2), {
   if (['report-schedule-preview', 'report-schedule-apply', 'report-schedule-restore'].includes(command)) return runReportScheduleCommand(command, args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args, { guard: downloadGuard });
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
+  if (command === 'network-monitor') return runNetworkMonitorCommand(args, { adapter, monitorFactory: networkMonitorFactory });
   if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args, { adapter });
   if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args, { adapter });
   if (['resource-limit-preview', 'resource-limit-apply'].includes(command)) return runResourceLimitCommand(command, args, { adapter });

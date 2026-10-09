@@ -177,6 +177,8 @@ node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
 node native/cli.mjs process-rate-monitor --interval-seconds 5
+node native/cli.mjs network-monitor --game-pid 1234 --latency-ms 80 \
+  --interval-seconds 5 --download-threshold-bytes-per-second 1048576
 node native/cli.mjs file-inspect --root "$HOME/Downloads" \
   --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
@@ -319,8 +321,9 @@ thermal movement, memory-pressure movement, drive-failure evidence, and
 recommendations. Missing samples remain unknown.
 
 `network-monitor` adds trigger-based contention history around an explicit
-platform or caller per-process sampler. It reports gaming/download contention
-transitions and never claims to enforce a network budget.
+platform or caller per-process sampler. The CLI exposes the same authority
+through `network-monitor`; it reports gaming/download contention transitions and
+never claims to enforce a network budget or shape traffic.
 
 `process-rate-monitor` derives bounded CPU, read/write I/O, memory-delta, and
 observed GPU-memory evidence for matching process identities from consecutive

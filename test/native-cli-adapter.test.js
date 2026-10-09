@@ -207,6 +207,7 @@ describe('native top-level CLI adapter', () => {
       ['cache-preview'],
       ['storage-preview'],
       ['download-preflight', '--size-bytes=1'],
+      ['network-monitor', '--interval-seconds=0'],
       ['workload-preview'],
       ['workload-budget-preview'],
       ['resource-limit-preview'],
@@ -224,7 +225,7 @@ describe('native top-level CLI adapter', () => {
     const cliCleaner = { preview: jest.fn(async () => ({ target: 'user-temp', platform: 'win32', roots: [], items: [] })) };
     const cliStorageGuard = { preview: jest.fn(async () => ({ state: 'review-ready', plan: { selected: [] } })) };
     const cliDownloadGuard = { preflight: jest.fn(() => ({ state: 'observation-required' })) };
-    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, platform: 'win32' };
+    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, networkMonitorFactory: monitorFactory, platform: 'win32' };
     for (const argv of routed.filter((argv) => argv[0] !== 'optimize')) await expect(runCli(argv, cliOptions)).resolves.toBeDefined();
     await expect(runCli(['optimize'], cliOptions)).rejects.toThrow('gateway URL is required');
     await expect(runCli(['optimize', `--history-path=${path.join(root, 'history.jsonl')}`], cliOptions)).rejects.toThrow('gateway URL is required');
@@ -297,6 +298,7 @@ describe('native top-level CLI adapter', () => {
       await expect(runProcessRateMonitorCommand({}, { monitorFactory })).resolves.toEqual({ stopped: true });
       await expect(runNetworkRateMonitorCommand({ 'interval-seconds': '0' })).rejects.toThrow('interval');
       await expect(runProcessRateMonitorCommand({ 'interval-seconds': '0' })).rejects.toThrow('interval');
+      await expect(runCli(['network-monitor', '--interval-seconds=0'])).rejects.toThrow('interval');
       await expect(runAssistantCommand({ question: 'What should I fix today?', facts: '{}' })).resolves.toMatchObject({ intent: 'recommendations' });
       await expect(runAssistantAdapterCommand({ question: 'What should I fix today?', facts: '{}', 'adapter-response': '{"question":"What should I fix today?","confidence":0.9}' })).resolves.toMatchObject({ state: 'delegated' });
       await expect(runWorkstationPolicyCommand('policy-approve', { plan: '{"version":1,"phase":"recommend","actions":[]}', 'approve-ids': '' })).resolves.toMatchObject({ phase: 'approved' });
