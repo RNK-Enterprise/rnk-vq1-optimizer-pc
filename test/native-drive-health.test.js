@@ -4,7 +4,7 @@
  * Contributor: Lisa's Dungeon
  */
 
-import { collectDriveHealth, collectSmartHealth, DRIVE_HEALTH_VERSION, parseDarwinDriveHealth, parseDarwinDriveInfo, parseLinuxDriveHealth, parseSmartOutput, parseWindowsDriveHealth } from '../native/drive-health.js';
+import { collectDriveHealth, collectSmartHealth, collectSmartHealthForDrives, DRIVE_HEALTH_VERSION, parseDarwinDriveHealth, parseDarwinDriveInfo, parseLinuxDriveHealth, parseSmartOutput, parseWindowsDriveHealth } from '../native/drive-health.js';
 
 describe('native drive health', () => {
   test('parses Windows, Linux, and macOS drive inventory evidence', () => {
@@ -81,6 +81,22 @@ describe('native drive health', () => {
     expect(parseSmartOutput('')).toEqual({ temperatureC: null, percentageUsed: null, powerOnHours: null, unsafeShutdowns: null, criticalWarning: null });
     expect(parseSmartOutput('Percent_Lifetime_Remain 98')).toMatchObject({ percentageUsed: 2 });
     expect(parseSmartOutput('Percent_Lifetime_Remain')).toMatchObject({ percentageUsed: 0 });
+  });
+
+  test('probes only bounded, normalized inventory devices when explicitly requested', async () => {
+    const runner = { run: jest.fn(async (_command, args) => ({ code: 0, stdout: args[2].endsWith('sda') ? 'SMART Health Status: OK' : 'SMART overall-health self-assessment test result: PASSED', stderr: '' })) };
+    const result = await collectSmartHealthForDrives([{ device: 'sda' }, { device: '/dev/sda' }, { device: 'sdb' }, { device: '../secret' }], { platform: 'linux', commandRunner: runner, maxDrives: 4 });
+    expect(result).toMatchObject({ available: true, observedCount: 2, source: 'smartctl' });
+    expect(runner.run).toHaveBeenCalledTimes(2);
+    expect(runner.run.mock.calls.map((call) => call[1][2])).toEqual(['/dev/sda', '/dev/sdb']);
+    const windows = await collectSmartHealthForDrives([{ device: 'PhysicalDrive0' }, { device: '\\\\.\\PhysicalDrive1' }, { device: 'not-a-drive' }], { platform: 'win32', commandRunner: runner });
+    expect(windows.observedCount).toBe(2);
+    expect(runner.run.mock.calls.at(-2)[1][2]).toBe('\\\\.\\PhysicalDrive0');
+    expect(runner.run.mock.calls.at(-1)[1][2]).toBe('\\\\.\\PhysicalDrive1');
+    await expect(collectSmartHealthForDrives(null)).rejects.toThrow('SMART drive inventory must be an array');
+    await expect(collectSmartHealthForDrives([], { maxDrives: 0 })).rejects.toThrow('SMART drive limit is out of range');
+    await expect(collectSmartHealthForDrives()).resolves.toMatchObject({ available: false, observedCount: 0 });
+    await expect(collectSmartHealthForDrives([{}, { device: 'sda' }], { platform: 'freebsd', commandRunner: runner })).resolves.toMatchObject({ available: false, observedCount: 0 });
   });
 });
 

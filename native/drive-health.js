@@ -146,3 +146,23 @@ export async function collectSmartHealth(device, { platform = process.platform, 
   } catch (error) { return Object.freeze({ available: false, device, health: 'unknown', reason: error.message }); }
 }
 
+function smartDeviceFor(value, platform) {
+  const device = text(value);
+  if (!device) return null;
+  if (platform === 'win32') {
+    if (/^\\\\\.\\PhysicalDrive\d+$/.test(device)) return device;
+    return /^PhysicalDrive\d+$/.test(device) ? `\\\\.\\${device}` : null;
+  }
+  if (!['linux', 'darwin'].includes(platform)) return null;
+  if (/^\/dev\/[A-Za-z0-9._-]+$/.test(device)) return device;
+  return /^[A-Za-z0-9._-]+$/.test(device) ? `/dev/${device}` : null;
+}
+
+export async function collectSmartHealthForDrives(drives = [], { platform = process.platform, commandRunner, maxDrives = 32 } = {}) {
+  if (!Array.isArray(drives)) throw new TypeError('SMART drive inventory must be an array');
+  if (!Number.isInteger(maxDrives) || maxDrives < 1 || maxDrives > 32) throw new RangeError('SMART drive limit is out of range');
+  const devices = [...new Set(drives.slice(0, maxDrives).map((item) => smartDeviceFor(item?.device, platform)).filter(Boolean))];
+  const results = await Promise.all(devices.map((device) => collectSmartHealth(device, { platform, commandRunner })));
+  return Object.freeze({ version: DRIVE_HEALTH_VERSION, platform, available: results.some((item) => item.available), observedCount: results.length, results: Object.freeze(results), source: 'smartctl' });
+}
+

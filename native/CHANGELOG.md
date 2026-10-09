@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added an explicit bounded multi-drive SMART observer that reuses validated
+  inventory devices without changing normal inventory-only facts collection.
 - Added the bounded cross-platform `volume-storage` observer and system-facts
   integration for mounted-volume free/total/used evidence. PowerShell
   `Get-Volume`, Linux `df`, and macOS `df` remain fixed read-only commands;

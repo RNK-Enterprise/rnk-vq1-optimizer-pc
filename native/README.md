@@ -85,6 +85,7 @@ node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234 --approve-pids 1234 --auto-apply --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs drive-health --smart-all
 node native/cli.mjs volume-storage
 node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
@@ -381,10 +382,14 @@ network caps remain unsupported.
 `drive-health` inventories physical drives with fixed platform commands. Windows
 uses `Get-PhysicalDisk`, Linux uses `lsblk`, and macOS uses `diskutil list`.
 The optional `--smart-device` probe invokes only the read-only `smartctl -H -A`
-path after strict device-path validation. It reports available temperature,
-percentage-used, power-on-hour, unsafe-shutdown, and critical-warning
-attributes. Missing `smartctl`, unsupported devices, attributes, and command
-failures remain unavailable.
+path after strict device-path validation. `--smart-all` is an explicit bounded
+probe over at most 32 device paths already returned by the inventory; it
+normalizes only simple platform device names, de-duplicates them, and never
+scans arbitrary paths. Both modes report available temperature, percentage-used,
+power-on-hour, unsafe-shutdown, and critical-warning attributes. Missing
+`smartctl`, unsupported devices, attributes, and command failures remain
+unavailable. Normal facts collection remains inventory-only and never invokes
+SMART probing implicitly.
 
 `volume-storage` inventories mounted volumes with fixed read-only commands.
 Windows uses `Get-Volume`; Linux and macOS use `df`. It reports mount, device,

@@ -17,7 +17,7 @@ import { applyWorkloadPolicy, previewWorkloadPolicy } from './workload-governor.
 import { applyWorkloadBudget, previewWorkloadBudget } from './workload-budget.js';
 import { applyResourceLimits, previewResourceLimits } from './resource-limits.js';
 import { createGameSessionMonitor } from './game-session.js';
-import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
+import { collectDriveHealth, collectSmartHealth, collectSmartHealthForDrives } from './drive-health.js';
 import { collectVolumeStorage } from './volume-storage.js';
 import { collectFilesystemHealth } from './filesystem-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
@@ -144,6 +144,7 @@ async function runGameSessionCommand(args) {
 
 async function runDriveHealthCommand(args) {
   const inventory = await collectDriveHealth({ platform: process.platform, commandRunner: createCommandRunner() });
+  if (args['smart-all'] === true) return { inventory, smart: await collectSmartHealthForDrives(inventory.drives, { platform: process.platform, commandRunner: createCommandRunner() }) };
   if (typeof args['smart-device'] !== 'string') return inventory;
   return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
 }
