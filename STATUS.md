@@ -25,7 +25,7 @@ means the authority deliberately refuses rather than pretending to enforce it.
 | Media library | Implemented | Local catalogue, metadata, duplicates, favorites, recents, and playlists exist. |
 | Music player | Implemented | Browser-owned local playback state and host are present; no downloader is included. |
 | Media panel | Implemented | HTTPS allow-list handoff exists; it does not fetch or bypass services. |
-| Daily workstation report | Implemented | History, HTML/JSON/Markdown delivery, daemon, and OS-user scheduling exist. |
+| Daily workstation report | Implemented | History, HTML/JSON/Markdown delivery, daemon, OS-user scheduling, and sampled process CPU/I/O leaders exist. |
 | History and trends | Implemented | Bounded append-only history and multi-day trend reduction exist. |
 | Local workstation assistant | Implemented | Deterministic facts-only question routing and preview plans exist. |
 | Protected assets | Implemented | Protected roots and role/path precedence refuse uncertain destructive work. |

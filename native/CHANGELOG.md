@@ -16,6 +16,9 @@
   read/write I/O, memory-delta, and observed GPU-memory rates from matching
   process samples; PID identity changes, missing counters, and counter resets
   remain explicit and the monitor has no process-control authority.
+- Extended daily workstation reports with measured process CPU and read/write
+  I/O peaks, latest leaders, rate-ready sample counts, and counter-reset events
+  from the same bounded two-sample evidence.
 - Added an explicit bounded multi-drive SMART observer that reuses validated
   inventory devices without changing normal inventory-only facts collection.
 - Corrected the Linux mounted-volume command so GNU `df` no longer receives the

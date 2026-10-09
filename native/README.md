@@ -268,6 +268,9 @@ rates without an explicit second sample.
 When `nvidia-smi` exposes compute-process rows, matching process records also
 carry observed GPU-memory bytes; graphics-process coverage and GPU enforcement
 remain unavailable unless the driver reports them through that fixed query.
+Daily workstation reports reduce consecutive process samples into measured CPU
+and read/write I/O rates, latest CPU/I/O leaders, rate-ready sample counts, and
+counter-reset events. Missing or changed process identity remains unknown.
 Windows battery telemetry combines `Win32_Battery` with the read-only `root/wmi`
 capacity and cycle-count classes when those classes are present; absent classes
 remain unavailable rather than being inferred.

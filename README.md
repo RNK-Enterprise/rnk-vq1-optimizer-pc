@@ -413,6 +413,10 @@ model, credential, and user-protected names. `process-stop-apply` is a separate
 explicit operation requiring confirmation and the platform adapter's approval
 boundary.
 
+Daily workstation reports reduce consecutive process samples into measured
+CPU and read/write I/O rates, latest CPU/I/O leaders, rate-ready sample counts,
+and counter-reset events. Missing or changed process identity remains unknown.
+
 `startup-preview` and `startup-apply` select one exact observed startup entry.
 Linux and macOS user startup files are renamed to an optimizer-owned
 `.rnk-disabled` suffix and return a restore receipt. Windows accepts only the

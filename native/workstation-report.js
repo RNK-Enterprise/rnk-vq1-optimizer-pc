@@ -8,6 +8,7 @@
  */
 
 import { compareNetworkRates } from './network-rate.js';
+import { deriveProcessResourceRateSamples, summarizeProcessResourceRates } from './process-resource-report.js';
 import { buildWorkstationPolicyPlan } from './workstation-policy.js';
 
 export const WORKSTATION_REPORT_VERSION = 1;
@@ -199,6 +200,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const drives = samples.map((entry) => driveSample(entry.facts));
   const volumes = samples.map((entry) => volumeSample(entry.facts));
   const processes = samples.map((entry) => processSample(entry.facts));
+  const processResourceRates = summarizeProcessResourceRates(deriveProcessResourceRateSamples(samples));
   const network = samples.map((entry) => networkSample(entry.facts));
   const networkRates = networkRateSamples(samples);
   const workloads = samples.map((entry) => workloadSample(entry, entry.facts));
@@ -247,7 +249,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), latest: Object.freeze(drives.at(-1)?.drives || []), observedSamples: count(drives, (item) => item.available) }),
     volumes: Object.freeze({ latest: Object.freeze(volumes.at(-1)?.volumes || []), latestCount: volumes.at(-1)?.volumes.length || 0, minimumFreeBytes: minimum(volumeFree), observedSamples: count(volumes, (item) => item.available) }),
-    processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
+    processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null, peakCpuPercent: processResourceRates.peakCpuPercent, peakIoBytesPerSecond: processResourceRates.peakIoBytesPerSecond, latestTopCpu: processResourceRates.latestTopCpu, latestTopIo: processResourceRates.latestTopIo, rateSamples: processResourceRates.rateSamples, counterResetEvents: processResourceRates.counterResetEvents }),
     network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestConnectionCount: last(network.map((item) => item.connectionCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),
     development: Object.freeze({ activeClasses, contentionEvents: count(workloads, (item) => item.contention) }),
     gaming: Object.freeze({ detectedEvents: count(workloads, (item) => item.gameDetected), contentionEvents: count(workloads, (item) => item.contention) }),

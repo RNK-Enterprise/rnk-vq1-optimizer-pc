@@ -16,6 +16,8 @@
 - Added trigger-based per-process CPU, read/write I/O, memory-delta, and
   observed GPU-memory rates with PID identity and counter-reset handling; the
   new monitor remains observation-only.
+- Extended daily workstation reports to surface measured process CPU/I/O peaks,
+  latest leaders, rate-ready samples, and counter resets.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 
