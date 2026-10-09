@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
- * Windows native adapter. Only fixed, reviewable commands live here. VQ
+ * Windows native adapter. Only fixed, reviewable commands live here. Gateway
  * payloads never select an executable, argument, path, or process id.
  */
 

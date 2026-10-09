@@ -19,7 +19,7 @@ this repository is called release-certified.
 - Added strict expiry validation with a bounded plan lifetime.
 - Restricted remote gateway URLs to HTTPS and loopback development URLs to
   explicit local hosts.
-- Scrubbed gateway and VQ credentials from child-process environments.
+- Scrubbed gateway credentials from child-process environments.
 - Distinguished optimizer-owned temporary files from platform/driver shader
   caches in code and documentation.
 - Replaced the former application workload benchmark with a host-observation

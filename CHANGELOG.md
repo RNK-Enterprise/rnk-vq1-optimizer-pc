@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Removed the private VQ client, protocol, persistence, browser host, and
+- Removed the private client, protocol, persistence, browser host, and
   sibling-stack completeness gate from the public PC checkout; the public
   surface now contains only native PC authority, PC analysis engines, and the
   bounded local media host.

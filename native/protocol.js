@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
- * VQ may propose data-only actions from this contract. The local agent is the
+ * A gateway may propose data-only actions from this contract. The local agent is the
  * authority that validates and executes them; paths, commands, and arguments
  * are deliberately absent from the wire format.
  */
@@ -123,7 +123,7 @@ export function validateNativeAction(action) {
   return { ...action };
 }
 
-/** Validate the structural part of a VQ plan before per-action handling. */
+/** Validate the structural part of a gateway plan before per-action handling. */
 export function validateNativePlan(plan, { now = Date.now } = {}) {
   if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
     throw new TypeError('Native optimizer plan must be an object');

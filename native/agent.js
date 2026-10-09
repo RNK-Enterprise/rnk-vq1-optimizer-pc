@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
- * Local authority for whole-PC optimization. VQ supplies bounded data; this
+ * Local authority for whole-PC optimization. The gateway supplies bounded data; this
  * agent validates it, selects local capabilities, and applies approved work.
  */
 

@@ -205,7 +205,7 @@
 
 ## 2026-10-05
 
-- Added a local Windows/Linux agent with bounded VQ plan intake.
+- Added a local Windows/Linux agent with bounded gateway plan intake.
 - Added CPU, memory, load, and optional NVIDIA GPU observation.
 - Added fixed platform command allow-lists for safe power/process controls.
 - Added preview-first cache cleanup with explicit approval and symlink refusal.

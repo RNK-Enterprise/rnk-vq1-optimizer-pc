@@ -29,7 +29,7 @@ jobs:
       - run: bash -n install/linux/install.sh
       - name: Reject private-stack references
         run: |
-          if rg -n -i 'foundry|vortex quantum|scripts/vq|check-pc-vq1|pc-host\.js' \
+          if rg -n -i 'foundry|vortex quantum|\bvq\b|scripts/vq|check-pc-vq1|pc-host\.js' \
             --glob '!package-lock.json' --glob '!.git/**' --glob '!.github/**' .; then
             echo 'private-stack reference found in public checkout' >&2
             exit 1

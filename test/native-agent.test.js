@@ -44,7 +44,7 @@ describe('NativeOptimizerAgent', () => {
     expect(() => new NativeOptimizerAgent({ adapter: h.adapter, profile: 'turbo' })).toThrow('Unsupported native profile');
   });
 
-  test('requests a VQ plan with a mapped profile and token', async () => {
+  test('requests a bounded gateway plan with a mapped profile and token', async () => {
     const h = adapterHarness();
     const fetchFn = jest.fn(async (_url, options) => {
       const request = JSON.parse(options.body);

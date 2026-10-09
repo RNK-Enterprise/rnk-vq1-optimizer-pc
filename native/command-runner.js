@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
  * Commands are selected by platform adapters from fixed allow-lists. This
- * runner never invokes a shell and never accepts a command string from VQ.
+ * runner never invokes a shell and never accepts a command string from a gateway.
  */
 
 import { spawn } from 'child_process';

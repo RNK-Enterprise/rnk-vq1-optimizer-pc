@@ -8,7 +8,7 @@ by the native agent.
 
 Any future controller bridge must keep the same boundaries as the local CLI:
 
-- VQ returns data-only plans.
+- The configured gateway returns data-only plans.
 - The native agent validates plans and owns all operating-system commands.
 - Every destructive action requires explicit approval.
 - File organization remains a separate preview/confirm workflow.

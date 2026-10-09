@@ -4,7 +4,7 @@
  * Contributor: Lisa's Dungeon
  *
  * Explicit storage-pressure category and protection boundaries. These
- * definitions are local policy; they are never accepted from a VQ payload.
+ * definitions are local policy; they are never accepted from a gateway payload.
  */
 
 import path from 'path';

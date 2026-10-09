@@ -20,7 +20,7 @@ The installers require Node.js 20 or newer, Git, and npm. A fresh install uses
 the public optimizer repository by default; pass `--repo URL` on Linux or
 `-RepositoryUrl URL` on Windows to use another source.
 
-Optimization requires the configured VQ gateway. Set
+Optimization requires the configured optimizer gateway. Set
 `OPTIMIZER_GATEWAY_URL` or pass `--gateway URL` on Linux / `-GatewayUrl URL` on
 Windows. If `--run-optimize` or `-RunOptimize` is requested without a gateway,
 the installer stops before cloning or changing the installation directory.
