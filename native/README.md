@@ -190,6 +190,11 @@ bounded in-process growth evidence. Use `--growth-window-hours` and
 `--growth-threshold-bytes` to control its comparison window and minimum change;
 growth evidence does not expand cleanup authority.
 
+Packaged monitor runs append the observed pressure, pagefile, eligible bytes,
+plan ID, and cleanup audit to the isolated workstation history. The history is
+observational and append-only; it does not authorize cleanup or mutate protected
+roots.
+
 `protected-roots-add` persists user-selected repository, model, credential, WSL,
 or document roots in a path-only registry. Pass the same `--protected-store`
 to Storage Pressure Guard commands to load it. Registry changes require

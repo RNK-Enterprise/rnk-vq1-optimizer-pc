@@ -24,6 +24,7 @@ import { createStorageGrowthTracker } from './storage-growth.js';
 import { createWorkstationReportFileDelivery } from './workstation-report-delivery.js';
 import { applyReportSchedule, previewReportSchedule, restoreReportSchedule } from './report-scheduler.js';
 import { defaultWorkstationPaths } from './workstation-paths.js';
+import { createStewardHistoryStore } from './steward-history.js';
 import {
   downloadGuardFromArgs,
   historyStoreFromArgs,
@@ -55,7 +56,8 @@ export async function runStorageMonitorCommand(args, {
   commandRunner = createCommandRunner(),
   platform = process.platform,
   env = process.env,
-  pathResolver = defaultWorkstationPaths
+  pathResolver = defaultWorkstationPaths,
+  historyStore = null
 } = {}) {
   const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
   if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
@@ -64,6 +66,7 @@ export async function runStorageMonitorCommand(args, {
     : args;
   const effectiveGuard = guard || storageGuardFromArgs(monitorArgs, { platform, commandRunner, env });
   const effectiveMonitorFactory = monitorFactory || ((config) => effectiveGuard.monitor(config));
+  const history = historyStore || (defaults ? createStewardHistoryStore({ filePath: defaults.historyPath }) : null);
   const options = await storageOptionsFromArgs(monitorArgs);
   if (args['auto-clean'] === true && options.enabledCategories.length === 0) {
     throw new Error('storage-monitor --auto-clean requires explicitly enabled categories');
@@ -89,6 +92,21 @@ export async function runStorageMonitorCommand(args, {
         && preview.plan.selected.length > 0
         ? await effectiveGuard.cleanup(preview.plan, { approved: true, dryRun: false })
         : null;
+      if (history) await history.append({
+        id: `storage-guard-${Date.parse(snapshot.collectedAt)}`,
+        event: 'observation',
+        timestamp: Date.parse(snapshot.collectedAt),
+        reversible: false,
+        facts: {
+          storage: snapshot.storage,
+          storagePressure: snapshot.pressure,
+          pagefile: snapshot.pagefile,
+          cleanupAudit: result?.audit
+            ? { performed: true, recoveredBytes: result.audit.spaceRecoveredBytes, removedBytes: result.audit.removedBytes, actionCount: result.removed?.length || 0 }
+            : { performed: false, recoveredBytes: 0, removedBytes: 0, actionCount: 0 }
+        },
+        storageGuard: { level: snapshot.pressure?.level, eligibleBytes: preview.eligibleBytes, planId: preview.plan?.planId || null }
+      });
       process.stdout.write(`${JSON.stringify({ snapshot, preview, growth: growth.read(), result })}\n`);
     },
     onError: (error) => process.stderr.write(`storage monitor: ${error.message}\n`)

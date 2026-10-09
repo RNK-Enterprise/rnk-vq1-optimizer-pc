@@ -95,9 +95,63 @@ describe('native CLI maintenance adapter', () => {
     await expect(runStorageMonitorCommand({ packaged: true, 'interval-seconds': '1' }, {
       growth,
       commandRunner: { run: jest.fn() },
-      pathResolver: () => ({ state: 'ready', protectedRootsPath: path.join(root, 'packaged-protected.json') }),
+      pathResolver: () => ({ state: 'ready', protectedRootsPath: path.join(root, 'packaged-protected.json'), historyPath: path.join(root, 'packaged-history.jsonl') }),
       monitorFactory: () => ({ start: async () => { interruptOnStart(() => Promise.resolve()); }, stop: jest.fn() })
     })).resolves.toEqual({ stopped: true });
+    const historyStore = { append: jest.fn(async (entry) => entry) };
+    const auditGuard = {
+      preview: async () => ({ ...preview, plan: { selected: ['user-temp'], planId: 'storage-test' } }),
+      cleanup: async () => ({
+        removed: [{ path: path.join(root, 'safe-cache'), sizeBytes: 4 }],
+        audit: { spaceRecoveredBytes: 9, removedBytes: 4 }
+      })
+    };
+    await expect(runStorageMonitorCommand({ packaged: true, 'auto-clean': true, enable: 'user-temp', 'interval-seconds': '1' }, {
+      guard: auditGuard,
+      growth,
+      historyStore,
+      pathResolver: () => ({ state: 'ready', protectedRootsPath: path.join(root, 'packaged-protected.json'), historyPath: path.join(root, 'packaged-history.jsonl') }),
+      monitorFactory: (config) => ({
+        start: async () => {
+          await config.onChange({ collectedAt: new Date(1000).toISOString(), storage: [], pressure: { level: 'critical' }, pagefile: {} });
+          await config.onChange({ collectedAt: new Date(2000).toISOString(), storage: [], pressure: { level: 'normal' }, pagefile: {} });
+          interruptOnStart(() => Promise.resolve());
+        },
+        stop: jest.fn()
+      })
+    })).resolves.toEqual({ stopped: true });
+    expect(historyStore.append).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      event: 'observation',
+      facts: expect.objectContaining({ cleanupAudit: { performed: true, recoveredBytes: 9, removedBytes: 4, actionCount: 1 } }),
+      storageGuard: expect.objectContaining({ planId: 'storage-test' })
+    }));
+    expect(historyStore.append).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      event: 'observation',
+      facts: expect.objectContaining({ cleanupAudit: { performed: false, recoveredBytes: 0, removedBytes: 0, actionCount: 0 } }),
+      storageGuard: expect.objectContaining({ planId: 'storage-test' })
+    }));
+    const edgeHistoryStore = { append: jest.fn(async (entry) => entry) };
+    const edgeGuard = {
+      preview: async () => ({ ...preview, plan: { selected: ['user-temp'] } }),
+      cleanup: async () => ({ audit: { spaceRecoveredBytes: 0, removedBytes: 0 } })
+    };
+    await expect(runStorageMonitorCommand({ packaged: true, 'auto-clean': true, enable: 'user-temp' }, {
+      guard: edgeGuard,
+      edgeHistoryStore,
+      historyStore: edgeHistoryStore,
+      pathResolver: () => ({ state: 'ready', protectedRootsPath: path.join(root, 'packaged-protected.json'), historyPath: path.join(root, 'packaged-history.jsonl') }),
+      monitorFactory: (config) => ({
+        start: async () => {
+          await config.onChange({ collectedAt: new Date(3000).toISOString(), storage: [], pressure: { level: 'critical' }, pagefile: {} });
+          interruptOnStart(() => Promise.resolve());
+        },
+        stop: jest.fn()
+      })
+    })).resolves.toEqual({ stopped: true });
+    expect(edgeHistoryStore.append).toHaveBeenCalledWith(expect.objectContaining({
+      facts: expect.objectContaining({ cleanupAudit: { performed: true, recoveredBytes: 0, removedBytes: 0, actionCount: 0 } }),
+      storageGuard: expect.objectContaining({ planId: null })
+    }));
     await expect(runStorageMonitorCommand({ packaged: true }, {
       guard,
       pathResolver: () => ({ state: 'invalid-environment', reason: 'missing packaged root' })
