@@ -24,7 +24,7 @@ import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
 import { createNetworkRateMonitor } from './network-rate.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
-import { applyPlacementPolicy, previewPlacementPolicy, rollbackPlacementPolicy } from './file-placement-policy.js';
+import { applyPlacementPolicy, previewPlacementPolicy, recommendPlacementTargets, rollbackPlacementPolicy } from './file-placement-policy.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { approveWorkstationPolicy, buildWorkstationPolicyPlan } from './workstation-policy.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
@@ -212,6 +212,16 @@ async function runPlacementPolicyCommand(command, args) {
   return { plan, result: await applyPlacementPolicy(plan, { approved: true, dryRun: false }) };
 }
 
+async function runPlacementRecommendationCommand(args) {
+  return recommendPlacementTargets({
+    volumes: jsonOption(args, 'volumes'),
+    categories: typeof args.categories === 'string' ? jsonOption(args, 'categories') : undefined,
+    mediaPreferences: typeof args['media-preferences'] === 'string' ? jsonOption(args, 'media-preferences') : undefined,
+    protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
+    minFreeBytes: numberOption(args, 'min-free-bytes', 0)
+  });
+}
+
 async function runAssistantCommand(args) {
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await createPlatformAdapter().collectFacts();
   const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
@@ -318,6 +328,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'network-overview') return runNetworkOverviewCommand(args);
   if (command === 'network-rate-monitor') return runNetworkRateMonitorCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
+  if (command === 'placement-recommend') return runPlacementRecommendationCommand(args);
   if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
   if (command === 'assistant') return runAssistantCommand(args);
   if (['policy-preview', 'policy-approve'].includes(command)) return runWorkstationPolicyCommand(command, args);

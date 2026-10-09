@@ -6,7 +6,7 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { applyPlacementPolicy, FILE_PLACEMENT_POLICY_VERSION, previewPlacementPolicy, rollbackPlacementPolicy } from '../native/file-placement-policy.js';
+import { applyPlacementPolicy, FILE_PLACEMENT_POLICY_VERSION, previewPlacementPolicy, recommendPlacementTargets, rollbackPlacementPolicy } from '../native/file-placement-policy.js';
 
 describe('native file placement policy', () => {
   test('groups approved categories and excludes unsafe evidence', () => {
@@ -47,6 +47,44 @@ describe('native file placement policy', () => {
     expect(previewPlacementPolicy({ root: '/home/test/Downloads', entries: [] }, { targetRoots: { model: '/mnt/archive' }, targetFreeBytes: null })).toMatchObject({ state: 'no-safe-moves', plans: [] });
     expect(previewPlacementPolicy({ root: '/home/test/Downloads', entries: [{ path: '/home/test/Downloads/model.gguf', category: 'model', sizeBytes: 1 }], duplicates: [{ paths: 'bad' }, null] }, { targetRoots: { model: '/mnt/archive' }, targetFreeBytes: { '/mnt/archive': 'bad' }, sourceRoots: ['/home/test/Downloads'] })).toMatchObject({ state: 'no-safe-moves' });
     expect(previewPlacementPolicy({ root: '/home/test/Downloads', entries: [{ path: '/home/test/Downloads/model.gguf', category: 'model', sizeBytes: 1 }], duplicates: 'bad' }, { targetRoots: { model: '/mnt/archive' }, targetFreeBytes: { '/mnt/archive': 'bad' }, sourceRoots: ['/home/test/Downloads'] })).toMatchObject({ state: 'no-safe-moves' });
+  });
+
+  test('recommends only evidenced, healthy, writable media targets', () => {
+    const result = recommendPlacementTargets({
+      volumes: [
+        { mount: '/fast', mediaType: 'ssd', freeBytes: 10, health: 'healthy' },
+        { mount: '/archive', mediaType: 'hdd', freeBytes: 100, health: 'healthy' },
+        { mount: '/archive-small', mediaType: 'hdd', freeBytes: 80, health: 'healthy' },
+        { mount: '/degraded', mediaType: 'hdd', freeBytes: 1000, health: 'degraded' },
+        { mount: '/protected', mediaType: 'hdd', freeBytes: 1000, health: 'healthy', protected: true },
+        { mount: '/readonly', mediaType: 'hdd', freeBytes: 1000, health: 'healthy', readOnly: true },
+        { mount: '/unknown', mediaType: 'unknown', freeBytes: 1000, health: 'unknown' },
+        { mount: '/missing-media', freeBytes: 1000, health: 'healthy' },
+        null,
+        { mount: null, mediaType: 'hdd', freeBytes: 1000 }
+      ],
+      categories: ['model', 'archive', 'other'],
+      protectedRoots: ['/never-use'],
+      minFreeBytes: 50
+    });
+    expect(result).toMatchObject({ state: 'recommendations-ready', mutation: 'none', requiresApproval: true, recommendations: [
+      { category: 'model', state: 'recommended', desiredMedia: 'hdd', targetVolume: '/archive', targetRoot: '/archive/model', freeBytes: 100 },
+      { category: 'archive', state: 'recommended', targetRoot: '/archive/archive' },
+      { category: 'other', state: 'review-required', reason: 'category-needs-explicit-media-policy' }
+    ] });
+    expect(recommendPlacementTargets({ volumes: [{ mount: '/fast', mediaType: 'ssd', freeBytes: 10 }], categories: ['model'], minFreeBytes: 20 })).toMatchObject({ state: 'review-required', recommendations: [{ state: 'no-safe-target', reason: 'no-volume-with-requested-media-type' }] });
+    expect(recommendPlacementTargets({ volumes: [{ mount: '/unknown', mediaType: 'unknown', freeBytes: 100 }], categories: ['model'] })).toMatchObject({ state: 'review-required', recommendations: [{ state: 'no-safe-target', reason: 'media-type-evidence-unavailable' }] });
+  });
+
+  test('validates placement recommendation inputs', () => {
+    expect(() => recommendPlacementTargets({ volumes: null })).toThrow('volume evidence');
+    expect(() => recommendPlacementTargets({ categories: null })).toThrow('categories');
+    expect(() => recommendPlacementTargets({ mediaPreferences: null })).toThrow('media preferences');
+    expect(() => recommendPlacementTargets({ protectedRoots: null })).toThrow('protected roots');
+    expect(() => recommendPlacementTargets({ minFreeBytes: -1 })).toThrow('free-space floor');
+    expect(recommendPlacementTargets()).toMatchObject({ state: 'review-required' });
+    expect(recommendPlacementTargets({ volumes: [{ mount: '/archive', mediaType: 'hdd', freeBytes: 100 }], categories: ['model'], protectedRoots: ['/archive'] })).toMatchObject({ state: 'review-required', recommendations: [{ state: 'no-safe-target' }] });
+    expect(recommendPlacementTargets({ volumes: [{ root: '/archive', mediaType: 'hdd', freeBytes: 100 }], categories: ['model'], mediaPreferences: { model: 'HDD' } })).toMatchObject({ state: 'recommendations-ready' });
   });
 
   test('applies and rolls back through the existing placement authority', async () => {

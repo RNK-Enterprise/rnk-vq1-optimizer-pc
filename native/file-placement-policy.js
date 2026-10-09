@@ -9,9 +9,11 @@
 
 import path from 'path';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
+import { isPathInside } from './storage-targets.js';
 
 export const FILE_PLACEMENT_POLICY_VERSION = 1;
 const SKIP_CATEGORIES = new Set(['incomplete-download']);
+const DEFAULT_MEDIA_PREFERENCES = Object.freeze({ model: 'hdd', archive: 'hdd', iso: 'hdd', installer: 'hdd' });
 
 function record(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
@@ -33,6 +35,54 @@ function duplicatePaths(scan, pathImpl) {
 function validateScan(scan) { if (!record(scan) || !Array.isArray(scan.entries)) throw new TypeError('Placement policy requires a file insight scan'); return scan; }
 function validateLimit(value) { if (!Number.isInteger(value) || value < 1 || value > 4096) throw new RangeError('Placement policy maxEntries is out of range'); return value; }
 function sourceRoots(scan, value, pathImpl) { const roots = Array.isArray(value) ? value.filter((item) => text(item)).map((item) => pathImpl.resolve(item)) : []; return roots.length ? roots : text(scan.root) ? [pathImpl.resolve(scan.root)] : []; }
+
+function protectedVolume(root, protectedRoots, pathImpl) {
+  return protectedRoots.some((candidate) => {
+    const resolved = pathImpl.resolve(candidate);
+    return resolved === pathImpl.resolve(root) || isPathInside(resolved, root, pathImpl);
+  });
+}
+
+function normalizeVolume(item, pathImpl) {
+  if (!record(item)) return null;
+  const root = text(item.mount ?? item.root);
+  if (!root) return null;
+  const freeBytes = bytes(item.freeBytes);
+  return Object.freeze({
+    root: pathImpl.resolve(root),
+    freeBytes,
+    mediaType: text(item.mediaType)?.toLowerCase() || 'unknown',
+    health: text(item.health)?.toLowerCase() || 'unknown',
+    writable: item.writable !== false && item.readOnly !== true,
+    protected: item.protected === true
+  });
+}
+
+export function recommendPlacementTargets({
+  volumes = [],
+  categories = Object.keys(DEFAULT_MEDIA_PREFERENCES),
+  mediaPreferences = DEFAULT_MEDIA_PREFERENCES,
+  protectedRoots = [],
+  minFreeBytes = 0,
+  pathImpl = path
+} = {}) {
+  if (!Array.isArray(volumes)) throw new TypeError('Placement recommendations require volume evidence');
+  if (!Array.isArray(categories)) throw new TypeError('Placement recommendations require categories');
+  if (!record(mediaPreferences)) throw new TypeError('Placement recommendations require media preferences');
+  if (!Array.isArray(protectedRoots)) throw new TypeError('Placement recommendations require protected roots');
+  if (!Number.isFinite(minFreeBytes) || minFreeBytes < 0) throw new RangeError('Placement recommendation free-space floor is invalid');
+  const normalized = volumes.slice(0, 64).map((item) => normalizeVolume(item, pathImpl)).filter(Boolean);
+  const candidates = normalized.filter((item) => item.writable && !item.protected && !['failed', 'degraded'].includes(item.health) && item.freeBytes !== null && item.freeBytes >= minFreeBytes && !protectedVolume(item.root, protectedRoots, pathImpl));
+  const recommendations = categories.slice(0, 32).map((value) => {
+    const kind = category(value);
+    const desiredMedia = text(mediaPreferences[kind])?.toLowerCase() || null;
+    if (!desiredMedia) return Object.freeze({ category: kind, state: 'review-required', reason: 'category-needs-explicit-media-policy', targetRoot: null });
+    const target = candidates.filter((item) => item.mediaType === desiredMedia).sort((left, right) => right.freeBytes - left.freeBytes)[0] || null;
+    if (!target) return Object.freeze({ category: kind, state: 'no-safe-target', desiredMedia, reason: normalized.some((item) => item.mediaType !== 'unknown') ? 'no-volume-with-requested-media-type' : 'media-type-evidence-unavailable', targetRoot: null });
+    return Object.freeze({ category: kind, state: 'recommended', desiredMedia, targetVolume: target.root, targetRoot: pathImpl.join(target.root, kind), freeBytes: target.freeBytes, reason: 'explicit-volume-evidence-matches-category-policy' });
+  });
+  return Object.freeze({ version: FILE_PLACEMENT_POLICY_VERSION, state: recommendations.some((item) => item.state === 'recommended') ? 'recommendations-ready' : 'review-required', recommendations: Object.freeze(recommendations), candidateVolumes: Object.freeze(candidates), mutation: 'none', requiresApproval: true });
+}
 
 export function previewPlacementPolicy(scan, { targetRoots, sourceRoots: requestedRoots, protectedRoots = [], targetFreeBytes = {}, maxEntries = 256, pathImpl = path } = {}) {
   validateScan(scan);

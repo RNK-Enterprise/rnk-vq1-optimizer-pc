@@ -96,6 +96,8 @@ node native/cli.mjs file-inspect --root "$HOME/Downloads" \
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
+node native/cli.mjs placement-recommend \
+  --volumes '[{"mount":"E:","mediaType":"hdd","freeBytes":68000000000,"health":"healthy"}]'
 node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
@@ -398,6 +400,11 @@ copy-verify-delete and preserve the source if verification fails.
 category-to-target map, then creates one bounded plan per target volume.
 Protected, incomplete, duplicate, unclassified, and missing-evidence entries
 remain skipped. Apply and rollback delegate to the existing placement authority.
+
+`placement-recommend` consumes explicit mounted-volume free-space and SSD/HDD
+evidence. It recommends capacity media for models, archives, ISOs, and
+installers, refuses unknown or degraded/protected/read-only volumes, and never
+creates a move plan or mutates a file.
 
 `assistant` is a deterministic local facts-to-plan interface. It answers
 supported storage, memory/pagefile, CPU/GPU thermal, battery, history, daily-priority,
