@@ -25,6 +25,14 @@ function text(value) { return typeof value === 'string' && value.trim() ? value.
 function list(value, limit = 16) { return Array.isArray(value) ? value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim()).slice(0, limit) : []; }
 function level(value) { return PRESSURE_LEVELS.includes(value) ? value : 'unknown'; }
 function health(value) { return HEALTH_STATES.includes(value) ? value : 'unknown'; }
+function driveHealth(source) {
+  const declared = health(source.storageHealth?.health);
+  if (declared !== 'unknown') return declared;
+  const drives = Array.isArray(source.drives?.drives) ? source.drives.drives : [];
+  if (drives.some((item) => health(item?.health) === 'failed')) return 'failed';
+  if (drives.some((item) => health(item?.health) === 'degraded')) return 'degraded';
+  return 'unknown';
+}
 
 function requireFacts(facts) {
   if (!isRecord(facts)) throw new TypeError('Workstation-health facts must be an object');
@@ -51,7 +59,7 @@ function storageEvidence(source) {
   const totalBytes = nonNegative(pressure.totalBytes ?? row.totalBytes);
   const freeBytes = totalBytes === null ? nonNegative(pressure.freeBytes ?? row.freeBytes) : Math.min(totalBytes, nonNegative(pressure.freeBytes ?? row.freeBytes));
   const freePercent = boundedPercent(pressure.freePercent ?? (totalBytes && freeBytes !== null ? freeBytes / totalBytes * 100 : null));
-  return Object.freeze({ freeBytes, totalBytes, freePercent, pressureLevel: level(pressure.level), health: health(source.storageHealth?.health) });
+  return Object.freeze({ freeBytes, totalBytes, freePercent, pressureLevel: level(pressure.level), health: driveHealth(source) });
 }
 
 function metric(source, keys) {
@@ -65,7 +73,8 @@ function resourceEvidence(source) {
   const cpu = isRecord(source.cpu) ? source.cpu : {};
   const memory = isRecord(source.memory) ? source.memory : {};
   const gpu = isRecord(source.gpu) ? source.gpu : {};
-  const thermal = isRecord(source.thermal) ? source.thermal : {};
+  const thermal = isRecord(source.thermals) ? source.thermals : isRecord(source.thermal) ? source.thermal : {};
+  const pagefile = isRecord(source.pagefile) ? source.pagefile : {};
   const memoryTotal = nonNegative(memory.totalBytes);
   const availableMemory = nonNegative(memory.availableBytes);
   const memoryUsed = nonNegative(memory.usedBytes ?? (memoryTotal !== null && availableMemory !== null ? memoryTotal - Math.min(memoryTotal, availableMemory) : null));
@@ -73,15 +82,23 @@ function resourceEvidence(source) {
   const derivedMemoryPressure = memoryPercent === null ? 'unknown' : memoryPercent >= 95 ? 'critical' : memoryPercent >= 80 ? 'warning' : 'normal';
   const memoryPressure = level(memory.pressure || derivedMemoryPressure);
   const temperature = Number.isFinite(thermal.maxTemperatureC) ? thermal.maxTemperatureC : null;
+  const gpuTemperatureC = Number.isFinite(gpu.temperatureC) ? gpu.temperatureC : Number.isFinite(gpu.temperature) ? gpu.temperature : null;
+  const observedTemperatures = [temperature, gpuTemperatureC].filter((value) => value !== null);
+  const peakTemperatureC = observedTemperatures.length ? Math.max(...observedTemperatures) : null;
+  const pagefilePressurePercent = boundedPercent(pagefile.pressurePercent);
   const throttling = thermal.throttling === true;
-  const thermalState = throttling || (temperature !== null && temperature >= 95) ? 'critical' : temperature !== null && temperature >= 85 ? 'warning' : temperature === null ? 'unknown' : 'normal';
+  const thermalThrottling = throttling || thermal.thermalThrottling === true;
+  const thermalState = thermalThrottling || (peakTemperatureC !== null && peakTemperatureC >= 95) ? 'critical' : peakTemperatureC !== null && peakTemperatureC >= 85 ? 'warning' : peakTemperatureC === null ? 'unknown' : 'normal';
   return Object.freeze({
     cpuLoadPercent: metric(cpu, ['loadPercent', 'utilizationPercent']),
     memoryPressure,
     gpuLoadPercent: metric(gpu, ['loadPercent', 'utilizationPercent']),
     temperatureC: temperature,
+    gpuTemperatureC,
+    peakTemperatureC,
     thermalState,
-    thermalThrottling: throttling
+    thermalThrottling,
+    pagefilePressurePercent
   });
 }
 
@@ -105,8 +122,16 @@ function cleanupEvidence(source) {
 }
 
 function batteryEvidence(source) {
-  const battery = isRecord(source.battery) ? source.battery : {};
-  return Object.freeze({ present: typeof battery.present === 'boolean' ? battery.present : null, chargePercent: boundedPercent(battery.chargePercent), health: health(battery.health), charging: typeof battery.charging === 'boolean' ? battery.charging : null });
+  const sourceBattery = isRecord(source.battery) ? source.battery : {};
+  const battery = Array.isArray(sourceBattery.batteries) ? sourceBattery.batteries.filter(isRecord)[0] || {} : sourceBattery;
+  const hasBatteryEvidence = sourceBattery.available === true || sourceBattery.present === true || battery.capacityPercent !== undefined || battery.chargePercent !== undefined;
+  const present = sourceBattery.available === false || sourceBattery.present === false ? false : hasBatteryEvidence ? true : null;
+  const chargePercent = boundedPercent(battery.chargePercent ?? battery.capacityPercent);
+  const declaredHealth = health(battery.health);
+  const healthPercent = boundedPercent(battery.healthPercent);
+  const inferredHealth = healthPercent === null ? 'unknown' : healthPercent >= 80 ? 'healthy' : healthPercent >= 60 ? 'degraded' : 'failed';
+  const charging = typeof battery.charging === 'boolean' ? battery.charging : /^charging\b/i.test(typeof battery.status === 'string' ? battery.status.trim() : '');
+  return Object.freeze({ present, chargePercent, health: declaredHealth === 'unknown' ? inferredHealth : declaredHealth, charging });
 }
 
 function problemEvidence(storage, resources, battery, processes, workload) {
@@ -119,6 +144,8 @@ function problemEvidence(storage, resources, battery, processes, workload) {
   else if (resources.memoryPressure === 'warning') problems.push('memory-pressure-warning');
   if (resources.thermalThrottling || resources.thermalState === 'critical') problems.push('thermal-throttling');
   else if (resources.thermalState === 'warning') problems.push('thermal-warning');
+  if (resources.pagefilePressurePercent !== null && resources.pagefilePressurePercent >= 95) problems.push('pagefile-pressure-critical');
+  else if (resources.pagefilePressurePercent !== null && resources.pagefilePressurePercent >= 80) problems.push('pagefile-pressure-high');
   if (battery.health === 'failed') problems.push('battery-health-failed');
   else if (battery.health === 'degraded') problems.push('battery-health-degraded');
   if (processes.abnormalCount > 0) problems.push('abnormal-processes');
@@ -132,6 +159,7 @@ function recommendations(problems, confidence) {
   if (problems.some((item) => item.includes('storage-pressure'))) values.push('review-storage-pressure-preview');
   if (problems.includes('drive-health-failed') || problems.includes('drive-health-degraded')) values.push('review-drive-health');
   if (problems.some((item) => item.includes('memory-pressure'))) values.push('review-memory-pressure');
+  if (problems.some((item) => item.includes('pagefile-pressure'))) values.push('review-pagefile-pressure');
   if (problems.includes('thermal-throttling') || problems.includes('thermal-warning')) values.push('review-thermal-workload');
   if (problems.includes('battery-health-failed') || problems.includes('battery-health-degraded')) values.push('review-battery-condition');
   if (problems.includes('abnormal-processes')) values.push('review-abnormal-processes');

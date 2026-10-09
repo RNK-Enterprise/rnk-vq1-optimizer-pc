@@ -11,5 +11,9 @@ The dedicated library merges bounded daily reports and builds observation
 plans. Four lazy, trigger-driven turbo/library pairs provide storage trend,
 resource pressure, workload conflict, and cleanup audit evidence.
 
+Native facts may use plural thermal zones and nested battery records; the
+engine normalizes those shapes before classifying health, including GPU
+temperature, drive health, and pagefile pressure.
+
 All outputs are analysis-only. A recommendation is not an authorization to
 act, and no engine in this family owns destructive or administrative actions.

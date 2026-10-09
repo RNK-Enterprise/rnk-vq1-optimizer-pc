@@ -49,6 +49,19 @@ describe('workstation-health engine', () => {
     expect(result.actions).toEqual([]);
   });
 
+  test('normalizes native telemetry shapes for thermal, GPU, battery, drive, and pagefile evidence', () => {
+    const native = runWorkstationHealthEngine({ ...completeFacts, thermal: undefined, thermals: { maxTemperatureC: 82, thermalThrottling: true }, storageHealth: undefined, drives: { drives: [{ health: 'failed' }] }, gpu: { loadPercent: 30, temperatureC: 88 }, battery: { available: true, batteries: [{ capacityPercent: 70, healthPercent: 90, status: 'Charging' }] }, pagefile: { pressurePercent: 85 } }, { trigger: 'health.interval', now: () => 500 });
+    expect(native).toMatchObject({ state: 'critical', storage: { health: 'failed' }, resources: { temperatureC: 82, gpuTemperatureC: 88, peakTemperatureC: 88, thermalState: 'critical', thermalThrottling: true, pagefilePressurePercent: 85 }, battery: { present: true, chargePercent: 70, health: 'healthy', charging: true } });
+    expect(native.problemCodes).toEqual(expect.arrayContaining(['drive-health-failed', 'thermal-throttling', 'pagefile-pressure-high']));
+    const low = runWorkstationHealthEngine({ ...completeFacts, storageHealth: undefined, drives: { drives: [{ health: 'degraded' }] }, gpu: { temperature: 72 }, thermal: { maxTemperatureC: 70 }, battery: { available: true, batteries: [{ capacityPercent: 10, healthPercent: 50, status: 'Discharging' }] }, pagefile: { pressurePercent: 95 } }, { trigger: 'health.interval', now: () => 501 });
+    expect(low).toMatchObject({ state: 'critical', storage: { health: 'degraded' }, resources: { gpuTemperatureC: 72, peakTemperatureC: 72, pagefilePressurePercent: 95 }, battery: { health: 'failed', charging: false } });
+    expect(low.problemCodes).toContain('pagefile-pressure-critical');
+    const mid = runWorkstationHealthEngine({ ...completeFacts, battery: { available: true, batteries: [{ capacityPercent: 40, healthPercent: 70 }] } }, { trigger: 'health.interval', now: () => 502 });
+    expect(mid.battery.health).toBe('degraded');
+    const emptyBattery = runWorkstationHealthEngine({ ...completeFacts, battery: { available: true, batteries: [] } }, { trigger: 'health.interval', now: () => 503 });
+    expect(emptyBattery.battery.present).toBe(true);
+  });
+
   test('reports critical pressure, health, thermal, battery, process, and workload evidence', () => {
     const result = runWorkstationHealthEngine({ ...completeFacts, storage: [], storagePressure: { level: 'emergency', freeBytes: 1, totalBytes: 100 }, storageHealth: { health: 'failed' }, memory: { pressure: 'critical' }, thermal: { maxTemperatureC: 100, throttling: true }, battery: { present: true, chargePercent: 5, health: 'failed' }, processes: [{ name: 'broken', state: 'crashed' }, { name: 'bad', abnormal: true }, { name: 'dead', health: 'failed' }], workload: { activeClasses: ['gaming', 'ai'], foregroundClass: 'game' }, cleanupAudit: { performed: true, removedBytes: 12, actionCount: 2 } }, { trigger: 'workload.changed', now: () => 1000 });
     expect(result.state).toBe('critical');
@@ -58,7 +71,7 @@ describe('workstation-health engine', () => {
   });
 
   test('derives memory pressure and handles alternate storage and thermal evidence', () => {
-    const warning = runWorkstationHealthEngine({ ...completeFacts, storage: [{ mount: 'D:', totalBytes: 100, freeBytes: 20 }], storagePressure: undefined, memory: { totalBytes: 100, availableBytes: 4 }, cpu: { loadPercent: 80 }, gpu: { utilizationPercent: 80 }, thermal: { maxTemperatureC: 85 }, battery: { present: false, charging: false, health: 'unknown' }, processes: undefined, workload: undefined, cleanupAudit: undefined }, { trigger: 'system.facts.request', now: () => 2000 });
+    const warning = runWorkstationHealthEngine({ ...completeFacts, storage: [{ mount: 'D:', totalBytes: 100, freeBytes: 20 }], storagePressure: undefined, memory: { totalBytes: 100, availableBytes: 4 }, cpu: { loadPercent: 80 }, gpu: { utilizationPercent: 80, temperature: 86 }, thermal: { maxTemperatureC: 85 }, battery: { present: false, charging: false, health: 'unknown' }, processes: undefined, workload: undefined, cleanupAudit: undefined }, { trigger: 'system.facts.request', now: () => 2000 });
     expect(warning.storage.freePercent).toBe(20);
     expect(warning.resources.memoryPressure).toBe('critical');
     expect(warning.resources.thermalState).toBe('warning');
