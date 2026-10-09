@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added read-only fan-RPM telemetry from Linux hwmon and Windows
+  `Win32_Fan`; macOS and missing sensor paths remain explicitly unavailable,
+  with no firmware or fan-control authority.
 - Corrected Windows battery evidence to combine `Win32_Battery` with the
   read-only `BatteryStaticData`, `BatteryFullChargedCapacity`, and
   `BatteryCycleCount` WMI classes so design capacity, full-charge capacity,

@@ -6,11 +6,13 @@
 
 import {
   collectBatteryTelemetry,
+  collectFanTelemetry,
   collectNetworkTelemetry,
   collectProcessTelemetry,
   collectThermalTelemetry,
   collectWorkstationTelemetry,
   parseBatteryTelemetry,
+  parseFanTelemetry,
   parseNetworkTelemetry,
   parseProcessTelemetry,
   parseThermalTelemetry,
@@ -189,6 +191,35 @@ describe('workstation thermal telemetry', () => {
     await expect(collectThermalTelemetry({ platform: 'win32' })).resolves.toMatchObject({ source: 'command runner unavailable' });
     await expect(collectThermalTelemetry({ platform: 'win32', commandRunner: runner({ code: 1 }) })).resolves.toMatchObject({ source: 'thermal command failed' });
     await expect(collectThermalTelemetry()).resolves.toHaveProperty('zones');
+  });
+});
+
+describe('workstation fan telemetry', () => {
+  test('parses fixed Windows fan evidence and rejects unsupported rows', () => {
+    expect(parseFanTelemetry(JSON.stringify([{ Name: 'CPU fan', CurrentSpeed: 2400 }, { rpm: 1200, label: 'GPU fan' }, { speed: 900, label: '' }, { Name: 'bad', CurrentSpeed: 'bad' }]), { platform: 'win32' })).toMatchObject({ available: true, fans: [{ name: 'CPU fan', rpm: 2400 }, { name: 'GPU fan', rpm: 1200 }, { name: 'fan', rpm: 900 }], source: 'Win32_Fan' });
+    expect(parseFanTelemetry()).toMatchObject({ available: false, fans: [] });
+  });
+
+  test('reads bounded Linux hwmon fan inputs and fails closed', async () => {
+    const files = {
+      '/sys/class/hwmon': ['hwmon0', 'not-hwmon'],
+      '/sys/class/hwmon/hwmon0': ['name', 'fan1_input', 'fan2_input', 'temp1_input'],
+      '/sys/class/hwmon/hwmon0/name': 'asus',
+      '/sys/class/hwmon/hwmon0/fan1_input': '2400',
+      '/sys/class/hwmon/hwmon0/fan2_input': 'bad'
+    };
+    expect(await collectFanTelemetry({ platform: 'linux', fsImpl: fakeFs(files) })).toMatchObject({ available: true, fans: [{ name: 'asus', rpm: 2400 }], source: 'hwmon' });
+    const missingDirectory = await collectFanTelemetry({ platform: 'linux', fsImpl: fakeFs({ '/sys/class/hwmon': ['hwmon0'] }, new Set(['/sys/class/hwmon/hwmon0'])) });
+    expect(missingDirectory).toMatchObject({ available: false, fans: [], source: 'hwmon' });
+    const missingLabel = await collectFanTelemetry({ platform: 'linux', fsImpl: fakeFs({ '/sys/class/hwmon': ['hwmon0'], '/sys/class/hwmon/hwmon0': ['name', 'fan1_input'], '/sys/class/hwmon/hwmon0/name': '', '/sys/class/hwmon/hwmon0/fan1_input': '1000' }) });
+    expect(missingLabel.fans[0]).toMatchObject({ name: 'hwmon0', rpm: 1000 });
+    await expect(collectFanTelemetry({ platform: 'linux', fsImpl: fakeFs({}, new Set(['/sys/class/hwmon'])) })).resolves.toMatchObject({ available: false });
+    await expect(collectFanTelemetry({ platform: 'darwin', commandRunner: runner({ code: 0 }) })).resolves.toMatchObject({ available: false, source: 'platform unsupported' });
+    await expect(collectFanTelemetry({ platform: 'win32', commandRunner: runner({ code: 0, stdout: JSON.stringify({ Name: 'fan', CurrentSpeed: 1800 }) }) })).resolves.toMatchObject({ available: true, fans: [{ rpm: 1800 }] });
+    await expect(collectFanTelemetry({ platform: 'win32', commandRunner: runner({ code: 1, stderr: 'denied' }) })).resolves.toMatchObject({ available: false, source: 'denied' });
+    await expect(collectFanTelemetry({ platform: 'win32', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toMatchObject({ source: 'missing' });
+    await expect(collectFanTelemetry({ platform: 'win32' })).resolves.toMatchObject({ source: 'command runner unavailable' });
+    await expect(collectFanTelemetry()).resolves.toHaveProperty('fans');
   });
 });
 

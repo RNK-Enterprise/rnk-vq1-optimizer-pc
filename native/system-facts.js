@@ -106,6 +106,7 @@ export async function collectSystemFacts({ platform = process.platform, osImpl =
   facts.processes = telemetry.processes.processes;
   facts.battery = telemetry.battery;
   facts.thermals = telemetry.thermals;
+  facts.fans = telemetry.fans;
   facts.network = telemetry.network;
   facts.networkConnections = telemetry.networkConnections;
   facts.startup = telemetry.startup;

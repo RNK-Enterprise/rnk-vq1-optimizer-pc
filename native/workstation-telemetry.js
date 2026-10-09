@@ -261,6 +261,50 @@ export async function collectThermalTelemetry({ platform = process.platform, com
   } catch (error) { return Object.freeze({ available: false, zones: EMPTY, maxTemperatureC: null, source: error.message }); }
 }
 
+function normalizeFan(row, platform) {
+  const rpm = number(row?.rpm ?? row?.CurrentSpeed ?? row?.speed);
+  return Object.freeze({ platform, name: text(row?.name ?? row?.Name ?? row?.label) || 'fan', rpm });
+}
+
+export function parseFanTelemetry(output, { platform = 'unknown' } = {}) {
+  const parsed = json(output);
+  const fans = rows(parsed).map((row) => normalizeFan(row, platform)).filter((row) => row.rpm !== null).slice(0, 64);
+  return Object.freeze({ available: fans.length > 0, fans: Object.freeze(fans), source: platform === 'win32' ? 'Win32_Fan' : 'unknown' });
+}
+
+async function collectLinuxFans(fsImpl) {
+  let roots;
+  try { roots = await fsImpl.readdir('/sys/class/hwmon'); } catch { return Object.freeze({ available: false, fans: EMPTY, source: 'hwmon' }); }
+  const fans = [];
+  for (const root of roots.filter((item) => /^hwmon\d+$/.test(item)).slice(0, 32)) {
+    let files;
+    try { files = await fsImpl.readdir(`/sys/class/hwmon/${root}`); } catch { continue; }
+    let label = root;
+    try { label = (await fsImpl.readFile(`/sys/class/hwmon/${root}/name`, 'utf8')).trim() || root; } catch { /* optional label */ }
+    for (const file of files.filter((item) => /^fan\d+_input$/.test(item)).slice(0, 16)) {
+      try {
+        const fan = normalizeFan({ name: label, rpm: await fsImpl.readFile(`/sys/class/hwmon/${root}/${file}`, 'utf8') }, 'linux');
+        if (fan.rpm !== null) fans.push(fan);
+      } catch { /* racing or unreadable sensor */ }
+    }
+  }
+  return Object.freeze({ available: fans.length > 0, fans: Object.freeze(fans), source: 'hwmon' });
+}
+
+export async function collectFanTelemetry({ platform = process.platform, commandRunner, fsImpl = fs } = {}) {
+  if (platform === 'linux') return collectLinuxFans(fsImpl);
+  if (!commandAvailable(commandRunner)) return Object.freeze({ available: false, fans: EMPTY, source: 'command runner unavailable' });
+  const command = platform === 'win32'
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-CimInstance Win32_Fan | Select-Object Name,CurrentSpeed | ConvertTo-Json -Compress'], { timeoutMs: 5000, maxOutputBytes: 8192 }]
+    : null;
+  if (!command) return Object.freeze({ available: false, fans: EMPTY, source: 'platform unsupported' });
+  try {
+    const result = await commandRunner.run(command[0], command[1], command[2]);
+    if (result?.code !== 0) return Object.freeze({ available: false, fans: EMPTY, source: result?.stderr || 'fan command failed' });
+    return parseFanTelemetry(result.stdout, { platform });
+  } catch (error) { return Object.freeze({ available: false, fans: EMPTY, source: error.message }); }
+}
+
 export function parseNetworkTelemetry(output, { platform = 'unknown' } = {}) {
   if (platform === 'win32') {
     const parsed = json(output);
@@ -288,13 +332,14 @@ export async function collectNetworkTelemetry({ platform = process.platform, com
 }
 
 export async function collectWorkstationTelemetry({ platform = process.platform, commandRunner, fsImpl = fs, env = process.env } = {}) {
-  const [processes, battery, thermals, network, networkConnections, startup] = await Promise.all([
+  const [processes, battery, thermals, fans, network, networkConnections, startup] = await Promise.all([
     collectProcessTelemetry({ platform, commandRunner }),
     collectBatteryTelemetry({ platform, commandRunner, fsImpl }),
     collectThermalTelemetry({ platform, commandRunner, fsImpl }),
+    collectFanTelemetry({ platform, commandRunner, fsImpl }),
     collectNetworkTelemetry({ platform, commandRunner, fsImpl }),
     collectNetworkConnectionTelemetry({ platform, commandRunner }),
     collectStartupTelemetry({ platform, commandRunner, env, fsImpl })
   ]);
-  return Object.freeze({ telemetryVersion: WORKSTATION_TELEMETRY_VERSION, platform, processes, battery, thermals, network, networkConnections, startup });
+  return Object.freeze({ telemetryVersion: WORKSTATION_TELEMETRY_VERSION, platform, processes, battery, thermals, fans, network, networkConnections, startup });
 }

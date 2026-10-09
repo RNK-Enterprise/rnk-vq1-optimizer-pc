@@ -233,6 +233,9 @@ when exposed. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
 Windows battery telemetry combines `Win32_Battery` with the read-only `root/wmi`
 capacity and cycle-count classes when those classes are present; absent classes
 remain unavailable rather than being inferred.
+Fan RPM is read-only evidence from Linux hwmon or Windows `Win32_Fan` when
+available. macOS fan evidence remains unavailable; no platform path writes
+firmware registers or changes fan profiles.
 Known exact process names are classified as `developer`, `runtime`, or `model`
 for workload policy and process explanations; unrecognized names remain
 `unknown` and are never treated as safe or protected by guesswork.

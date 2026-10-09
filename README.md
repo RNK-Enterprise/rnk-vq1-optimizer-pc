@@ -58,8 +58,8 @@ The current platform adapters provide documented controls for:
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
   explicitly approved cleanup of regenerable categories.
-- Read-only CPU, memory, storage, process, startup, battery, thermal, network,
-  and optional NVIDIA facts. Process, battery, thermal, and network telemetry
+- Read-only CPU, memory, storage, process, startup, battery, thermal, fan, network,
+  and optional NVIDIA facts. Process, battery, thermal, fan, and network telemetry
   returns explicit unavailable evidence when the platform or sensor does not
   provide it.
 

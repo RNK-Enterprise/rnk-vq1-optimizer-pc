@@ -87,6 +87,12 @@ function thermalSample(facts) {
   return { temperatureC: nonNegative(thermal.maxTemperatureC), throttling };
 }
 
+function fanSample(facts) {
+  const source = record(facts.fans) ? facts.fans : {};
+  const rpms = rows(source.fans).map((fan) => nonNegative(fan.rpm ?? fan.currentSpeed)).filter((value) => value !== null);
+  return { available: source.available === true, maximumRpm: maximum(rpms), fanCount: rpms.length };
+}
+
 function batterySample(facts) {
   const source = record(facts.battery) ? facts.battery : {};
   const battery = rows(source.batteries)[0] || source;
@@ -165,6 +171,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const memory = samples.map((entry) => memorySample(entry.facts));
   const cpuGpu = samples.map((entry) => cpuGpuSample(entry.facts));
   const thermals = samples.map((entry) => thermalSample(entry.facts));
+  const fans = samples.map((entry) => fanSample(entry.facts));
   const batteries = samples.map((entry) => batterySample(entry.facts));
   const pagefile = samples.map((entry) => pagefileSample(entry.facts));
   const drives = samples.map((entry) => driveSample(entry.facts));
@@ -211,6 +218,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     memory: Object.freeze({ peakUsedBytes: maximum(memoryUsed), peakUsedPercent: maximum(memoryPercent), pressureEvents: memoryEvents }),
     cpuGpu: Object.freeze({ peakCpuPercent: maximum(cpuPercent), peakGpuPercent: maximum(gpuPercent), peakGpuTemperatureC: maximum(gpuTemperatures), latestGpuTemperatureC: last(gpuTemperatures), latestGpuMemoryUsedBytes: last(finiteValues(cpuGpu.map((item) => item.gpuMemoryUsedBytes))), gpuThermalThrottleEvents: gpuThrottleEvents }),
     thermals: Object.freeze({ peakTemperatureC: maximum(temperatures), throttleEvents }),
+    fans: Object.freeze({ peakRpm: maximum(fans.map((item) => item.maximumRpm).filter((value) => value !== null)), latestRpm: last(fans.map((item) => item.maximumRpm)), latestFanCount: last(fans.map((item) => item.fanCount)), observedSamples: count(fans, (item) => item.available) }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
