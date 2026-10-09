@@ -34,9 +34,10 @@ describe('public-boundary command adapter', () => {
   test('covers default output and execution targets', async () => {
     const stdout = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
     const stderr = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await expect(runPublicBoundary(undefined, { defaultScan: async () => ({ state: 'clean' }) })).resolves.toBe(0);
     await expect(runPublicBoundary({ scan: async () => ({ state: 'clean' }) })).resolves.toBe(0);
     await expect(runPublicBoundary({ scan: async () => { throw new Error('default failure'); } })).resolves.toBe(1);
-    await expect(runIfEntrypoint({ entrypoint: true })).resolves.toBe(0);
+    await expect(runIfEntrypoint({ entrypoint: true, runOptions: { scan: async () => ({ state: 'clean' }) } })).resolves.toBe(0);
     await expect(runIfEntrypoint()).resolves.toBe(0);
     expect(setExitCode(0)).toBe(0);
     expect(isEntrypoint('file:///tmp/adapter.mjs', '')).toBe(false);

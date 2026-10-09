@@ -8,7 +8,8 @@
 import { scanPublicBoundary } from '../native/public-boundary.js';
 import { pathToFileURL } from 'url';
 
-export async function runPublicBoundary({ scan = scanPublicBoundary, write = (value) => process.stdout.write(value), errorWrite = (value) => process.stderr.write(value) } = {}) {
+export async function runPublicBoundary(options = {}, { defaultScan = scanPublicBoundary } = {}) {
+  const { scan = defaultScan, write = (value) => process.stdout.write(value), errorWrite = (value) => process.stderr.write(value) } = options;
   try {
     const result = await scan();
     write(`${JSON.stringify(result)}\n`);
@@ -19,9 +20,9 @@ export async function runPublicBoundary({ scan = scanPublicBoundary, write = (va
   }
 }
 
-export async function runIfEntrypoint({ entrypoint, run = runPublicBoundary } = {}) {
+export async function runIfEntrypoint({ entrypoint, run = runPublicBoundary, runOptions } = {}) {
   if (!entrypoint) return 0;
-  return run();
+  return run(runOptions);
 }
 
 export function setExitCode(code, target = process) {

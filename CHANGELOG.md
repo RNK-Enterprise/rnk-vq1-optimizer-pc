@@ -5,6 +5,9 @@
 - Added an independent per-file coverage verifier that fails on any uncovered
   statement, branch, function, or executable line; the global Jest threshold
   can no longer hide a weak file behind another file's coverage.
+- Made the cross-platform CI test adapters independent of the runner's default
+  operating system and bounded the public-boundary entrypoint test to a fixed
+  injected scan.
 - Added a one-shot workstation snapshot/report command for immediate local
   health capture and JSON, Markdown, or HTML delivery through the existing
   history and approval boundaries.

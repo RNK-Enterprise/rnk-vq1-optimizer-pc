@@ -179,7 +179,7 @@ describe('native adapters', () => {
     expect(createPlatformAdapter({ platform: 'linux', commandRunner: h.commandRunner, cacheCleaner: h.cacheCleaner }).platform).toBe('linux');
     expect(createPlatformAdapter({ platform: 'win32', commandRunner: h.commandRunner, cacheCleaner: h.cacheCleaner }).platform).toBe('win32');
     expect(createPlatformAdapter({ platform: 'linux' }).platform).toBe('linux');
-    expect(createPlatformAdapter().platform).toBe('linux');
+    expect(createPlatformAdapter().platform).toBe(process.platform);
   });
 
   test('macOS exposes only fixed priority/cache/process controls', async () => {
