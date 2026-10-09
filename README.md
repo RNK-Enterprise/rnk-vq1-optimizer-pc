@@ -50,6 +50,9 @@ The browser PC surface also includes an application-owned local music host in
 objects through `HTMLAudioElement`, with bounded queue/shuffle/repeat controls
 and object-URL cleanup. Remote URLs and downloads are outside that authority.
 
+The source-level wishlist closure and the remaining product/certification
+boundaries are tracked in [`STATUS.md`](STATUS.md).
+
 ## Supported native controls
 
 The current platform adapters provide documented controls for:

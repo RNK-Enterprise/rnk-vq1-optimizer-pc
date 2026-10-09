@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added a source-backed capability status matrix that separates the completed
+  workstation wishlist from the eight remaining product or live-certification
+  boundaries instead of repeating the original twenty-item request.
+- Added bounded per-process cumulative read/write I/O evidence for Windows and
+  Linux Developer Mode, Gaming+Build review, and workstation reports; missing
+  platform counters remain unknown rather than inferred.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

@@ -69,6 +69,8 @@ function normalizeProcess(row, platform) {
   const cpu = number(row?.cpuPercent);
   const cpuSeconds = number(row?.CPU ?? row?.cpuSeconds);
   const memoryBytes = number(row?.memoryBytes ?? row?.WorkingSet64) ?? (number(row?.rssKb) === null ? null : number(row.rssKb) * 1024);
+  const ioReadBytes = number(row?.ioReadBytes ?? row?.ReadTransferCount);
+  const ioWriteBytes = number(row?.ioWriteBytes ?? row?.WriteTransferCount);
   return Object.freeze({
     pid,
     name,
@@ -76,12 +78,29 @@ function normalizeProcess(row, platform) {
     cpuPercent: cpu,
     cpuSeconds,
     memoryBytes,
+    ioReadBytes,
+    ioWriteBytes,
+    ioBytes: ioReadBytes === null || ioWriteBytes === null ? null : ioReadBytes + ioWriteBytes,
     uptimeSeconds: number(row?.uptimeSeconds),
     state: text(row?.state ?? row?.State) || 'unknown',
     platform,
     foreground: row?.foreground === true,
     protected: row?.protected === true,
     role: explicitRole && explicitRole !== 'unknown' ? explicitRole : inferredRole(name, executablePath) || 'unknown'
+  });
+}
+
+function parseLinuxProcessIo(output) {
+  const values = Object.fromEntries(String(output || '').split(/\r?\n/).map((line) => {
+    const match = line.match(/^\s*(read_bytes|write_bytes):\s*(\d+)\s*$/u);
+    return match ? [match[1], number(match[2])] : null;
+  }).filter(Boolean));
+  const ioReadBytes = values.read_bytes ?? null;
+  const ioWriteBytes = values.write_bytes ?? null;
+  return ioReadBytes === null && ioWriteBytes === null ? null : Object.freeze({
+    ioReadBytes,
+    ioWriteBytes,
+    ioBytes: ioReadBytes === null || ioWriteBytes === null ? null : ioReadBytes + ioWriteBytes
   });
 }
 
@@ -117,12 +136,16 @@ export function parseProcessTelemetry(output, { platform = 'unknown' } = {}) {
 async function enrichLinuxProcessPaths(telemetry, fsImpl) {
   if (typeof fsImpl?.readlink !== 'function' || telemetry.processes.length === 0) return telemetry;
   const processes = await Promise.all(telemetry.processes.map(async (process) => {
+    let io = null;
+    if (typeof fsImpl.readFile === 'function') {
+      try { io = parseLinuxProcessIo(await fsImpl.readFile(`/proc/${process.pid}/io`, 'utf8')); } catch { /* unavailable counter */ }
+    }
     try {
       const path = await fsImpl.readlink(`/proc/${process.pid}/exe`);
       const role = process.role === 'unknown' ? inferredRole(process.name, path) || 'unknown' : process.role;
-      return Object.freeze({ ...process, path: text(path), role });
+      return Object.freeze({ ...process, ...(io || {}), path: text(path), role });
     } catch {
-      return process;
+      return Object.freeze({ ...process, ...(io || {}) });
     }
   }));
   return Object.freeze({ ...telemetry, processes: Object.freeze(processes) });
@@ -131,7 +154,7 @@ async function enrichLinuxProcessPaths(telemetry, fsImpl) {
 export async function collectProcessTelemetry({ platform = process.platform, commandRunner, fsImpl = fs } = {}) {
   if (!commandAvailable(commandRunner)) return Object.freeze({ available: false, processes: EMPTY, truncated: false, reason: 'command runner unavailable' });
   const command = platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$signature='[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);'; Add-Type -MemberDefinition $signature -Name ForegroundWindow -Namespace RnkNative -ErrorAction Stop; $window=[RnkNative.ForegroundWindow]::GetForegroundWindow(); [uint32]$foregroundPid=0; [void][RnkNative.ForegroundWindow]::GetWindowThreadProcessId($window,[ref]$foregroundPid); Get-Process | ForEach-Object { $cpu=$null; $start=$null; $path=$null; try { $cpu=$_.CPU } catch {}; try { $start=$_.StartTime } catch {}; try { $path=$_.Path } catch {}; [pscustomobject]@{ Id=$_.Id; ProcessName=$_.ProcessName; Path=$path; WorkingSet64=$_.WorkingSet64; CPU=$cpu; StartTime=$start; foreground=($_.Id -eq $foregroundPid) } } | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 65536 }]
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$signature='[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);'; Add-Type -MemberDefinition $signature -Name ForegroundWindow -Namespace RnkNative -ErrorAction Stop; $window=[RnkNative.ForegroundWindow]::GetForegroundWindow(); [uint32]$foregroundPid=0; [void][RnkNative.ForegroundWindow]::GetWindowThreadProcessId($window,[ref]$foregroundPid); $io=@{}; Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object { $io[[int]$_.ProcessId]=[pscustomobject]@{ ReadTransferCount=$_.ReadTransferCount; WriteTransferCount=$_.WriteTransferCount } }; Get-Process | ForEach-Object { $cpu=$null; $start=$null; $path=$null; $read=$null; $write=$null; try { $cpu=$_.CPU } catch {}; try { $start=$_.StartTime } catch {}; try { $path=$_.Path } catch {}; $processIo=$io[[int]$_.Id]; if($processIo){$read=$processIo.ReadTransferCount;$write=$processIo.WriteTransferCount}; [pscustomobject]@{ Id=$_.Id; ProcessName=$_.ProcessName; Path=$path; WorkingSet64=$_.WorkingSet64; CPU=$cpu; StartTime=$start; ReadTransferCount=$read; WriteTransferCount=$write; foreground=($_.Id -eq $foregroundPid) } } | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 65536 }]
     : platform === 'linux' || platform === 'darwin'
       ? ['ps', ['-eo', 'pid=,comm=,pcpu=,rss=,etime=,state='], { timeoutMs: 2500, maxOutputBytes: 65536 }]
       : null;

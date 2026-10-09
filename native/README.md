@@ -255,9 +255,13 @@ Battery health decline and active charge drain remain separate observations.
 
 `collectSystemFacts()` now includes bounded process, startup, battery, thermal,
 and network telemetry when the host exposes it. Windows uses fixed PowerShell
-queries, Linux uses fixed `ps` plus read-only `/sys`, `/proc`, and startup
+queries, including cumulative `Win32_Process` read/write transfer counters;
+Linux uses fixed `ps` plus read-only `/sys`, `/proc`, and startup
 roots; Linux thermal telemetry also reads bounded CPU thermal-throttle counters
-when exposed. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
+when exposed, and process rows include bounded `/proc/<pid>/io` counters when
+available. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots; macOS
+process I/O counters remain unavailable. Cumulative counters are not reported as
+rates without an explicit second sample.
 Windows battery telemetry combines `Win32_Battery` with the read-only `root/wmi`
 capacity and cycle-count classes when those classes are present; absent classes
 remain unavailable rather than being inferred.

@@ -41,11 +41,11 @@ function fakeFs(files, missing = new Set()) {
 describe('workstation process telemetry', () => {
   test('parses Windows JSON and bounded POSIX rows', () => {
     const windows = parseProcessTelemetry(JSON.stringify([
-      { Id: 10, ProcessName: 'builder', Path: 'C:\\build\\builder.exe', WorkingSet64: 2048, CPU: 4, State: 'running', foreground: true, protected: true, role: 'build' },
+      { Id: 10, ProcessName: 'builder', Path: 'C:\\build\\builder.exe', WorkingSet64: 2048, CPU: 4, ReadTransferCount: 300, WriteTransferCount: 700, State: 'running', foreground: true, protected: true, role: 'build' },
       { Id: 11, ProcessName: '', WorkingSet64: 0, CPU: 0, StartTime: null }
     ]), { platform: 'win32' });
     expect(windows).toMatchObject({ available: true, truncated: false });
-    expect(windows.processes[0]).toMatchObject({ pid: 10, name: 'builder', path: 'C:\\build\\builder.exe', memoryBytes: 2048, cpuSeconds: 4, foreground: true, protected: true, role: 'build' });
+    expect(windows.processes[0]).toMatchObject({ pid: 10, name: 'builder', path: 'C:\\build\\builder.exe', memoryBytes: 2048, cpuSeconds: 4, ioReadBytes: 300, ioWriteBytes: 700, ioBytes: 1000, foreground: true, protected: true, role: 'build' });
     expect(windows.processes[1]).toMatchObject({ pid: 11, name: 'unknown', state: 'unknown' });
     expect(parseProcessTelemetry(JSON.stringify({ Id: 12, ProcessName: 'one' }), { platform: 'win32' }).processes).toHaveLength(1);
     expect(parseProcessTelemetry(JSON.stringify([
@@ -66,6 +66,7 @@ describe('workstation process telemetry', () => {
     const inferred = parseProcessTelemetry('20 ollama.exe 1 1 00:01 S\n21 wslhost 1 1 00:01 S\n22 unknown-tool 1 1 00:01 S', { platform: 'linux' });
     expect(inferred.processes.map((item) => item.role)).toEqual(['model', 'runtime', 'unknown']);
     expect(parseProcessTelemetry(JSON.stringify({ Id: 23, ProcessName: 'game', Path: 'E:\\SteamLibrary\\steamapps\\common\\Game\\game.exe' }), { platform: 'win32' }).processes[0]).toMatchObject({ role: 'game' });
+    expect(parseProcessTelemetry(JSON.stringify({ Id: 24, ProcessName: 'writer', WriteTransferCount: 7 }), { platform: 'win32' }).processes[0]).toMatchObject({ ioReadBytes: null, ioWriteBytes: 7, ioBytes: null });
   });
 
   test('collects with fixed platform commands and fails closed', async () => {
@@ -74,8 +75,13 @@ describe('workstation process telemetry', () => {
     expect(win.run.mock.calls[0][1].join(' ')).toEqual(expect.stringContaining('Get-Process'));
     expect(win.run.mock.calls[0][1].join(' ')).toEqual(expect.stringContaining('GetForegroundWindow'));
     expect(win.run.mock.calls[0][1].join(' ')).toEqual(expect.stringContaining('GetWindowThreadProcessId'));
-    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '1 init 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/1/exe': '/usr/lib/init' }) })).resolves.toMatchObject({ available: true, processes: [{ path: '/usr/lib/init' }] });
-    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '2 game 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/2/exe': '/mnt/SteamLibrary/steamapps/common/Game/game' }) })).resolves.toMatchObject({ processes: [{ path: '/mnt/SteamLibrary/steamapps/common/Game/game', role: 'game' }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '1 init 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/1/exe': '/usr/lib/init', '/proc/1/io': 'read_bytes: 300\nwrite_bytes: 700\n' }) })).resolves.toMatchObject({ available: true, processes: [{ path: '/usr/lib/init', ioReadBytes: 300, ioWriteBytes: 700, ioBytes: 1000 }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '2 game 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/2/exe': '/mnt/SteamLibrary/steamapps/common/Game/game', '/proc/2/io': 'read_bytes: 11\n' }) })).resolves.toMatchObject({ processes: [{ path: '/mnt/SteamLibrary/steamapps/common/Game/game', role: 'game', ioReadBytes: 11, ioWriteBytes: null, ioBytes: null }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '3 build 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/3/exe': '/usr/bin/build', '/proc/3/io': 'write_bytes: 7\n' }) })).resolves.toMatchObject({ processes: [{ path: '/usr/bin/build', role: 'unknown', ioReadBytes: null, ioWriteBytes: 7, ioBytes: null }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '4 build 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/4/exe': '/usr/bin/build', '/proc/4/io': '' }) })).resolves.toMatchObject({ processes: [{ path: '/usr/bin/build', ioReadBytes: null, ioWriteBytes: null, ioBytes: null }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '5 build 0 1 00:01 S' }), fsImpl: { readlink: jest.fn(async () => '/usr/bin/build') } })).resolves.toMatchObject({ processes: [{ path: '/usr/bin/build' }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '6 build 0 1 00:01 S' }), fsImpl: { readlink: jest.fn(async () => { throw new Error('gone'); }), readFile: jest.fn(async () => undefined) } })).resolves.toMatchObject({ processes: [{ path: null }] });
+    await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: runner({ code: 0, stdout: '7 node 0 1 00:01 S' }), fsImpl: fakeFs({ '/proc/7/exe': '/usr/bin/node', '/proc/7/io': 'read_bytes: 1\nwrite_bytes: 2\n' }) })).resolves.toMatchObject({ processes: [{ path: '/usr/bin/node', role: 'developer' }] });
     await expect(collectProcessTelemetry({ platform: 'darwin', commandRunner: runner({ code: 1, stderr: 'denied' }) })).resolves.toMatchObject({ available: false, reason: 'denied' });
     await expect(collectProcessTelemetry({ platform: 'win32', commandRunner: runner({ code: 1 }) })).resolves.toMatchObject({ available: false, reason: 'process command failed' });
     await expect(collectProcessTelemetry({ platform: 'linux', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toMatchObject({ available: false, reason: 'missing' });
