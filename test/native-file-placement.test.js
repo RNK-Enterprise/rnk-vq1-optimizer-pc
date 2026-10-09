@@ -9,7 +9,7 @@ import os from 'os';
 import path from 'path';
 import { applyFilePlacement, FILE_PLACEMENT_VERSION, previewFilePlacement as buildFilePlacementPreview, rollbackFilePlacement } from '../native/file-placement.js';
 
-const safeStorage = { volumes: [{ mount: '/', volumeId: 'root-volume', physicalDiskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', writable: true }], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }] };
+const safeStorage = { state: 'HEALTHY', admission: 'ALLOW', eligible: true };
 function previewFilePlacement(options = {}) { return buildFilePlacementPreview({ ...options, storageEvidence: options.storageEvidence || safeStorage }); }
 
 describe('native file placement', () => {

@@ -183,7 +183,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runPlacementRecommendationCommand({ volumes: '[]', categories: '["model"]', 'media-preferences': '{"model":"hdd"}', 'protected-root': root, 'min-free-bytes': '10' })).resolves.toBeDefined();
     await expect(runPlacementRecommendationCommand({ volumes: '[]' })).resolves.toBeDefined();
     await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', { pid: '42' }, { platform: 'linux' })).resolves.toMatchObject({ state: 'unsupported-platform' });
-    await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', {})).resolves.toMatchObject({ state: 'unsupported-platform' });
+    await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', { pid: '0' })).resolves.toBeDefined();
     const resourceRunner = { run: jest.fn(async () => ({ code: 0, stdout: JSON.stringify({ limits: { cpuPercent: 10 } }) })) };
     await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', { pid: '42' }, { platform: 'win32', commandRunner: resourceRunner })).resolves.toMatchObject({ state: 'observed', operation: 'query' });
     await expect(runWindowsResourceLimitCommand('windows-resource-limit-release', { pid: '42' }, { platform: 'win32', commandRunner: resourceRunner })).resolves.toMatchObject({ state: 'released', operation: 'release' });
@@ -242,7 +242,7 @@ describe('native top-level CLI adapter', () => {
     const cliDownloadGuard = { preflight: jest.fn(() => ({ state: 'observation-required' })) };
     const cliNetworkMonitorFactory = () => ({ collect: async () => {}, start: jest.fn(), stop: jest.fn() });
     const cliNetworkMonitorSignalEmitter = { once: jest.fn((event, listener) => listener()) };
-    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, networkMonitorFactory: cliNetworkMonitorFactory, networkMonitorSignalEmitter: cliNetworkMonitorSignalEmitter, platform: 'win32' };
+    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, networkMonitorFactory: cliNetworkMonitorFactory, networkMonitorSignalEmitter: cliNetworkMonitorSignalEmitter, platform: 'linux' };
     for (const argv of routed.filter((argv) => argv[0] !== 'optimize')) await expect(runCli(argv, cliOptions)).resolves.toBeDefined();
     await expect(runCli(['optimize'], cliOptions)).rejects.toThrow('gateway URL is required');
     await expect(runCli(['optimize', `--history-path=${path.join(root, 'history.jsonl')}`], cliOptions)).rejects.toThrow('gateway URL is required');

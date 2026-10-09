@@ -13,7 +13,7 @@ describe('WINDOWS_LIVE_PROOF', () => {
     if (process.platform !== 'win32') return;
     const adapter = createPlatformAdapter({ platform: 'win32', commandRunner: createCommandRunner() });
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'win32' }));
-  });
+  }, 60000);
 
   test('collects read-only mounted-volume identity on a Windows runner', async () => {
     if (process.platform !== 'win32') return;

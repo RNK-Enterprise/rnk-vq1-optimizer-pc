@@ -8,7 +8,7 @@ import os from 'os';
 import path from 'path';
 import { applyPlacementPolicy, FILE_PLACEMENT_POLICY_VERSION, previewPlacementPolicy as buildPlacementPolicyPreview, recommendPlacementTargets as buildPlacementRecommendations, rollbackPlacementPolicy } from '../native/file-placement-policy.js';
 
-const safeStorageEvidence = { volumes: [{ mount: '/', volumeId: 'root-volume', physicalDiskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', writable: true }], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }] };
+const safeStorageEvidence = { state: 'HEALTHY', admission: 'ALLOW', eligible: true };
 function previewPlacementPolicy(scan, options = {}) { return buildPlacementPolicyPreview(scan, { ...options, storageEvidence: options.storageEvidence || safeStorageEvidence }); }
 function recommendPlacementTargets(options = {}) { const volumes = Array.isArray(options.volumes) ? options.volumes.map((item, index) => item && ({ ...item, health: item.health || 'healthy', volumeId: item.volumeId || `volume-${index}`, physicalDiskNumber: item.physicalDiskNumber ?? index, physicalDevicePath: item.physicalDevicePath || `disk${index}` })) : options.volumes; const drives = options.drives || (Array.isArray(volumes) ? volumes.map((item, index) => ({ diskNumber: index, physicalDevicePath: `disk${index}`, health: 'healthy', smart: 'passed' })) : [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }]); return buildPlacementRecommendations({ ...options, volumes, drives }); }
 
