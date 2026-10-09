@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added cross-platform Linux swap-pressure observation as system-managed
+  evidence without granting pagefile or swap cleanup authority.
 - Added a bounded trigger-based daily report scheduler with one-delivery-per-day
   suppression, forced delivery, callback error handling, and a CLI command.
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added fixed shell-free Linux swap observation as separate system-managed
+  pagefile evidence; swap remains permanently excluded from cleanup.
 - Added separate GPU temperature evidence to daily workstation reports, with
   canonical and alternate host field support and explicit unavailable states.
 - Extended the deterministic workstation assistant to include GPU temperature

@@ -142,9 +142,10 @@ explicit preview targets and does not claim ownership of those files.
 `critical`, or `emergency` pressure. The default target is 5 GiB free and
 the default age boundary is 24 hours. Both the pressure thresholds and target
 floor are configurable. The Windows collector reports pagefile allocation and
-usage separately, Linux uses byte-accurate `df`, and macOS uses normalized
-1-KiB `df` facts; `pagefile.sys`, `hiberfil.sys`, and `swapfile.sys` are never
-cleanup targets.
+usage separately, Linux uses byte-accurate `df` plus fixed `free -b` swap
+evidence, and macOS uses normalized 1-KiB `df` facts; `pagefile.sys`,
+`hiberfil.sys`, `swapfile.sys`, and Linux swap are never cleanup targets. Linux
+swap remains unavailable when the host does not expose a valid `free` result.
 
 The preview only walks fixed roots for explicitly selected categories:
 temporary files, package caches, browser automation caches, GPU/shader caches,
