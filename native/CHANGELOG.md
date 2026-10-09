@@ -16,6 +16,8 @@
   scheduler and daemon can persist reports without installing a service.
 - Extended the abandoned-runtime cleanup input to accept multiple explicit
   comma-separated roots while retaining approval and protected-path checks.
+- Extended the ESLint configuration and lint command to cover the split native
+  `.mjs` CLI adapters as well as the JavaScript authority modules.
 - Split the native CLI into bounded argument, maintenance, media, and
   dispatch modules; each source file remains below the 500-line limit without
   changing the command surface or approval defaults.

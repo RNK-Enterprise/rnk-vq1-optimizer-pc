@@ -7,7 +7,7 @@
  */
 
 import { createCommandRunner } from './command-runner.js';
-import { createMediaLibrary, scanMediaRoot } from './media-library.js';
+import { scanMediaRoot } from './media-library.js';
 import { buildMediaPanelPlan, createMediaPlayer } from './media-player.js';
 import { createMediaSession } from './media-session.js';
 import { applyMediaPlayback, buildMediaPlaybackPlan } from './media-playback.js';
