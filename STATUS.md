@@ -37,9 +37,9 @@ These are the actual remaining items, not a second copy of the completed
 wishlist:
 
 1. Packaged cross-platform desktop shell/tray application. Dashboard, steward,
-   tray, and System Drive Guard launchers now exist; a Windows/Linux/macOS CI
-   host-runtime matrix exercises facts and volume probes, while target-host and
-   tool proof remains.
+   tray, System Drive Guard, and network-monitor launchers now exist; a
+   Windows/Linux/macOS CI host-runtime matrix exercises facts and volume probes,
+   while target-host and tool proof remains.
 2. Platform-native per-process network byte counters and traffic shaping. The
    Linux and macOS facts paths now consume bounded NetHogs/nettop evidence when
    available; Windows counters and all traffic shaping remain explicit
@@ -57,8 +57,10 @@ wishlist:
    implemented; the optimizer does not ship a decoder or service downloader.
 7. Live release evidence: clean-machine install, Windows 11 ROG execution,
    administrative applies, live gateway, signed release tag, checksum, and
-   build attestation still require their exact environments and Odinn's signoff;
-   the cross-platform CI matrix is evidence for runners, not for the ROG laptop.
+   build attestation still require their exact environments and Odinn's signoff.
+   Release automation now runs the full verification gate before producing
+   artifacts; the cross-platform CI matrix is evidence for runners, not for
+   the ROG laptop.
 
 The seven remaining rows are deliberately separated from source completeness:
 unsupported platform authorities and live certification cannot be honestly
