@@ -463,9 +463,10 @@ npm run native:facts
 ```
 
 `npm run verify` is the reproducible public-checkout gate. It runs the strict
-100% Jest coverage gate, lint, every ESM syntax check, the bounded public
-identity scan, and the observational host benchmark. The CI workflow invokes
-the same command from a clean checkout.
+100% Jest coverage gate, an independent per-file 100/100/100/100 verifier,
+lint, every ESM syntax check, the bounded public identity scan, and the
+observational host benchmark. The CI workflow invokes the same command from a
+clean checkout.
 
 The Jest configuration is a strict 100% statements, branches, functions, and
 lines gate over every collected JavaScript (`.js`) runtime authority file in
@@ -474,11 +475,13 @@ script ESM CLI adapters (`.mjs`) are intentionally kept as thin dispatch
 surfaces. `native/cli-utils.mjs`, `native/cli-media.mjs`,
 `scripts/verify-public-boundary.mjs`, `scripts/verify-release-provenance.mjs`,
 `scripts/pc-host-benchmark.mjs`, `native/cli-maintenance.mjs`, and
-`native/cli.mjs` are included in the strict Jest gate. All collected JavaScript
-and ESM adapter files are covered by the same gate; the benchmark adapter
-remains observational tooling, and its coverage verifies dispatch behavior,
-not host-performance claims. The CI workflow runs these checks from a clean
-checkout; unsupported coverage is not presented as green.
+`native/cli.mjs` are included in the strict Jest gate. The independent verifier
+also checks every collected file's statements, branches, functions, and
+executable lines, so a global average cannot mask an under-covered file. All
+collected JavaScript and ESM adapter files are covered by the same gate; the
+benchmark adapter remains observational tooling, and its coverage verifies
+dispatch behavior, not host-performance claims. The CI workflow runs these
+checks from a clean checkout; unsupported coverage is not presented as green.
 
 The benchmark is observational evidence only. A passing local suite does not
 prove a clean-machine install, Windows execution, a live gateway, or a real

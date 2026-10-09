@@ -2,11 +2,14 @@
 
 ## Unreleased
 
+- Added an independent per-file coverage verifier that fails on any uncovered
+  statement, branch, function, or executable line; the global Jest threshold
+  can no longer hide a weak file behind another file's coverage.
 - Added a one-shot workstation snapshot/report command for immediate local
   health capture and JSON, Markdown, or HTML delivery through the existing
   history and approval boundaries.
 - Added a source-backed capability status matrix that separates the completed
-  workstation wishlist from the eight remaining product or live-certification
+  workstation wishlist from the seven remaining product or live-certification
   boundaries instead of repeating the original twenty-item request.
 - Added bounded per-process cumulative read/write I/O evidence for Windows and
   Linux Developer Mode, Gaming+Build review, and workstation reports; missing
