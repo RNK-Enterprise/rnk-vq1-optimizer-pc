@@ -22,7 +22,7 @@ native protocol validation
     +--> explicit approvals
              |
              v
-      Windows/Linux adapter
+      Windows/Linux/macOS adapter
 ```
 
 The native agent is the only component that can request an operating-system

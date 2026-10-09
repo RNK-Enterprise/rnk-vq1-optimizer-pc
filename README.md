@@ -425,7 +425,7 @@ npm run native:facts
 
 The Jest configuration is a strict 100% statements, branches, functions, and
 lines gate over every collected JavaScript (`.js`) runtime authority file in
-`pc/`, `native/`, and the retained PC host/client modules. The native and
+`pc/`, `native/`, and the browser media host. The native and
 script ESM CLI adapters (`.mjs`) are intentionally kept as thin dispatch
 surfaces; CI applies ESLint and `node --check` to every one of them. The
 benchmark adapter is observational tooling and is not part of the runtime

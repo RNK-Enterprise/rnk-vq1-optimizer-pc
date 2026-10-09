@@ -1,7 +1,8 @@
 # PC optimizer security review
 
-This review covers the public PC optimizer native agent, PC browser host,
-platform adapters, cache boundaries, installers, and release workflow.
+This review covers the public PC optimizer native agent, browser-owned local
+media host, platform adapters, cache boundaries, installers, and release
+workflow.
 
 ## Enforced boundaries
 
