@@ -174,6 +174,8 @@ rates when consecutive counters are available; first samples, missing counters,
 and counter resets remain explicitly unavailable.
 The report also includes the latest-evidence policy state and exact handoff IDs
 for review; it does not apply those handoffs.
+`priorities` contains the first three deterministic recommendations for a
+compact daily view; the complete `recommendations` list remains available.
 Missing sensors remain missing. Neither command applies the planner's actions
 automatically.
 

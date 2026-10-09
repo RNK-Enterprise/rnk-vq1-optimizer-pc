@@ -209,7 +209,8 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     cleanup: Object.freeze({ performedSamples: count(cleanup, (item) => item.performed), recoveredBytes: cleanup.reduce((sum, item) => sum + item.recoveredBytes, 0), actionCount: cleanup.reduce((sum, item) => sum + item.actionCount, 0) }),
     policy: Object.freeze({ state: policy.state, recommendations: policy.recommendations, actionCount: policy.actions.length, approvalRequired: policy.actions.some((item) => item.requiresApproval) }),
     evidence: Object.freeze({ telemetrySamples: samples.length, complete: samples.length > 0 && storageFree.length > 0 && (memoryUsed.length > 0 || memoryPercent.length > 0) }),
-    recommendations: Object.freeze(recommendations)
+    recommendations: Object.freeze(recommendations),
+    priorities: Object.freeze(recommendations.slice(0, 3))
   });
 }
 

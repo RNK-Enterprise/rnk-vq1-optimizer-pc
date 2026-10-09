@@ -36,6 +36,7 @@ describe('native workstation daily report', () => {
     ], { now: () => 120000, windowMs: 60000 });
     expect(result).toMatchObject({ version: WORKSTATION_REPORT_VERSION, period: 'daily', sampleCount: 2, storage: { minimumFreeBytes: 50, latestFreeBytes: 50, pressureEvents: 1 }, memory: { peakUsedBytes: 960, peakUsedPercent: 96, pressureEvents: 1 }, cpuGpu: { peakCpuPercent: 80, peakGpuPercent: 90, peakGpuTemperatureC: 88, latestGpuTemperatureC: 88, latestGpuMemoryUsedBytes: 400 }, thermals: { peakTemperatureC: 96, throttleEvents: 1 }, battery: { latestChargePercent: 20, minimumHealthPercent: 70, latestCycleCount: 20 }, pagefile: { peakPressurePercent: 90, latestCurrentBytes: 400 }, drives: { latestCount: 2, latestDegradedCount: 1, latestFailedCount: 1, observedSamples: 2 }, processes: { peakCount: 1, abnormalEvents: 1 }, network: { latestReceivedBytes: 2000, latestSentBytes: 1000, latestReceivedBytesPerSecond: 1000 / 60, latestSentBytesPerSecond: 500 / 60, peakReceivedBytesPerSecond: 1000 / 60, peakSentBytesPerSecond: 500 / 60, rateSamples: 1, counterResetEvents: 0, latestRateState: 'rate-ready' }, development: { contentionEvents: 1 }, gaming: { detectedEvents: 1, contentionEvents: 1 }, cleanup: { performedSamples: 1, recoveredBytes: 42, actionCount: 2 }, policy: { state: 'recommendations-ready', actionCount: 5, approvalRequired: true } });
     expect(result.recommendations).toEqual(expect.arrayContaining(['review-storage-pressure', 'review-memory-and-pagefile', 'review-thermal-workload', 'review-abnormal-processes']));
+    expect(result.priorities).toEqual(['review-storage-pressure', 'review-memory-and-pagefile', 'review-thermal-workload']);
     expect(result.evidence).toMatchObject({ telemetrySamples: 2, complete: true });
   });
 
@@ -68,7 +69,7 @@ describe('native workstation daily report', () => {
     const warning = buildDailyWorkstationReport([entry(60000, { memory: { totalBytes: 100, availableBytes: 10 } })], { now: () => 60000, windowMs: 60 * 1000 });
     expect(warning.memory.pressureEvents).toBe(1);
     const empty = buildDailyWorkstationReport([{ event: 'report', timestamp: 1000 }, { event: 'other', timestamp: 1000, facts: facts() }], { now: () => 1000, windowMs: 60 * 1000 });
-    expect(empty).toMatchObject({ sampleCount: 0, evidence: { complete: false }, recommendations: ['collect-workstation-evidence'] });
+    expect(empty).toMatchObject({ sampleCount: 0, evidence: { complete: false }, recommendations: ['collect-workstation-evidence'], priorities: ['collect-workstation-evidence'] });
     expect(empty.policy).toMatchObject({ state: 'no-change', recommendations: [], actionCount: 0, approvalRequired: false });
   });
 

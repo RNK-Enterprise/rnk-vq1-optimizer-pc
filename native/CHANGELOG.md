@@ -10,6 +10,8 @@
   the bounded multi-day workstation history reducer.
 - Added Linux cgroup-v2 CPU hard-limit enforcement for approved PIDs with
   controller detection and fail-closed setup/write errors.
+- Added a deterministic top-three `priorities` view to daily workstation
+  reports without removing the complete recommendation list.
 
 - Added cross-platform interface bandwidth-rate derivation and a trigger-based
   `network-rate-monitor` command with counter-reset and per-process authority
