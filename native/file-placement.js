@@ -9,8 +9,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { createHash } from 'crypto';
+import { assessStorageTarget, storageSuitabilityForPath } from './storage-suitability.js';
 
-export const FILE_PLACEMENT_VERSION = 1;
+export const FILE_PLACEMENT_VERSION = 2;
 const MAX_ENTRIES = 10000;
 
 function record(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
@@ -22,8 +23,18 @@ function rootList(value, pathImpl, message, required = false) { const roots = li
 function protectedPath(candidate, roots, pathImpl) { return roots.some((root) => inside(root, candidate, pathImpl)); }
 function sourceAllowed(candidate, roots, pathImpl) { return roots.some((root) => inside(root, candidate, pathImpl)); }
 function category(value) { return text(value)?.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'other'; }
+function targetSuitability(storageEvidence, targetRoot, pathImpl) {
+  if (record(storageEvidence) && ['HEALTHY', 'DEGRADED', 'FAILED', 'UNKNOWN'].includes(storageEvidence.state)) return storageEvidence;
+  if (!record(storageEvidence)) return assessStorageTarget({ targetMount: null });
+  return storageSuitabilityForPath(targetRoot, {
+    pathImpl,
+    volumes: storageEvidence.volumes || [],
+    drives: storageEvidence.drives || [],
+    hardFailureEvidence: storageEvidence.hardFailureEvidence || []
+  });
+}
 
-export function previewFilePlacement({ files, sourceRoots, targetRoot, protectedRoots = [], targetFreeBytes, maxEntries = 256, preserveSource = false, pathImpl = path } = {}) {
+export function previewFilePlacement({ files, sourceRoots, targetRoot, protectedRoots = [], targetFreeBytes, storageEvidence = null, maxEntries = 256, preserveSource = false, pathImpl = path } = {}) {
   if (!Array.isArray(files)) throw new TypeError('File placement requires file facts');
   if (!Number.isInteger(maxEntries) || maxEntries < 1 || maxEntries > MAX_ENTRIES) throw new RangeError('File placement maxEntries is out of range');
   const allowedRoots = rootList(sourceRoots, pathImpl, 'File placement source', true);
@@ -31,7 +42,9 @@ export function previewFilePlacement({ files, sourceRoots, targetRoot, protected
   if (!resolvedTarget) throw new TypeError('File placement requires a target root');
   const protectedResolved = rootList(protectedRoots, pathImpl, 'File placement protected');
   const free = bytes(targetFreeBytes);
-  if (free === null) return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: 'observation-required', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), moves: Object.freeze([]), skipped: Object.freeze([{ reason: 'target free-space evidence is unavailable' }]), estimatedBytes: 0, remainingFreeBytes: null, mutation: 'none' });
+  const suitability = targetSuitability(storageEvidence, resolvedTarget, pathImpl);
+  if (suitability.admission !== 'ALLOW') return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: 'storage-target-rejected', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), storageSuitability: suitability, moves: Object.freeze([]), skipped: Object.freeze([{ reason: suitability.reasons?.[0] || 'storage-suitability-required' }]), estimatedBytes: 0, remainingFreeBytes: free, mutation: 'none' });
+  if (free === null) return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: 'observation-required', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), storageSuitability: suitability, moves: Object.freeze([]), skipped: Object.freeze([{ reason: 'target free-space evidence is unavailable' }]), estimatedBytes: 0, remainingFreeBytes: null, mutation: 'none' });
   let remaining = free;
   const moves = [];
   const skipped = [];
@@ -49,11 +62,11 @@ export function previewFilePlacement({ files, sourceRoots, targetRoot, protected
     moves.push(Object.freeze({ source, destination, sizeBytes, category: category(file.category), preserveSource: preserveSource === true, reversible: true }));
     remaining -= sizeBytes;
   }
-  return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: moves.length ? 'preview-ready' : 'no-safe-moves', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), protectedRoots: Object.freeze(protectedResolved), preserveSource: preserveSource === true, moves: Object.freeze(moves), skipped: Object.freeze(skipped), estimatedBytes: free - remaining, remainingFreeBytes: remaining, mutation: 'none' });
+  return Object.freeze({ version: FILE_PLACEMENT_VERSION, state: moves.length ? 'preview-ready' : 'no-safe-moves', targetRoot: resolvedTarget, sourceRoots: Object.freeze(allowedRoots), protectedRoots: Object.freeze(protectedResolved), storageSuitability: suitability, preserveSource: preserveSource === true, moves: Object.freeze(moves), skipped: Object.freeze(skipped), estimatedBytes: free - remaining, remainingFreeBytes: remaining, mutation: 'none' });
 }
 
 function validPlan(plan, pathImpl) {
-  if (!record(plan) || plan.version !== FILE_PLACEMENT_VERSION || typeof plan.targetRoot !== 'string' || !Array.isArray(plan.sourceRoots) || !Array.isArray(plan.moves)) throw new TypeError('Invalid file placement plan');
+  if (!record(plan) || plan.version !== FILE_PLACEMENT_VERSION || typeof plan.targetRoot !== 'string' || !Array.isArray(plan.sourceRoots) || !Array.isArray(plan.moves) || plan.storageSuitability?.admission !== 'ALLOW') throw new TypeError('Invalid file placement plan');
   return plan;
 }
 
@@ -78,23 +91,42 @@ async function hashFile(file, fsImpl) {
 
 async function flushFile(file, fsImpl) {
   if (typeof fsImpl.open !== 'function') return;
-  const handle = await fsImpl.open(file, 'r');
+  const handle = await fsImpl.open(file, 'r+');
   try { if (typeof handle.sync === 'function') await handle.sync(); }
   finally { if (typeof handle.close === 'function') await handle.close(); }
 }
 
-async function transfer(source, destination, move, fsImpl, preserveSource = false) {
-  if (!preserveSource) {
-    try { await fsImpl.rename(source, destination); return { method: 'rename', bytes: move.sizeBytes, verificationState: 'not-required', sourceDeletionState: 'moved-with-rename' }; } catch (error) { if (error?.code !== 'EXDEV') throw error; }
+async function removePartialDestination(destination, fsImpl) {
+  try {
+    const info = await fsImpl.lstat(destination);
+    if (info.isSymbolicLink?.() || info.isDirectory?.()) throw new Error('partial destination is not a regular file');
+    await fsImpl.unlink(destination);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
   }
-  await fsImpl.copyFile(source, destination);
-  await flushFile(destination, fsImpl);
-  const info = await fsImpl.stat(destination);
-  const sourceSha256 = await hashFile(source, fsImpl);
-  const destinationSha256 = await hashFile(destination, fsImpl);
-  if (bytes(info.size) !== move.sizeBytes || sourceSha256 !== destinationSha256) throw new Error('copy verification failed');
-  if (!preserveSource) await fsImpl.unlink(source);
-  return { method: 'copy-delete', bytes: info.size, sourceHash: sourceSha256, destinationHash: destinationSha256, verificationState: 'verified', sourceDeletionState: preserveSource ? 'preserved' : 'deleted' };
+}
+
+async function transfer(source, destination, move, fsImpl, preserveSource = false) {
+  const partial = `${destination}.rnk-partial`;
+  let destinationCreated = false;
+  try {
+    destinationCreated = true;
+    const copyFlags = fsImpl.constants?.COPYFILE_EXCL ?? 1;
+    await fsImpl.copyFile(source, partial, copyFlags);
+    await flushFile(partial, fsImpl);
+    const info = await fsImpl.stat(partial);
+    const sourceSha256 = await hashFile(source, fsImpl);
+    const destinationSha256 = await hashFile(partial, fsImpl);
+    if (bytes(info.size) !== move.sizeBytes || sourceSha256 !== destinationSha256) throw new Error('copy verification failed');
+    await fsImpl.rename(partial, destination);
+    if (!preserveSource) await fsImpl.unlink(source);
+    return { method: 'copy-delete', bytes: info.size, sourceHash: sourceSha256, destinationHash: destinationSha256, verificationState: 'verified', sourceDeletionState: preserveSource ? 'preserved' : 'deleted' };
+  } catch (error) {
+    if (destinationCreated && error?.code !== 'EEXIST') {
+      try { await fsImpl.unlink(partial); } catch (cleanupError) { if (cleanupError?.code !== 'ENOENT') error.cleanupError = cleanupError.message; }
+    }
+    throw error;
+  }
 }
 
 export async function applyFilePlacement(plan, { approved = false, dryRun = true, fsImpl = fs, pathImpl = path } = {}) {
@@ -107,6 +139,7 @@ export async function applyFilePlacement(plan, { approved = false, dryRun = true
     if (!sourceAllowed(pathImpl.resolve(move.source), plan.sourceRoots.map((root) => pathImpl.resolve(root)), pathImpl) || !inside(pathImpl.resolve(plan.targetRoot), pathImpl.resolve(move.destination), pathImpl) || protectedPath(pathImpl.resolve(move.source), (plan.protectedRoots || []).map((root) => pathImpl.resolve(root)), pathImpl)) { skipped.push({ move, reason: 'plan-path-boundary-failed' }); continue; }
     try {
       await fsImpl.mkdir(pathImpl.dirname(move.destination), { recursive: true });
+      await removePartialDestination(`${move.destination}.rnk-partial`, fsImpl);
       try { await fsImpl.lstat(move.destination); skipped.push({ move, reason: 'destination-exists' }); continue; } catch (error) { if (error?.code !== 'ENOENT') throw error; }
       const verification = await transfer(move.source, move.destination, move, fsImpl, move.preserveSource === true || plan.preserveSource === true);
       moved.push({ ...move, ...verification });

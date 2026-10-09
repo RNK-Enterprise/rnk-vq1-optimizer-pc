@@ -10,8 +10,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { assessStorageSuitability } from './storage-suitability.js';
 
-export const DOWNLOAD_GUARD_VERSION = 1;
+export const DOWNLOAD_GUARD_VERSION = 2;
 const INCOMPLETE = /\.(?:part|crdownload|download|partial|tmp)$/i;
 
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
@@ -20,17 +21,18 @@ function requireRoot(root) { const value = text(root); if (!value) throw new Typ
 function requireHash(hash) { const value = text(hash)?.toLowerCase(); if (!/^[a-f0-9]{64}$/.test(value || '')) throw new TypeError('Download guard requires a SHA-256 hash'); return value; }
 function boundedRows(value, limit) { return Array.isArray(value) ? value.filter((row) => row && typeof row === 'object').slice(0, limit) : []; }
 
-export function preflightDownload({ sizeBytes, destinationMount = null, volumes = [] } = {}) {
+export function preflightDownload({ sizeBytes, destinationMount = null, volumes = [], drives = [], hardFailureEvidence = [] } = {}) {
   const size = bytes(sizeBytes);
-  const rows = boundedRows(volumes, 64).map((volume) => ({ mount: text(volume.mount), freeBytes: bytes(volume.freeBytes), writable: volume.writable !== false, system: volume.system === true }));
+  const rows = boundedRows(volumes, 64).map((volume) => ({ ...volume, mount: text(volume.mount), freeBytes: bytes(volume.freeBytes), writable: volume.writable !== false, system: volume.system === true, suitability: assessStorageSuitability({ volume, drives, hardFailureEvidence }) }));
   if (size === null) return Object.freeze({ state: 'observation-required', sizeBytes: null, requestedMount: text(destinationMount), targetMount: null, reason: 'download size is unavailable' });
   const requested = text(destinationMount)?.toLowerCase() || null;
   const requestedRow = rows.find((row) => row.mount?.toLowerCase() === requested);
-  const available = rows.filter((row) => row.writable && row.freeBytes !== null && row.freeBytes >= size).sort((left, right) => right.freeBytes - left.freeBytes);
-  const target = requestedRow && requestedRow.freeBytes >= size ? requestedRow : available[0] || requestedRow || null;
+  const safeRows = rows.filter((row) => row.suitability.admission === 'ALLOW' && row.writable && row.freeBytes !== null);
+  const available = safeRows.filter((row) => row.freeBytes >= size).sort((left, right) => right.freeBytes - left.freeBytes);
+  const target = requestedRow?.suitability.admission === 'ALLOW' && requestedRow.freeBytes >= size ? requestedRow : available[0] || null;
   const enough = Boolean(target && target.freeBytes !== null && target.freeBytes >= size);
-  const state = enough ? target.mount?.toLowerCase() === requested ? 'allow' : 'redirect' : 'insufficient-space';
-  return Object.freeze({ state, sizeBytes: size, requestedMount: text(destinationMount), targetMount: target?.mount || null, freeBytesAtTarget: target?.freeBytes ?? null, reason: state === 'allow' ? 'requested-destination-has-headroom' : state === 'redirect' ? 'requested-destination-lacks-headroom' : 'no-volume-can-fit-download' });
+  const state = enough ? target.mount?.toLowerCase() === requested ? 'allow' : 'redirect' : rows.length && safeRows.length === 0 ? 'storage-safety-review' : 'insufficient-space';
+  return Object.freeze({ state, sizeBytes: size, requestedMount: text(destinationMount), targetMount: target?.mount || null, freeBytesAtTarget: target?.freeBytes ?? null, targetSuitability: target?.suitability || null, rejectedMounts: Object.freeze(rows.filter((row) => row.suitability.admission !== 'ALLOW').map((row) => Object.freeze({ mount: row.mount, state: row.suitability.state, reasons: row.suitability.reasons }))), reason: state === 'allow' ? 'requested-destination-has-headroom' : state === 'redirect' ? 'requested-destination-lacks-headroom' : state === 'storage-safety-review' ? 'no-volume-passed-physical-storage-suitability' : 'no-volume-can-fit-download' });
 }
 
 async function defaultHashFile(filePath) {
@@ -95,7 +97,7 @@ export async function verifyDownloadHash(filePath, expectedHash, { hashFileImpl 
 export function createDownloadGuard(options = {}) {
   return Object.freeze({
     version: DOWNLOAD_GUARD_VERSION,
-    preflight: preflightDownload,
+    preflight: (input = {}) => preflightDownload({ ...input, ...options }),
     scan: (root, scanOptions = {}) => scanDownloadRoot(root, { ...options, ...scanOptions }),
     verify: (filePath, expectedHash, verifyOptions = {}) => verifyDownloadHash(filePath, expectedHash, { ...options, ...verifyOptions })
   });

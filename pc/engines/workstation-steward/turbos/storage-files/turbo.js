@@ -5,6 +5,8 @@
  * incomplete-download, and protected-path evidence.
  */
 
+import { assessStorageSuitability } from '../../../../../native/storage-suitability.js';
+
 export const WORKSTATION_STEWARD_STORAGE_FILES_TURBO_ID = 'workstation-steward.storage-files';
 export const WORKSTATION_STEWARD_STORAGE_FILES_TURBO_VERSION = 1;
 const TRIGGERS = Object.freeze(['install.preflight', 'system.facts.request', 'workload.changed', 'health.interval']);
@@ -25,9 +27,14 @@ export function runWorkstationStewardStorageFilesTurbo(sample = {}, { trigger, p
   const downloads = Array.isArray(sample.downloads) ? sample.downloads.filter(record).slice(0, 128) : [];
   const duplicates = groups(entries);
   const incomplete = Object.freeze([...new Set([...entries.filter((item) => item.complete === false || /\.(part|crdownload|tmp)$/i.test(text(item.path) || '')).map((item) => text(item.path)), ...downloads.filter((item) => item.complete === false).map((item) => text(item.path || item.name))].filter(Boolean))]);
-  const target = volumes.filter((item) => item.writable !== false && item.system !== true && nonNegative(item.freeBytes) !== null).sort((a, b) => b.freeBytes - a.freeBytes)[0] || null;
+  const drives = Array.isArray(sample.drives) ? sample.drives.filter(record).slice(0, 64) : [];
+  const hardFailureEvidence = Array.isArray(sample.hardFailureEvidence) ? sample.hardFailureEvidence : [];
+  const evidencedVolumes = volumes.map((item) => ({ ...item, storageSuitability: assessStorageSuitability({ volume: item, drives, hardFailureEvidence }) }));
+  const safeVolumes = evidencedVolumes.filter((item) => item.writable !== false && item.system !== true && nonNegative(item.freeBytes) !== null && item.storageSuitability.admission === 'ALLOW');
+  const target = safeVolumes.sort((a, b) => b.freeBytes - a.freeBytes)[0] || null;
   const benchmarked = volumes.some((item) => record(item.benchmark) && nonNegative(item.benchmark.readBytesPerSecond) !== null && nonNegative(item.benchmark.writeBytesPerSecond) !== null);
   const placements = Object.freeze(entries.filter((item) => nonNegative(item.sizeBytes) >= 2 * 1024 ** 3 && !pathProtected(item.path, protectedPaths) && target).map((item) => Object.freeze({ path: text(item.path), targetMount: text(target.mount), state: 'move-preview', reversible: true, requiresApproval: true })));
-  const state = !volumes.length && !entries.length && !downloads.length ? 'observation-required' : incomplete.length ? 'incomplete-review' : duplicates.length ? 'duplicate-review' : placements.length ? 'placement-review' : benchmarked ? 'evidence-ready' : 'observation-review';
-  return Object.freeze({ protocolVersion: 1, turbo: WORKSTATION_STEWARD_STORAGE_FILES_TURBO_ID, turboVersion: 1, trigger, generatedAt: new Date(timestamp).toISOString(), volumeCount: volumes.length, fileCount: entries.length, downloadCount: downloads.length, smart: Object.freeze(volumes.map((item) => Object.freeze({ mount: text(item.mount), health: text(item.health) || 'unknown', smart: text(item.smart) || 'unknown' }))), benchmarked, duplicates, incomplete, placements, protectedPaths: Object.freeze(protectedPaths.filter((item) => typeof item === 'string')), targetMount: text(target?.mount), state, actions: Object.freeze([]) });
+  const storageSafetyState = volumes.length && !safeVolumes.length ? 'storage-safety-review' : null;
+  const state = !volumes.length && !entries.length && !downloads.length ? 'observation-required' : incomplete.length ? 'incomplete-review' : duplicates.length ? 'duplicate-review' : storageSafetyState ? storageSafetyState : placements.length ? 'placement-review' : benchmarked ? 'evidence-ready' : 'observation-review';
+  return Object.freeze({ protocolVersion: 1, turbo: WORKSTATION_STEWARD_STORAGE_FILES_TURBO_ID, turboVersion: 1, trigger, generatedAt: new Date(timestamp).toISOString(), volumeCount: volumes.length, fileCount: entries.length, downloadCount: downloads.length, smart: Object.freeze(evidencedVolumes.map((item) => Object.freeze({ mount: text(item.mount), health: text(item.health) || 'unknown', smart: text(item.smart) || 'unknown', storageSuitability: item.storageSuitability }))), benchmarked, duplicates, incomplete, placements, protectedPaths: Object.freeze(protectedPaths.filter((item) => typeof item === 'string')), targetMount: text(target?.mount), targetSuitability: target?.storageSuitability || null, storageSafetyState, state, actions: Object.freeze([]) });
 }

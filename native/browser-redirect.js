@@ -10,8 +10,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { createHash } from 'crypto';
+import { assessStorageTarget } from './storage-suitability.js';
 
-export const BROWSER_REDIRECT_VERSION = 1;
+export const BROWSER_REDIRECT_VERSION = 2;
 const MAX_SIZE = 1024 ** 4;
 
 function record(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
@@ -42,12 +43,33 @@ async function hashFile(file, fsImpl) {
 
 async function flushFile(file, fsImpl) {
   if (typeof fsImpl.open !== 'function') return;
-  const handle = await fsImpl.open(file, 'r');
+  const handle = await fsImpl.open(file, 'r+');
   try { if (typeof handle.sync === 'function') await handle.sync(); }
   finally { if (typeof handle.close === 'function') await handle.close(); }
 }
 
-export function previewBrowserRedirect({ sourcePath, sourceRoot, targetRoot, targetMount, sizeBytes, targetFreeBytes, preserveSource = false, pathImpl = path } = {}) {
+async function removePartialDestination(destination, fsImpl) {
+  try {
+    const info = await fsImpl.lstat(destination);
+    if (info.isSymbolicLink?.() || info.isDirectory?.()) throw new Error('partial redirect destination is not a regular file');
+    await fsImpl.unlink(destination);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+}
+
+function targetSuitability(target, storageEvidence) {
+  if (record(storageEvidence) && ['HEALTHY', 'DEGRADED', 'FAILED', 'UNKNOWN'].includes(storageEvidence.state)) return storageEvidence;
+  if (!record(storageEvidence)) return assessStorageTarget({ targetMount: target });
+  return assessStorageTarget({
+    targetMount: target,
+    volumes: storageEvidence.volumes || [],
+    drives: storageEvidence.drives || [],
+    hardFailureEvidence: storageEvidence.hardFailureEvidence || []
+  });
+}
+
+export function previewBrowserRedirect({ sourcePath, sourceRoot, targetRoot, targetMount, sizeBytes, targetFreeBytes, storageEvidence = null, preserveSource = false, pathImpl = path } = {}) {
   const source = text(sourcePath) ? pathImpl.resolve(sourcePath) : null;
   const sourceBase = text(sourceRoot) ? pathImpl.resolve(sourceRoot) : null;
   const targetBase = text(targetRoot) ? pathImpl.resolve(targetRoot) : null;
@@ -60,28 +82,43 @@ export function previewBrowserRedirect({ sourcePath, sourceRoot, targetRoot, tar
   const sourceMount = mountOf(source, pathImpl);
   if (!sourceMount || sourceMount === target) return invalid(sourceMount === target ? 'source and target are on the same volume' : 'source volume is unavailable');
   if (free < size) return invalid('target volume lacks space for the download');
+  const suitability = targetSuitability(target, storageEvidence);
+  if (suitability.admission !== 'ALLOW') return Object.freeze({ version: BROWSER_REDIRECT_VERSION, state: 'storage-safety-review', mutation: 'none', targetMount: target, storageSuitability: suitability, reason: suitability.reasons?.[0] || 'target storage suitability is not proven' });
   const destination = pathImpl.join(targetBase, pathImpl.basename(source));
   if (!inside(targetBase, destination, pathImpl)) return invalid('redirect destination is outside the approved target root');
-  return Object.freeze({ version: BROWSER_REDIRECT_VERSION, state: 'preview-ready', mutation: 'none', source, sourceRoot: sourceBase, sourceMount, targetRoot: targetBase, targetMount: target, destination, sizeBytes: size, targetFreeBytes: free, preserveSource: preserveSource === true, reversible: true });
+  return Object.freeze({ version: BROWSER_REDIRECT_VERSION, state: 'preview-ready', mutation: 'none', source, sourceRoot: sourceBase, sourceMount, targetRoot: targetBase, targetMount: target, destination, sizeBytes: size, targetFreeBytes: free, storageSuitability: suitability, preserveSource: preserveSource === true, reversible: true });
 }
 
 export async function applyBrowserRedirect(plan, { approved = false, dryRun = true, fsImpl = fs, pathImpl = path } = {}) {
-  if (!record(plan) || plan.version !== BROWSER_REDIRECT_VERSION || plan.state !== 'preview-ready') throw new TypeError('Invalid browser redirect plan');
+  if (!record(plan) || plan.version !== BROWSER_REDIRECT_VERSION || plan.state !== 'preview-ready' || plan.storageSuitability?.admission !== 'ALLOW') throw new TypeError('Invalid browser redirect plan');
   if (!approved) return Object.freeze({ state: 'approval-required', applied: false, mutation: 'none', plan });
   if (dryRun) return Object.freeze({ state: 'preview', applied: false, mutation: 'none', plan });
-  if (!fsImpl || typeof fsImpl.lstat !== 'function' || typeof fsImpl.mkdir !== 'function' || typeof fsImpl.copyFile !== 'function' || typeof fsImpl.stat !== 'function' || typeof fsImpl.unlink !== 'function') return Object.freeze({ state: 'unavailable', applied: false, mutation: 'none', reason: 'file relocation dependencies are unavailable' });
+  if (!fsImpl || typeof fsImpl.lstat !== 'function' || typeof fsImpl.mkdir !== 'function' || typeof fsImpl.copyFile !== 'function' || typeof fsImpl.stat !== 'function' || typeof fsImpl.rename !== 'function' || typeof fsImpl.unlink !== 'function') return Object.freeze({ state: 'unavailable', applied: false, mutation: 'none', reason: 'file relocation dependencies are unavailable' });
   try {
     const sourceInfo = await fsImpl.lstat(plan.source);
     if (sourceInfo.isSymbolicLink?.()) return Object.freeze({ state: 'rejected', applied: false, mutation: 'none', reason: 'source download is a symbolic link' });
+    await removePartialDestination(`${plan.destination}.rnk-partial`, fsImpl);
     try { await fsImpl.lstat(plan.destination); return Object.freeze({ state: 'rejected', applied: false, mutation: 'none', reason: 'redirect destination already exists' }); } catch (error) { if (error?.code !== 'ENOENT') throw error; }
     await fsImpl.mkdir(pathImpl.dirname(plan.destination), { recursive: true });
-    await fsImpl.copyFile(plan.source, plan.destination);
-    await flushFile(plan.destination, fsImpl);
-    const destinationInfo = await fsImpl.stat(plan.destination);
-    const sourceSha256 = await hashFile(plan.source, fsImpl);
-    const destinationSha256 = await hashFile(plan.destination, fsImpl);
-    if (destinationInfo.size !== plan.sizeBytes || sourceSha256 !== destinationSha256) throw new Error('redirect copy verification failed');
-    if (plan.preserveSource !== true) await fsImpl.unlink(plan.source);
-    return Object.freeze({ state: 'applied', applied: true, mutation: 'copy-delete', source: plan.source, destination: plan.destination, bytes: destinationInfo.size, sourceHash: sourceSha256, destinationHash: destinationSha256, verificationState: 'verified', sourceDeletionState: plan.preserveSource === true ? 'preserved' : 'deleted' });
+    let destinationCreated = false;
+    const partial = `${plan.destination}.rnk-partial`;
+    try {
+      destinationCreated = true;
+      const copyFlags = fsImpl.constants?.COPYFILE_EXCL ?? 1;
+      await fsImpl.copyFile(plan.source, partial, copyFlags);
+      await flushFile(partial, fsImpl);
+      const destinationInfo = await fsImpl.stat(partial);
+      const sourceSha256 = await hashFile(plan.source, fsImpl);
+      const destinationSha256 = await hashFile(partial, fsImpl);
+      if (destinationInfo.size !== plan.sizeBytes || sourceSha256 !== destinationSha256) throw new Error('redirect copy verification failed');
+      await fsImpl.rename(partial, plan.destination);
+      if (plan.preserveSource !== true) await fsImpl.unlink(plan.source);
+      return Object.freeze({ state: 'applied', applied: true, mutation: 'copy-delete', source: plan.source, destination: plan.destination, bytes: destinationInfo.size, sourceHash: sourceSha256, destinationHash: destinationSha256, verificationState: 'verified', sourceDeletionState: plan.preserveSource === true ? 'preserved' : 'deleted' });
+    } catch (error) {
+      if (destinationCreated && error?.code !== 'EEXIST') {
+        try { await fsImpl.unlink(partial); } catch (cleanupError) { if (cleanupError?.code !== 'ENOENT') error.cleanupError = cleanupError.message; }
+      }
+      throw error;
+    }
   } catch (error) { return Object.freeze({ state: 'rejected', applied: false, mutation: 'none', reason: error.message }); }
 }

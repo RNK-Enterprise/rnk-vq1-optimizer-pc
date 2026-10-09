@@ -12,7 +12,8 @@ import { mergeWorkstationStewardMediaAssistantReports, buildWorkstationStewardMe
 const hash = 'a'.repeat(64);
 const base = {
   engine: 'system-facts', platform: 'win32', protectedPaths: ['E:/Models'],
-  storage: [{ mount: 'C:', freeBytes: 8, totalBytes: 100, kind: 'ssd', health: 'healthy', smart: 'passed', system: true }, { mount: 'E:', freeBytes: 20 * 1024 ** 3, totalBytes: 1000, kind: 'hdd', health: 'healthy', writable: true }, { mount: 'F:', freeBytes: 30 * 1024 ** 3, totalBytes: 1000, kind: 'hdd', health: 'healthy', writable: true }],
+  storage: [{ mount: 'C:', volumeId: 'volume-c', physicalDiskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', freeBytes: 8, totalBytes: 100, kind: 'ssd', health: 'healthy', smart: 'passed', system: true }, { mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', freeBytes: 20 * 1024 ** 3, totalBytes: 1000, kind: 'hdd', health: 'healthy', writable: true }, { mount: 'F:', volumeId: 'volume-f', physicalDiskNumber: 2, physicalDevicePath: '\\\\.\\PhysicalDrive2', freeBytes: 30 * 1024 ** 3, totalBytes: 1000, kind: 'hdd', health: 'healthy', writable: true }],
+  drives: [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }, { diskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', smart: 'passed' }, { diskNumber: 2, physicalDevicePath: '\\\\.\\PhysicalDrive2', health: 'healthy', smart: 'passed' }],
   resourceBudget: { cpuPercent: 10, memoryBytes: 10, ioBytesPerSecond: 10, gpuPercent: 10 },
   processes: [{ pid: 10, name: 'game.exe', role: 'game', foreground: true, gpuPercent: 80 }, { pid: 11, name: 'build', role: 'build', memoryBytes: 20, protected: false }, { pid: 12, name: 'model', role: 'ai', protected: true }],
   files: [{ path: 'C:/Downloads/a.zip', sha256: hash, sizeBytes: 3 * 1024 ** 3 }, { path: 'C:/Downloads/b.zip', sha256: hash }, { path: 'C:/Downloads/c.part', complete: false }],
@@ -39,6 +40,8 @@ describe('workstation-steward engine and library', () => {
     expect(result.downloads[3].state).toBe('observation-required');
     expect(result.media).toMatchObject({ itemCount: 2, totalBytes: 10, counts: { music: 1, movie: 1 } });
     expect(result.protectedPaths).toEqual(expect.arrayContaining(['models', 'E:/Models']));
+    expect(runWorkstationStewardEngine({ ...base, hardFailureEvidence: [], downloads: [{ sizeBytes: 1, destinationMount: 'Z:' }] }, { trigger: 'health.interval', now: () => 0 }).downloads[0].state).toBe('redirect');
+    expect(runWorkstationStewardEngine({ ...base, storage: [{ mount: 'E:', freeBytes: 10 }], downloads: [{ sizeBytes: 1, destinationMount: 'E:' }] }, { trigger: 'health.interval', now: () => 0 }).downloads[0].state).toBe('storage-safety-review');
   });
 
   test('fails closed for sparse, malformed, and alternate platform evidence', () => {
@@ -53,6 +56,7 @@ describe('workstation-steward engine and library', () => {
     const mac = runWorkstationStewardEngine({ engine: 'system-facts', platform: 'darwin', game: { detected: true }, processes: [{ pid: 1, role: 'game', foreground: true }, { pid: 2, role: 'build' }] }, { trigger: 'health.interval', now: () => 3.5 });
     expect(mac.resources.actions[0].unsupportedDimensions).toEqual(['cpuPercent', 'memoryBytes', 'ioBytesPerSecond', 'gpuPercent']);
     const candidateWithoutPid = runWorkstationStewardEngine({ engine: 'system-facts', processes: [{ role: 'game', foreground: false }] }, { trigger: 'health.interval', now: () => 4 });
+    expect(runWorkstationStewardEngine({ ...base, hardFailureEvidence: [], downloads: [{ name: 'unknown-size' }] }, { trigger: 'health.interval', now: () => 4 }).downloads[0].state).toBe('observation-required');
     expect(candidateWithoutPid.game).toMatchObject({ detected: true, pid: null, confidence: 0.8 });
     expect(runWorkstationStewardEngine({ engine: 'system-facts', processes: [{ role: 'build', foreground: true }] }, { trigger: 'health.interval', now: () => 5 }).game.detected).toBe(false);
     expect(() => runWorkstationStewardEngine(null, { trigger: 'health.interval' })).toThrow('facts must be an object');
@@ -130,19 +134,23 @@ describe('workstation-steward resource governance', () => {
 
 describe('workstation-steward storage and files', () => {
   test('reviews drive evidence, duplicates, partial downloads, and placements', () => {
-    const result = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'C:', system: true, freeBytes: 1, health: 'healthy', smart: 'passed' }, { mount: 'E:', freeBytes: 100, benchmark: { readBytesPerSecond: 1, writeBytesPerSecond: 1 } }, { mount: 'F:', freeBytes: 200 }], files: [null, { path: 'C:/a.iso', sha256: hash, sizeBytes: 3 * 1024 ** 3 }, { path: 'C:/b.iso', sha256: hash }, { path: 'C:/c.crdownload' }, { path: 'C:/protected/large.iso', sizeBytes: 3 * 1024 ** 3 }, { sizeBytes: 3 * 1024 ** 3 }, { path: 'C:/complete.zip', complete: true }], downloads: [{ path: 'C:/d.part', complete: false }, { name: 'orphan', complete: false }, { path: 'C:/done.zip', complete: true }] }, { trigger: 'health.interval', protectedPaths: ['C:/protected', 2], now: () => 0 });
+    const result = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'C:', volumeId: 'volume-c', physicalDiskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', system: true, freeBytes: 1, health: 'healthy', smart: 'passed' }, { mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', freeBytes: 100, health: 'healthy', benchmark: { readBytesPerSecond: 1, writeBytesPerSecond: 1 } }, { mount: 'F:', volumeId: 'volume-f', physicalDiskNumber: 2, physicalDevicePath: '\\\\.\\PhysicalDrive2', freeBytes: 200, health: 'healthy' }], drives: [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }, { diskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', smart: 'passed' }, { diskNumber: 2, physicalDevicePath: '\\\\.\\PhysicalDrive2', health: 'healthy', smart: 'passed' }], files: [null, { path: 'C:/a.iso', sha256: hash, sizeBytes: 3 * 1024 ** 3 }, { path: 'C:/b.iso', sha256: hash }, { path: 'C:/c.crdownload' }, { path: 'C:/protected/large.iso', sizeBytes: 3 * 1024 ** 3 }, { sizeBytes: 3 * 1024 ** 3 }, { path: 'C:/complete.zip', complete: true }], downloads: [{ path: 'C:/d.part', complete: false }, { name: 'orphan', complete: false }, { path: 'C:/done.zip', complete: true }] }, { trigger: 'health.interval', protectedPaths: ['C:/protected', 2], now: () => 0 });
     expect(result).toMatchObject({ state: 'incomplete-review', benchmarked: true, targetMount: 'F:' });
     expect(result.duplicates).toHaveLength(1);
     expect(result.incomplete).toEqual(expect.arrayContaining(['C:/c.crdownload', 'C:/d.part']));
     expect(result.placements[0]).toMatchObject({ targetMount: 'F:', state: 'move-preview' });
     const duplicate = runWorkstationStewardStorageFilesTurbo({ files: [{ path: 'x', sha256: hash }, { path: 'y', sha256: hash }] }, { trigger: 'system.facts.request' });
     expect(duplicate.state).toBe('duplicate-review');
-    const place = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'E:', freeBytes: 10 }], files: [{ path: 'large', sizeBytes: 3 * 1024 ** 3 }] }, { trigger: 'health.interval' });
+    const place = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', freeBytes: 10 }], drives: [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }], files: [{ path: 'large', sizeBytes: 3 * 1024 ** 3 }] }, { trigger: 'health.interval' });
     expect(place.state).toBe('placement-review');
-    const evidence = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'E:', freeBytes: 10, benchmark: { readBytesPerSecond: 1, writeBytesPerSecond: 1 } }] }, { trigger: 'health.interval' });
+    const evidence = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', freeBytes: 10, benchmark: { readBytesPerSecond: 1, writeBytesPerSecond: 1 } }], drives: [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }] }, { trigger: 'health.interval' });
     expect(evidence.state).toBe('evidence-ready');
     const review = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'E:', freeBytes: 10 }] }, { trigger: 'health.interval' });
-    expect(review.state).toBe('observation-review');
+    const explicitEvidence = runWorkstationStewardStorageFilesTurbo({ hardFailureEvidence: [], volumes: [{ mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 0, physicalDevicePath: 'disk0', freeBytes: 10, health: 'healthy', benchmark: { readBytesPerSecond: 1, writeBytesPerSecond: 1 } }], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }] }, { trigger: 'health.interval' });
+    const observation = runWorkstationStewardStorageFilesTurbo({ volumes: [{ mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 0, physicalDevicePath: 'disk0', freeBytes: 10, health: 'healthy' }], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }] }, { trigger: 'health.interval' });
+    expect(review.state).toBe('storage-safety-review');
+    expect(explicitEvidence.state).toBe('evidence-ready');
+    expect(observation.state).toBe('observation-review');
     expect(runWorkstationStewardStorageFilesTurbo({}, { trigger: 'health.interval' }).state).toBe('observation-required');
     expect(() => runWorkstationStewardStorageFilesTurbo([], { trigger: 'health.interval' })).toThrow('sample must be an object');
     expect(() => runWorkstationStewardStorageFilesTurbo({}, { trigger: 'bad' })).toThrow('Unsupported');

@@ -10,6 +10,7 @@
 import path from 'path';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { isPathInside } from './storage-targets.js';
+import { assessStorageSuitability } from './storage-suitability.js';
 
 export const FILE_PLACEMENT_POLICY_VERSION = 1;
 const SKIP_CATEGORIES = new Set(['incomplete-download']);
@@ -49,10 +50,16 @@ function normalizeVolume(item, pathImpl) {
   if (!root) return null;
   const freeBytes = bytes(item.freeBytes);
   return Object.freeze({
+    mount: text(item.mount ?? item.root),
     root: pathImpl.resolve(root),
     freeBytes,
     mediaType: text(item.mediaType)?.toLowerCase() || 'unknown',
     health: text(item.health)?.toLowerCase() || 'unknown',
+    volumeId: text(item.volumeId ?? item.uniqueId ?? item.device),
+    physicalDiskNumber: Number.isInteger(item.physicalDiskNumber) && item.physicalDiskNumber >= 0 ? item.physicalDiskNumber : null,
+    physicalDevicePath: text(item.physicalDevicePath),
+    smart: item.smart,
+    hardFailureEvidence: item.hardFailureEvidence,
     writable: item.writable !== false && item.readOnly !== true,
     protected: item.protected === true
   });
@@ -63,6 +70,8 @@ export function recommendPlacementTargets({
   categories = Object.keys(DEFAULT_MEDIA_PREFERENCES),
   mediaPreferences = DEFAULT_MEDIA_PREFERENCES,
   protectedRoots = [],
+  drives = [],
+  hardFailureEvidence = [],
   minFreeBytes = 0,
   pathImpl = path
 } = {}) {
@@ -72,19 +81,20 @@ export function recommendPlacementTargets({
   if (!Array.isArray(protectedRoots)) throw new TypeError('Placement recommendations require protected roots');
   if (!Number.isFinite(minFreeBytes) || minFreeBytes < 0) throw new RangeError('Placement recommendation free-space floor is invalid');
   const normalized = volumes.slice(0, 64).map((item) => normalizeVolume(item, pathImpl)).filter(Boolean);
-  const candidates = normalized.filter((item) => item.writable && !item.protected && !['failed', 'degraded'].includes(item.health) && item.freeBytes !== null && item.freeBytes >= minFreeBytes && !protectedVolume(item.root, protectedRoots, pathImpl));
+  const candidates = normalized.map((item) => ({ ...item, storageSuitability: assessStorageSuitability({ volume: item, drives, hardFailureEvidence }) }))
+    .filter((item) => item.writable && !item.protected && item.storageSuitability.admission === 'ALLOW' && item.freeBytes !== null && item.freeBytes >= minFreeBytes && !protectedVolume(item.root, protectedRoots, pathImpl));
   const recommendations = categories.slice(0, 32).map((value) => {
     const kind = category(value);
     const desiredMedia = text(mediaPreferences[kind])?.toLowerCase() || null;
     if (!desiredMedia) return Object.freeze({ category: kind, state: 'review-required', reason: 'category-needs-explicit-media-policy', targetRoot: null });
     const target = candidates.filter((item) => item.mediaType === desiredMedia).sort((left, right) => right.freeBytes - left.freeBytes)[0] || null;
     if (!target) return Object.freeze({ category: kind, state: 'no-safe-target', desiredMedia, reason: normalized.some((item) => item.mediaType !== 'unknown') ? 'no-volume-with-requested-media-type' : 'media-type-evidence-unavailable', targetRoot: null });
-    return Object.freeze({ category: kind, state: 'recommended', desiredMedia, targetVolume: target.root, targetRoot: pathImpl.join(target.root, kind), freeBytes: target.freeBytes, reason: 'explicit-volume-evidence-matches-category-policy' });
+    return Object.freeze({ category: kind, state: 'recommended', desiredMedia, targetVolume: target.root, targetRoot: pathImpl.join(target.root, kind), freeBytes: target.freeBytes, storageSuitability: target.storageSuitability, reason: 'explicit-volume-and-physical-health-evidence-matches-category-policy' });
   });
   return Object.freeze({ version: FILE_PLACEMENT_POLICY_VERSION, state: recommendations.some((item) => item.state === 'recommended') ? 'recommendations-ready' : 'review-required', recommendations: Object.freeze(recommendations), candidateVolumes: Object.freeze(candidates), mutation: 'none', requiresApproval: true });
 }
 
-export function previewPlacementPolicy(scan, { targetRoots, sourceRoots: requestedRoots, protectedRoots = [], targetFreeBytes = {}, maxEntries = 256, pathImpl = path } = {}) {
+export function previewPlacementPolicy(scan, { targetRoots, sourceRoots: requestedRoots, protectedRoots = [], targetFreeBytes = {}, storageEvidence = null, maxEntries = 256, pathImpl = path } = {}) {
   validateScan(scan);
   const limit = validateLimit(maxEntries);
   const targets = targetMap(targetRoots, pathImpl);
@@ -105,7 +115,7 @@ export function previewPlacementPolicy(scan, { targetRoots, sourceRoots: request
     if (!target) { skipped.push({ entry, reason: 'category-has-no-approved-target' }); continue; }
     groups.set(target, [...(groups.get(target) || []), { ...entry, path: source, category: kind }]);
   }
-  const plans = [...groups.entries()].map(([targetRoot, files]) => previewFilePlacement({ files, sourceRoots: sources, targetRoot, protectedRoots, targetFreeBytes: free.get(targetRoot) ?? null, maxEntries: limit, pathImpl }));
+  const plans = [...groups.entries()].map(([targetRoot, files]) => previewFilePlacement({ files, sourceRoots: sources, targetRoot, protectedRoots, storageEvidence, targetFreeBytes: free.get(targetRoot) ?? null, maxEntries: limit, pathImpl }));
   return Object.freeze({ version: FILE_PLACEMENT_POLICY_VERSION, state: plans.some((plan) => plan.moves.length) ? 'preview-ready' : 'no-safe-moves', sourceRoots: Object.freeze(sources), targetRoots: Object.freeze(Object.fromEntries(targets)), plans: Object.freeze(plans), skipped: Object.freeze(skipped), estimatedBytes: plans.reduce((sum, plan) => sum + plan.estimatedBytes, 0), mutation: 'none', requiresApproval: true });
 }
 

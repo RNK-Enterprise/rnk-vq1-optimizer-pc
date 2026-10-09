@@ -1,8 +1,26 @@
-# Release Notes — v3.1.2
+# Release Notes — v3.1.3 candidate
 
 Status: candidate. Odinn sign-off, target-machine proof, a live gateway check,
 and signed-tag/build-attestation verification are still required before this
 repository is called release-certified.
+
+## v3.1.3 repair changes
+
+- Added one canonical physical-storage suitability gate to every destination
+  selection and transfer boundary; unresolved or unhealthy physical storage
+  fails closed even when free space is available.
+- Hardened cross-volume browser and file placement with exclusive partial
+  destinations, flush and hash verification, rollback cleanup, and delayed
+  source deletion.
+- Added named Windows Job Object resource ownership, nested-job refusal,
+  query/release operations, persistent ownership, and restart-required
+  reporting for active-limit relaxation.
+- Preserved unknown pagefile and commit-management evidence when Windows
+  providers do not report a trustworthy state.
+- Added read-only Windows live-proof tests and release automation requiring
+  the exact signing fingerprint and a successful CI run for the tagged commit.
+
+The v3.1.2 candidate notes remain below as historical context.
 
 ## v3.1.2 candidate changes
 

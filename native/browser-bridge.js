@@ -30,7 +30,7 @@ export async function handleBrowserMessage(message, { factsProvider = collectSys
     const targetRoot = redirectPolicy.targetRoots[message.targetMount];
     const facts = await factsProvider();
     const targetVolume = (facts?.volumes?.volumes || []).find((item) => String(item.mount).toUpperCase() === String(message.targetMount).toUpperCase());
-    const plan = previewBrowserRedirect({ sourcePath: message.sourcePath, sourceRoot: redirectPolicy.sourceRoot, targetRoot, targetMount: message.targetMount, sizeBytes: message.sizeBytes, targetFreeBytes: targetVolume?.freeBytes });
+    const plan = previewBrowserRedirect({ sourcePath: message.sourcePath, sourceRoot: redirectPolicy.sourceRoot, targetRoot, targetMount: message.targetMount, sizeBytes: message.sizeBytes, targetFreeBytes: targetVolume?.freeBytes, storageEvidence: { volumes: facts?.volumes?.volumes || [], drives: facts?.drives?.drives || facts?.drives || [], hardFailureEvidence: facts?.hardFailureEvidence || [] } });
     const result = plan.state !== 'preview-ready'
       ? { state: plan.state, applied: false, plan }
       : redirectPolicy.approved === true
@@ -42,7 +42,7 @@ export async function handleBrowserMessage(message, { factsProvider = collectSys
   if (!validSize(message.sizeBytes)) return response(message.requestId, { state: 'observation-required', reason: 'download size is unavailable' });
   const facts = await factsProvider();
   const volumes = Array.isArray(facts?.volumes?.volumes) ? facts.volumes.volumes : [];
-  const result = preflightDownload({ sizeBytes: message.sizeBytes, destinationMount: message.destinationMount, volumes });
+  const result = preflightDownload({ sizeBytes: message.sizeBytes, destinationMount: message.destinationMount, volumes, drives: facts?.drives?.drives || facts?.drives || [], hardFailureEvidence: facts?.hardFailureEvidence || [] });
   return response(message.requestId, { state: result.state, preflight: result });
 }
 

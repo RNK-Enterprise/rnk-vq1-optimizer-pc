@@ -24,18 +24,26 @@ jobs:
       - run: npm ci
       - run: npm run audit:prod
       - run: npm run audit:high
-      - name: Verify signed release provenance
-        env:
-          RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
-        run: |
-          test -n "$RNK_SIGNING_KEY_FINGERPRINT"
-          node scripts/verify-release-provenance.mjs
-      - name: Import release signing key
+      - name: Import release signing key before provenance verification
         env:
           RNK_RELEASE_PUBLIC_KEY: ${{ secrets.RNK_RELEASE_PUBLIC_KEY }}
         run: |
           test -n "$RNK_RELEASE_PUBLIC_KEY"
           printf '%s\n' "$RNK_RELEASE_PUBLIC_KEY" | gpg --batch --import
+      - name: Require green CI for the tagged commit
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --status completed --json databaseId,conclusion --jq 'map(select(.conclusion == "success")) | .[0].databaseId')"
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+      - name: Verify signed release provenance and exact signer
+        env:
+          RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
+        run: |
+          test -n "$RNK_SIGNING_KEY_FINGERPRINT"
+          node scripts/verify-release-provenance.mjs
       - name: Recheck exact release signer
         env:
           RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
@@ -44,7 +52,9 @@ jobs:
           git verify-tag --raw "$GITHUB_REF_NAME" | grep -E "VALIDSIG ${RNK_SIGNING_KEY_FINGERPRINT}"
       - run: npm run verify
       - run: git archive --format=tar.gz --prefix=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}/ --output=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz "${GITHUB_SHA}"
+      - run: git archive --format=zip --prefix=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}/ --output=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.zip "${GITHUB_SHA}"
       - run: sha256sum "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" > "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256"
+      - run: sha256sum "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.zip" > "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.zip.sha256"
       - name: Build and verify runtime bundles
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
@@ -59,11 +69,28 @@ jobs:
             sha256sum "$archive" > "$archive.sha256"
           done
       - name: Write release provenance
+        env:
+          RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
+          CI_RUN_ID: ${{ steps.ci.outputs.run_id }}
         run: |
-          node --input-type=module -e "import { writeFile } from 'node:fs/promises'; await writeFile('provenance.json', JSON.stringify({ repository: process.env.GITHUB_REPOSITORY, tag: process.env.GITHUB_REF_NAME, commit: process.env.GITHUB_SHA, archive: 'rnk-vq1-optimizer-pc-' + process.env.GITHUB_REF_NAME + '.tar.gz' }, null, 2) + '\\n');"
+          node --input-type=module -e "import { readFile, writeFile } from 'node:fs/promises'; const tag=process.env.GITHUB_REF_NAME; const prefix='rnk-vq1-optimizer-pc-'+tag; const sha=async (path)=>String(await readFile(path,'utf8')).trim().split(/\s+/)[0]; const artifacts={zip:{path:prefix+'.zip',sha256:await sha(prefix+'.zip.sha256')},tarGz:{path:prefix+'.tar.gz',sha256:await sha(prefix+'.tar.gz.sha256')}}; await writeFile('provenance.json', JSON.stringify({ repository: process.env.GITHUB_REPOSITORY, tag, commit: process.env.GITHUB_SHA, signing: { fingerprint: process.env.RNK_SIGNING_KEY_FINGERPRINT, verified: true }, ci: { workflow: 'PC optimizer verification', runId: process.env.CI_RUN_ID, conclusion: 'success' }, workflow: { name: process.env.GITHUB_WORKFLOW, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT }, artifacts }, null, 2) + '\\n');"
+      - name: Create checksum attestation
+        env:
+          RNK_SIGNING_KEY_FINGERPRINT: ${{ vars.RNK_SIGNING_KEY_FINGERPRINT }}
+        run: |
+          artifacts=(
+            "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.zip"
+            "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz"
+            "rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz"
+            "rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz"
+            "rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz"
+          )
+          args=(--output release-attestation.json)
+          for artifact in "${artifacts[@]}"; do args+=(--artifact "$artifact"); done
+          node scripts/create-release-attestation.mjs "${args[@]}"
       - uses: actions/attest-build-provenance@v2
         with:
-          subject-path: rnk-vq1-optimizer-pc-${{ github.ref_name }}.tar.gz
+          subject-path: rnk-vq1-optimizer-pc-${{ github.ref_name }}.zip
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256" rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz.sha256 rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz.sha256 rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz.sha256 provenance.json --verify-tag --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.zip" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.zip.sha256" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256" rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz.sha256 rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz.sha256 rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz.sha256 provenance.json release-attestation.json --verify-tag --generate-notes

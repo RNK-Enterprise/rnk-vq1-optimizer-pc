@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.1.3 candidate
+
+- Added one canonical physical-storage suitability gate and connected it to
+  downloads, placement, browser relocation, destination selection, and space
+  preflight; unknown, degraded, failed, or unresolved storage fails closed.
+- Hardened cross-volume transfers with exclusive partial destinations,
+  destination flush, byte/hash verification, rollback cleanup, and source
+  deletion only after verification.
+- Added named Windows Job Object lifecycle handling with nested-job refusal,
+  query/release support, persistent resource ownership, and explicit restart
+  requirements when active limits cannot be relaxed.
+- Preserved unknown Windows pagefile and commit evidence instead of deriving
+  management state from missing providers.
+- Added Windows live-proof coverage and release provenance gates for exact
+  signing fingerprints, green CI on the tagged commit, deterministic archives,
+  checksums, and build attestation. Windows certification and Odinn sign-off
+  remain outstanding.
+
 ## 3.1.2 candidate
 
 - Corrected Windows SMART inventory joins to retain the explicit disk number

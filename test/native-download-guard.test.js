@@ -17,15 +17,17 @@ import {
 
 const HASH_A = 'a'.repeat(64);
 const HASH_B = 'b'.repeat(64);
+const SAFE_DRIVES = [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }, { diskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', smart: 'passed' }];
+const safeVolume = (mount, freeBytes, extra = {}) => ({ mount, volumeId: `${mount}-volume`, physicalDiskNumber: mount === 'C:' ? 0 : 1, physicalDevicePath: mount === 'C:' ? '\\\\.\\PhysicalDrive0' : '\\\\.\\PhysicalDrive1', health: 'healthy', freeBytes, ...extra });
 
 describe('download preflight and verification', () => {
   test('chooses a safe destination without starting a download', () => {
     expect(preflightDownload()).toMatchObject({ state: 'observation-required', sizeBytes: null });
-    expect(preflightDownload({ sizeBytes: 100, destinationMount: 'C:', volumes: [{ mount: 'C:', freeBytes: 100 }] })).toMatchObject({ state: 'allow', targetMount: 'C:' });
-    expect(preflightDownload({ sizeBytes: '100', destinationMount: 'C:', volumes: [{ mount: 'C:', freeBytes: 50 }, { mount: 'E:', freeBytes: 200 }] })).toMatchObject({ state: 'redirect', targetMount: 'E:' });
-    expect(preflightDownload({ sizeBytes: 300, destinationMount: 'C:', volumes: [{ mount: 'C:', freeBytes: 50, writable: false }, { mount: 'E:', freeBytes: 200 }] })).toMatchObject({ state: 'insufficient-space', targetMount: 'C:' });
-    expect(preflightDownload({ sizeBytes: 300, volumes: [{ mount: 'E:', freeBytes: 200 }] })).toMatchObject({ state: 'insufficient-space', targetMount: null });
-    expect(preflightDownload({ sizeBytes: 100, destinationMount: 'X:', volumes: [{ mount: 'E:', freeBytes: 100 }, { mount: 'F:', freeBytes: 200 }, { mount: 'G:', freeBytes: 150 }] })).toMatchObject({ state: 'redirect', targetMount: 'F:' });
+    expect(preflightDownload({ sizeBytes: 100, destinationMount: 'C:', volumes: [safeVolume('C:', 100)], drives: SAFE_DRIVES })).toMatchObject({ state: 'allow', targetMount: 'C:' });
+    expect(preflightDownload({ sizeBytes: '100', destinationMount: 'C:', volumes: [safeVolume('C:', 50), safeVolume('E:', 200)], drives: SAFE_DRIVES })).toMatchObject({ state: 'redirect', targetMount: 'E:' });
+    expect(preflightDownload({ sizeBytes: 300, destinationMount: 'C:', volumes: [safeVolume('C:', 50, { writable: false }), safeVolume('E:', 200)], drives: SAFE_DRIVES })).toMatchObject({ state: 'insufficient-space', targetMount: null });
+    expect(preflightDownload({ sizeBytes: 300, volumes: [safeVolume('E:', 200)], drives: SAFE_DRIVES })).toMatchObject({ state: 'insufficient-space', targetMount: null });
+    expect(preflightDownload({ sizeBytes: 100, destinationMount: 'X:', volumes: [safeVolume('E:', 100), safeVolume('F:', 200), safeVolume('G:', 150)], drives: SAFE_DRIVES })).toMatchObject({ state: 'redirect', targetMount: 'F:' });
     expect(preflightDownload({ sizeBytes: 1, volumes: null })).toMatchObject({ state: 'insufficient-space' });
   });
 
@@ -104,7 +106,8 @@ test('creates a reusable guard with bounded option merging', async () => {
   await expect(emptyGuard.scan('/missing')).resolves.toMatchObject({ unreadableRoots: 1 });
   const guard = createDownloadGuard({ hashFiles: true, hashFileImpl: async () => HASH_A });
   expect(guard.version).toBe(DOWNLOAD_GUARD_VERSION);
-  expect(guard.preflight({ sizeBytes: 1, volumes: [{ mount: 'E:', freeBytes: 2 }] })).toMatchObject({ state: 'redirect', targetMount: 'E:' });
+  expect(guard.preflight()).toMatchObject({ state: 'observation-required' });
+  expect(guard.preflight({ sizeBytes: 1, volumes: [safeVolume('E:', 2)], drives: SAFE_DRIVES })).toMatchObject({ state: 'redirect', targetMount: 'E:' });
   const fsImpl = { readdir: async () => [{ name: 'file', isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false }], stat: async () => ({ size: 1, mtimeMs: 0 }) };
   await expect(guard.scan('/root', { fsImpl })).resolves.toMatchObject({ entryCount: 1, duplicates: [] });
   await expect(guard.verify('/file', HASH_A)).resolves.toMatchObject({ state: 'verified' });

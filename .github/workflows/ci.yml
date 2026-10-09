@@ -69,3 +69,6 @@ jobs:
       - run: npm run verify
       - run: node native/cli.mjs facts
       - run: node native/cli.mjs volume-storage
+      - name: WINDOWS_LIVE_PROOF read-only host probes
+        if: matrix.os == 'windows-latest'
+        run: node --experimental-vm-modules node_modules/jest/bin/jest.js test/windows-live-proof.test.js --runInBand --coverage=false

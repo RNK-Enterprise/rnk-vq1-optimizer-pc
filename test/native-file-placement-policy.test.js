@@ -6,7 +6,11 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { applyPlacementPolicy, FILE_PLACEMENT_POLICY_VERSION, previewPlacementPolicy, recommendPlacementTargets, rollbackPlacementPolicy } from '../native/file-placement-policy.js';
+import { applyPlacementPolicy, FILE_PLACEMENT_POLICY_VERSION, previewPlacementPolicy as buildPlacementPolicyPreview, recommendPlacementTargets as buildPlacementRecommendations, rollbackPlacementPolicy } from '../native/file-placement-policy.js';
+
+const safeStorageEvidence = { volumes: [{ mount: '/', volumeId: 'root-volume', physicalDiskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', writable: true }], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }] };
+function previewPlacementPolicy(scan, options = {}) { return buildPlacementPolicyPreview(scan, { ...options, storageEvidence: options.storageEvidence || safeStorageEvidence }); }
+function recommendPlacementTargets(options = {}) { const volumes = Array.isArray(options.volumes) ? options.volumes.map((item, index) => item && ({ ...item, health: item.health || 'healthy', volumeId: item.volumeId || `volume-${index}`, physicalDiskNumber: item.physicalDiskNumber ?? index, physicalDevicePath: item.physicalDevicePath || `disk${index}` })) : options.volumes; const drives = options.drives || (Array.isArray(volumes) ? volumes.map((item, index) => ({ diskNumber: index, physicalDevicePath: `disk${index}`, health: 'healthy', smart: 'passed' })) : [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }]); return buildPlacementRecommendations({ ...options, volumes, drives }); }
 
 describe('native file placement policy', () => {
   test('groups approved categories and excludes unsafe evidence', () => {
@@ -79,6 +83,9 @@ describe('native file placement policy', () => {
   });
 
   test('validates placement recommendation inputs', () => {
+    expect(buildPlacementRecommendations()).toMatchObject({ state: 'review-required' });
+    expect(buildPlacementRecommendations({ volumes: [{ root: '/raw', uniqueId: 'raw-id', freeBytes: 10, mediaType: 'hdd' }, { root: '/device', device: '/dev/raw', freeBytes: 10, mediaType: 'hdd', physicalDiskNumber: 0, physicalDevicePath: 'disk0' }], categories: ['model'], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }], pathImpl: path.posix })).toMatchObject({ state: 'review-required' });
+    expect(() => buildPlacementPolicyPreview({ entries: [] })).toThrow('category target roots');
     expect(() => recommendPlacementTargets({ volumes: null })).toThrow('volume evidence');
     expect(() => recommendPlacementTargets({ categories: null })).toThrow('categories');
     expect(() => recommendPlacementTargets({ mediaPreferences: null })).toThrow('media preferences');

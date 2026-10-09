@@ -26,15 +26,21 @@ function volume(platform, values) {
   return Object.freeze({
     mount: mount(values.mount),
     device: text(values.device),
+    volumeId: text(values.volumeId ?? values.device),
+    physicalDiskNumber: Number.isInteger(values.physicalDiskNumber) && values.physicalDiskNumber >= 0 ? values.physicalDiskNumber : null,
+    physicalDevicePath: text(values.physicalDevicePath),
     filesystem: text(values.filesystem),
     health: text(values.health)?.toLowerCase() || 'unknown',
+    diskHealth: text(values.diskHealth)?.toLowerCase() || 'unknown',
+    diskOperationalStatus: text(values.diskOperationalStatus)?.toLowerCase() || 'unknown',
     totalBytes,
     freeBytes,
     usedBytes: totalBytes === null || freeBytes === null ? null : Math.max(0, totalBytes - Math.min(totalBytes, freeBytes)),
     usedPercent: totalBytes && freeBytes !== null ? Math.min(100, Math.max(0, ((totalBytes - Math.min(totalBytes, freeBytes)) / totalBytes) * 100)) : null,
     readOnly: values.readOnly === true,
     type: text(values.type),
-    platform
+    platform,
+    source: text(values.source)
   });
 }
 function result(platform, volumes, source, reason = null) {
@@ -50,12 +56,18 @@ export function parseWindowsVolumeStorage(output) {
     return volume('win32', {
       mount: normalizedDrive,
       device: normalizedDrive,
+      volumeId: row?.VolumeId ?? row?.UniqueId ?? null,
+      physicalDiskNumber: Number.isInteger(row?.DiskNumber) ? row.DiskNumber : null,
+      physicalDevicePath: row?.PhysicalDevicePath,
       filesystem: row?.FileSystem,
       health: row?.HealthStatus,
+      diskHealth: row?.DiskHealthStatus,
+      diskOperationalStatus: row?.DiskOperationalStatus,
       totalBytes: row?.Size,
       freeBytes: row?.SizeRemaining,
       readOnly: row?.IsReadOnly === true,
-      type: row?.DriveType
+      type: row?.DriveType,
+      source: 'Get-Volume+Get-Partition+Get-Disk'
     });
   }).filter((item) => item.mount && item.totalBytes !== null);
   return result('win32', volumes, 'Get-Volume');
@@ -73,11 +85,13 @@ function parsePosixRows(output, platform, blockMultiplier, fields) {
     return volume(platform, {
       mount: values.slice(mountIndex).join(' '),
       device: values[0],
+      volumeId: values[0],
       filesystem: null,
       totalBytes: total * blockMultiplier,
       freeBytes: free * blockMultiplier,
       readOnly: false,
-      type: null
+      type: null,
+      source: fields.source
     });
   }).filter(Boolean);
   return result(platform, volumes, fields.source);
@@ -94,7 +108,7 @@ export function parseDarwinVolumeStorage(output) {
 export async function collectVolumeStorage({ platform = process.platform, commandRunner } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') return result(platform, [], 'unavailable', 'command runner unavailable');
   const command = platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Get-Volume | Where-Object { $_.DriveLetter -and $_.Size -ne $null } | Select-Object DriveLetter,FileSystem,HealthStatus,Size,SizeRemaining,IsReadOnly,DriveType | ConvertTo-Json -Compress'], { timeoutMs: 5000, maxOutputBytes: 32768 }]
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$rows = foreach ($volume in @(Get-Volume | Where-Object { $_.DriveLetter -and $null -ne $_.Size })) { $partition = @(Get-Partition -DriveLetter $volume.DriveLetter -ErrorAction SilentlyContinue | Select-Object -First 1)[0]; $disk = if ($partition) { @(Get-Disk -Number $partition.DiskNumber -ErrorAction SilentlyContinue | Select-Object -First 1)[0] } else { $null }; [pscustomobject]@{ DriveLetter=$volume.DriveLetter; VolumeId=$volume.UniqueId; FileSystem=$volume.FileSystem; HealthStatus=$volume.HealthStatus; Size=if ($null -ne $volume.Size) { [int64]$volume.Size } else { $null }; SizeRemaining=if ($null -ne $volume.SizeRemaining) { [int64]$volume.SizeRemaining } else { $null }; IsReadOnly=$volume.IsReadOnly; DriveType=$volume.DriveType; DiskNumber=if ($partition) { [int]$partition.DiskNumber } else { $null }; PhysicalDevicePath=if ($partition) { ('\\\\.\\PhysicalDrive{0}' -f $partition.DiskNumber) } else { $null }; DiskHealthStatus=if ($disk) { $disk.HealthStatus } else { $null }; DiskOperationalStatus=if ($disk) { $disk.OperationalStatus -join ',' } else { $null } } }; @($rows) | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 32768 }]
     : platform === 'linux'
       ? ['df', ['-B1', '--output=source,size,avail,target'], { timeoutMs: 2500, maxOutputBytes: 32768 }]
       : platform === 'darwin' ? ['df', ['-Pk'], { timeoutMs: 2500, maxOutputBytes: 32768 }] : null;

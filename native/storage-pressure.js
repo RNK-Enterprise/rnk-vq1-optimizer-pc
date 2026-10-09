@@ -7,7 +7,6 @@
  * pressure separate from reclaimable files, and only plans bounded work under
  * explicit category and approval policy.
  */
-
 import fs from 'fs/promises';
 import path from 'path';
 import {
@@ -19,7 +18,6 @@ import {
   resolveStorageCategoryRoots
 } from './storage-targets.js';
 import { collectDarwinSwapPressure, collectLinuxSwapPressure } from './swap-pressure.js';
-
 export const STORAGE_PRESSURE_POLICY_VERSION = 1;
 export const STORAGE_PRESSURE_LEVELS = Object.freeze(['normal', 'warning', 'critical', 'emergency', 'unknown']);
 export const PAGEFILE_MANAGEMENT_STATES = Object.freeze(['ENABLED', 'DISABLED', 'UNKNOWN']);
@@ -33,20 +31,17 @@ export const DEFAULT_STORAGE_PRESSURE_POLICY = Object.freeze({
   maxEntries: 2000,
   maxDepth: 3
 });
-
 const WINDOWS_STORAGE_COMMAND = Object.freeze([
   '-NoProfile',
   '-NonInteractive',
   '-ExecutionPolicy', 'Bypass',
   '-Command',
-  "$drive = [Environment]::SystemDirectory.Substring(0,2); $disk = Get-CimInstance Win32_LogicalDisk -Filter (\"DeviceID='{0}'\" -f $drive); $computer = Get-CimInstance Win32_ComputerSystem; $memory = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory; $pages = @(Get-CimInstance Win32_PageFileUsage | Select-Object Name,AllocatedBaseSize,CurrentUsage,PeakUsage); [pscustomobject]@{drive=$disk.DeviceID; totalBytes=[int64]$disk.Size; freeBytes=[int64]$disk.FreeSpace; automaticManagedPagefile=[bool]$computer.AutomaticManagedPagefile; committedBytes=[int64]$memory.CommittedBytes; commitLimitBytes=[int64]$memory.CommitLimit; freeCommitBytes=[Math]::Max(0, ([int64]$memory.CommitLimit - [int64]$memory.CommittedBytes)); observedAt=(Get-Date).ToUniversalTime().ToString('o'); source='Win32_PageFileUsage+Win32_ComputerSystem+Win32_PerfFormattedData_PerfOS_Memory'; pagefiles=$pages} | ConvertTo-Json -Compress"
+  "$drive = [Environment]::SystemDirectory.Substring(0,2); $disk = Get-CimInstance Win32_LogicalDisk -Filter (\"DeviceID='{0}'\" -f $drive); $computer = Get-CimInstance Win32_ComputerSystem; $memory = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory; $pages = @(Get-CimInstance Win32_PageFileUsage | Select-Object Name,AllocatedBaseSize,CurrentUsage,PeakUsage); $total = if ($null -ne $disk -and $null -ne $disk.Size) { [int64]$disk.Size } else { $null }; $free = if ($null -ne $disk -and $null -ne $disk.FreeSpace) { [int64]$disk.FreeSpace } else { $null }; $managed = if ($null -ne $computer -and $null -ne $computer.AutomaticManagedPagefile) { [bool]$computer.AutomaticManagedPagefile } else { $null }; $committed = if ($null -ne $memory -and $null -ne $memory.CommittedBytes) { [int64]$memory.CommittedBytes } else { $null }; $limit = if ($null -ne $memory -and $null -ne $memory.CommitLimit) { [int64]$memory.CommitLimit } else { $null }; $freeCommit = if ($null -ne $committed -and $null -ne $limit) { [Math]::Max(0, $limit - $committed) } else { $null }; [pscustomobject]@{drive=if ($null -ne $disk) { $disk.DeviceID } else { $null }; totalBytes=$total; freeBytes=$free; automaticManagedPagefile=$managed; committedBytes=$committed; commitLimitBytes=$limit; freeCommitBytes=$freeCommit; observedAt=(Get-Date).ToUniversalTime().ToString('o'); source='Win32_PageFileUsage+Win32_ComputerSystem+Win32_PerfFormattedData_PerfOS_Memory'; pagefiles=$pages} | ConvertTo-Json -Compress"
 ]);
-
 function nonNegative(value) {
   const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
   return Number.isFinite(number) && number >= 0 ? number : null;
 }
-
 function validatePolicy(input = {}) {
   const policy = { ...DEFAULT_STORAGE_PRESSURE_POLICY, ...input };
   const percentages = [policy.warningPercent, policy.criticalPercent, policy.emergencyPercent];
@@ -70,12 +65,10 @@ function validatePolicy(input = {}) {
   }
   return Object.freeze(policy);
 }
-
 function percent(freeBytes, totalBytes) {
   if (freeBytes === null || totalBytes === null || totalBytes <= 0) return null;
   return Math.min(100, Math.max(0, (Math.min(freeBytes, totalBytes) / totalBytes) * 100));
 }
-
 export function classifyStoragePressure({ freeBytes, totalBytes } = {}, inputPolicy = {}) {
   const policy = validatePolicy(inputPolicy);
   const free = nonNegative(freeBytes);
@@ -102,7 +95,6 @@ export function classifyStoragePressure({ freeBytes, totalBytes } = {}, inputPol
 }
 
 function booleanOrNull(value) { return typeof value === 'boolean' ? value : null; }
-
 function normalizePagefiles(pagefiles, facts = {}) {
   const rows = Array.isArray(pagefiles) ? pagefiles : pagefiles ? [pagefiles] : [];
   const normalized = rows.map((pagefile) => ({
@@ -149,7 +141,11 @@ export function parseWindowsStorageOutput(output, policy = {}) {
   }
   const totalBytes = nonNegative(parsed?.totalBytes);
   const freeBytes = nonNegative(parsed?.freeBytes);
-  if (totalBytes === null || freeBytes === null) return null;
+  const hasPagefileEvidence = ['pagefiles', 'automaticManagedPagefile', 'committedBytes', 'commitLimitBytes', 'freeCommitBytes'].some((key) => Object.prototype.hasOwnProperty.call(parsed || {}, key));
+  if (totalBytes === null || freeBytes === null) {
+    if (!hasPagefileEvidence) return null;
+    return { storage: [], pagefile: normalizePagefiles(parsed.pagefiles, parsed), pressure: classifyStoragePressure({}, policy) };
+  }
   const mount = typeof parsed.drive === 'string' ? parsed.drive : null;
   return {
     storage: [{ mount, device: mount, totalBytes, freeBytes, health: 'unknown', readOnly: false }],

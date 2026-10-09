@@ -113,7 +113,10 @@ node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]'
 node native/cli.mjs placement-recommend \
-  --volumes '[{"mount":"E:","mediaType":"hdd","freeBytes":68000000000,"health":"healthy"}]'
+  --volumes '[{"mount":"E:","volumeId":"volume-e","physicalDiskNumber":1,"physicalDevicePath":"\\\\.\\PhysicalDrive1","mediaType":"hdd","freeBytes":68000000000,"health":"healthy"}]' \
+  --drives '[{"diskNumber":1,"physicalDevicePath":"\\\\.\\PhysicalDrive1","health":"healthy","smart":"passed"}]'
+node native/cli.mjs windows-resource-limit-query --pid 1234
+node native/cli.mjs windows-resource-limit-release --pid 1234
 node native/cli.mjs placement-apply --source-root "$HOME/Downloads" \
   --target-root /mnt/archive --target-free-bytes 100000000000 \
   --files '[{"path":"/home/me/Downloads/model.zip","sizeBytes":12000000000,"category":"models"}]' --confirm
@@ -482,8 +485,9 @@ removes only its own sample. It is evidence, not a claim of sustained device
 performance.
 
 `placement-preview` accepts explicit file facts and an explicit source root,
-target root, protected-root list, and target free-space measurement. It never
-scans by size or moves files during preview. `placement-apply` requires
+target root, protected-root list, target free-space measurement, and
+`--storage-evidence` when the target is not the host root. It never scans by
+size or moves files during preview. `placement-apply` requires
 `--confirm`; same-volume moves use rename, while cross-volume moves use
 copy-verify-delete, hashes both sides after the destination is closed, and
 deletes the source only after equal hashes are recorded. Pass
@@ -496,10 +500,20 @@ category-to-target map, then creates one bounded plan per target volume.
 Protected, incomplete, duplicate, unclassified, and missing-evidence entries
 remain skipped. Apply and rollback delegate to the existing placement authority.
 
-`placement-recommend` consumes explicit mounted-volume free-space and SSD/HDD
-evidence. It recommends capacity media for models, archives, ISOs, and
-installers, refuses unknown or degraded/protected/read-only volumes, and never
-creates a move plan or mutates a file.
+`placement-recommend` consumes explicit mounted-volume, physical-disk, health,
+SMART, and SSD/HDD evidence. The same canonical physical-storage suitability
+gate is used by download placement, browser relocation, workstation steward
+file plans, and cleanup/placement recommendations. It recommends capacity
+media for models, archives, ISOs, and installers, refuses unknown or
+degraded/protected/read-only volumes, and never creates a move plan or mutates
+a file.
+
+On Windows, `windows-resource-limit-query` and
+`windows-resource-limit-release` are query-or-release operations for the named
+Job Object authority. Applying a resource limit requires the normal approval
+path, uses process access `0x1501`, refuses a different existing Job Object,
+and reports `RESTART_REQUIRED_TO_RELAX_LIMIT` when Windows cannot relax a live
+assignment.
 
 `assistant` is a deterministic local facts-to-plan interface. It answers
 supported storage, memory/pagefile, CPU/GPU thermal, battery, history, daily-priority,

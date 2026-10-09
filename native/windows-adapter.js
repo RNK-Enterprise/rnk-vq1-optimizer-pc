@@ -23,6 +23,7 @@ import { collectSystemFacts } from './system-facts.js';
 import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
 import { collectWindowsRogFacts } from './windows-rog.js';
 import { applyWindowsTrafficShape, collectWindowsNetworkCounters } from './windows-network.js';
+import { spawn as spawnProcess } from 'child_process';
 
 const POWER_GUIDS = Object.freeze({
   balanced: '381b4222-f694-41f0-9685-ff5bb260df2e',
@@ -35,6 +36,7 @@ const RESOURCE_LIMIT_SCRIPT = [
   '$source = @"',
   'using System;',
   'using System.Runtime.InteropServices;',
+  'using System.Threading;',
   'public static class RnkResourceJob {',
   '[StructLayout(LayoutKind.Sequential)] public struct Basic { public long ProcessTime; public long JobTime; public uint Flags; public UIntPtr Min; public UIntPtr Max; public uint Active; public UIntPtr Affinity; public uint Priority; public uint Scheduling; }',
   '[StructLayout(LayoutKind.Sequential)] public struct Io { public ulong ReadOps; public ulong WriteOps; public ulong OtherOps; public ulong ReadBytes; public ulong WriteBytes; public ulong OtherBytes; }',
@@ -48,19 +50,21 @@ const RESOURCE_LIMIT_SCRIPT = [
   '[DllImport("kernel32.dll", SetLastError=true)] static extern bool SetInformationJobObject(IntPtr job, int kind, IntPtr info, uint length);',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern bool QueryInformationJobObject(IntPtr job, int kind, IntPtr info, uint length, out uint returned);',
   '[DllImport("kernel32.dll", SetLastError=true)] static extern bool CloseHandle(IntPtr handle);',
-  'const uint JobAccess = 0x1F001F; const uint ProcessAccess = 0x1500;',
+  'const uint JobAccess = 0x1F001F; const uint ProcessAccess = 0x1501;',
   'public static string Name(int pid) { return "Local\\\\RNK-Optimizer-" + pid; }',
+  'public static string OwnerName(int pid) { return "Local\\\\RNK-Optimizer-owner-" + pid; }',
   'static IntPtr OpenOrCreate(string name) { IntPtr job = OpenJobObject(JobAccess, false, name); return job == IntPtr.Zero ? CreateJobObject(IntPtr.Zero, name) : job; }',
   'static int SetMemory(IntPtr job, long memory) { var info = new Extended(); info.BasicInfo.Flags = 0x100; info.ProcessMemory = (UIntPtr)(ulong)memory; IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); try { Marshal.StructureToPtr(info, ptr, false); return SetInformationJobObject(job, 9, ptr, (uint)Marshal.SizeOf(typeof(Extended))) ? 0 : Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(ptr); } }',
   'static int SetCpu(IntPtr job, int cpu) { var info = new CpuRate { Flags = 1, Rate = (uint)(cpu * 100) }; IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(CpuRate))); try { Marshal.StructureToPtr(info, ptr, false); return SetInformationJobObject(job, 15, ptr, (uint)Marshal.SizeOf(typeof(CpuRate))) ? 0 : Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(ptr); } }',
-  'public static int Apply(int pid, long memory, int cpu) { if (memory <= 0 && cpu <= 0) return 87; string name = Name(pid); IntPtr job = OpenOrCreate(name); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error(); IntPtr process = OpenProcess(ProcessAccess, false, (uint)pid); if (process == IntPtr.Zero) { int e = Marshal.GetLastWin32Error(); CloseHandle(job); return e; } try { int result = memory > 0 ? SetMemory(job, memory) : 0; if (result != 0) return result; result = cpu > 0 ? SetCpu(job, cpu) : 0; if (result != 0) return result; bool inJob; if (!IsProcessInJob(process, job, out inJob)) return Marshal.GetLastWin32Error(); if (!inJob && !AssignProcessToJobObject(job, process)) return Marshal.GetLastWin32Error(); IntPtr verify = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); try { uint returned; if (!QueryInformationJobObject(job, 9, verify, (uint)Marshal.SizeOf(typeof(Extended)), out returned)) return Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(verify); } return 0; } finally { CloseHandle(process); CloseHandle(job); } }',
+  'public static int Apply(int pid, long memory, int cpu) { if (memory <= 0 && cpu <= 0) return 87; IntPtr process = OpenProcess(ProcessAccess, false, (uint)pid); if (process == IntPtr.Zero) return Marshal.GetLastWin32Error(); IntPtr job = IntPtr.Zero; try { bool inAnyJob; if (!IsProcessInJob(process, IntPtr.Zero, out inAnyJob)) return Marshal.GetLastWin32Error(); job = inAnyJob ? OpenJobObject(JobAccess, false, Name(pid)) : OpenOrCreate(Name(pid)); if (job == IntPtr.Zero) return inAnyJob ? 5 : Marshal.GetLastWin32Error(); bool inNamedJob; if (!IsProcessInJob(process, job, out inNamedJob)) return Marshal.GetLastWin32Error(); if (inAnyJob && !inNamedJob) return 5; int result = memory > 0 ? SetMemory(job, memory) : 0; if (result != 0) return result; result = cpu > 0 ? SetCpu(job, cpu) : 0; if (result != 0) return result; if (!inNamedJob && !AssignProcessToJobObject(job, process)) return Marshal.GetLastWin32Error(); IntPtr verify = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); try { uint returned; if (!QueryInformationJobObject(job, 9, verify, (uint)Marshal.SizeOf(typeof(Extended)), out returned)) return Marshal.GetLastWin32Error(); } finally { Marshal.FreeHGlobal(verify); } return 0; } finally { if (job != IntPtr.Zero) CloseHandle(job); CloseHandle(process); } }',
   'public static string Query(int pid) { IntPtr job = OpenJobObject(JobAccess, false, Name(pid)); if (job == IntPtr.Zero) return null; IntPtr info = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Extended))); IntPtr cpuInfo = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(CpuRate))); try { uint returned; if (!QueryInformationJobObject(job, 9, info, (uint)Marshal.SizeOf(typeof(Extended)), out returned)) return null; var extended = Marshal.PtrToStructure<Extended>(info); var cpuPercent = 0; if (QueryInformationJobObject(job, 15, cpuInfo, (uint)Marshal.SizeOf(typeof(CpuRate)), out returned)) cpuPercent = (int)(Marshal.PtrToStructure<CpuRate>(cpuInfo).Rate / 100); return "{\\"memoryBytes\\":" + extended.ProcessMemory.ToUInt64() + ",\\"cpuPercent\\":" + cpuPercent + "}"; } finally { Marshal.FreeHGlobal(info); Marshal.FreeHGlobal(cpuInfo); CloseHandle(job); } }',
-  'public static int Release(int pid) { IntPtr job = OpenJobObject(JobAccess, false, Name(pid)); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error(); IntPtr process = OpenProcess(ProcessAccess, false, (uint)pid); try { if (process != IntPtr.Zero) { bool inJob; if (IsProcessInJob(process, job, out inJob) && inJob) return 170; } return 0; } finally { if (process != IntPtr.Zero) CloseHandle(process); CloseHandle(job); } }',
+  'public static int Hold(int pid) { IntPtr job = OpenOrCreate(Name(pid)); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error(); try { bool created; using (var signal = new EventWaitHandle(false, EventResetMode.ManualReset, OwnerName(pid), out created)) { signal.WaitOne(); } return 0; } finally { CloseHandle(job); } }',
+  'public static int Release(int pid) { try { using (var signal = EventWaitHandle.OpenExisting(OwnerName(pid))) { signal.Set(); } } catch (WaitHandleCannotBeOpenedException) { } catch (UnauthorizedAccessException) { return 5; } IntPtr job = OpenJobObject(JobAccess, false, Name(pid)); if (job == IntPtr.Zero) return Marshal.GetLastWin32Error(); IntPtr process = OpenProcess(ProcessAccess, false, (uint)pid); try { if (process != IntPtr.Zero) { bool inJob; if (IsProcessInJob(process, job, out inJob) && inJob) return 170; } return 0; } finally { if (process != IntPtr.Zero) CloseHandle(process); CloseHandle(job); } }',
   '} }',
   '"@;',
   'Add-Type -TypeDefinition $source -ErrorAction Stop;',
   '$operation = [string]$args[0]; $pidValue = [Int32]$args[1]; $memory = 0; $cpu = 0;',
-  'if ($operation -eq "apply") { if ($args[3] -eq "memory-bytes") { $memory = [Int64]$args[2] } else { $cpu = [Int32]$args[2] }; $result = [RnkResourceJob]::Apply($pidValue, $memory, $cpu); $payload = if ($result -eq 0) { [RnkResourceJob]::Query($pidValue) } else { $null } } elseif ($operation -eq "query") { $payload = [RnkResourceJob]::Query($pidValue); $result = if ($null -eq $payload) { 2 } else { 0 } } elseif ($operation -eq "release") { $result = [RnkResourceJob]::Release($pidValue); $payload = $null } else { $result = 87; $payload = $null }',
+  'if ($operation -eq "apply") { if ($args[3] -eq "memory-bytes") { $memory = [Int64]$args[2] } else { $cpu = [Int32]$args[2] }; $result = [RnkResourceJob]::Apply($pidValue, $memory, $cpu); $payload = if ($result -eq 0) { [RnkResourceJob]::Query($pidValue) } else { $null } } elseif ($operation -eq "hold") { $result = [RnkResourceJob]::Hold($pidValue); $payload = $null } elseif ($operation -eq "query") { $payload = [RnkResourceJob]::Query($pidValue); $result = if ($null -eq $payload) { 2 } else { 0 } } elseif ($operation -eq "release") { $result = [RnkResourceJob]::Release($pidValue); $payload = $null } else { $result = 87; $payload = $null }',
   'if ($result -ne 0) { exit $result }; $facts = @{ operation=$operation; managedId=[RnkResourceJob]::Name($pidValue); scope="named-job-object"; verified=$true }; if ($payload) { $facts.limits = $payload | ConvertFrom-Json }; $facts | ConvertTo-Json -Compress'
 ].join('\n');
 
@@ -85,19 +89,34 @@ function validResourceLimit(action) {
 function validGpuPowerLimit(value) { return Number.isFinite(value) && value >= 10 && value <= 2000; }
 
 export function windowsResourceLimitCommands() {
-  return Object.freeze({ script: RESOURCE_LIMIT_SCRIPT, scope: 'named-job-object', lifecycle: Object.freeze(['create-or-open', 'identify', 'query', 'update', 'release', 'verify']) });
+  return Object.freeze({ script: RESOURCE_LIMIT_SCRIPT, scope: 'named-job-object', processAccess: '0x1501', nestedJobPolicy: 'refuse-different-existing-job', owner: 'persistent-helper-event', lifecycle: Object.freeze(['create-or-open', 'identify', 'apply', 'query', 'update', 'release', 'restart-required', 'verify']) });
 }
 
 function resourceFacts(output) { try { const parsed = JSON.parse(String(output || '')); return parsed && typeof parsed === 'object' ? parsed : null; } catch { return null; } }
 
-async function resourceAuthorityOperation(operation, processId, { commandRunner } = {}) {
+function startPersistentResourceOwner(processId, processSpawner) {
+  if (typeof processSpawner !== 'function') return Object.freeze({ state: 'not-started', reason: 'persistent owner launcher unavailable' });
+  try {
+    const child = processSpawner('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', RESOURCE_LIMIT_SCRIPT, '--', 'hold', String(processId), '0', 'cpu-percent'], { detached: true, stdio: 'ignore', windowsHide: true });
+    if (typeof child?.unref === 'function') child.unref();
+    return Object.freeze({ state: 'started' });
+  } catch (error) {
+    return Object.freeze({ state: 'failed', reason: error.message });
+  }
+}
+
+async function resourceAuthorityOperation(operation, processId, { commandRunner, processSpawner = null, limit = 0, value = 'cpu-percent' } = {}) {
   if (!validPid(processId)) return Object.freeze({ state: 'rejected', verified: false, operation, reason: 'resource authority requires a valid process id' });
   if (!commandRunner || typeof commandRunner.run !== 'function') return Object.freeze({ state: 'unavailable', verified: false, operation, managedId: resourceAuthorityId(processId), reason: 'command runner unavailable' });
   try {
-    const result = await commandRunner.run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', RESOURCE_LIMIT_SCRIPT, '--', operation, String(processId), '0', 'cpu-percent'], { timeoutMs: 10000, maxOutputBytes: 8192 });
+    const result = await commandRunner.run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', RESOURCE_LIMIT_SCRIPT, '--', operation, String(processId), String(limit), value], { timeoutMs: operation === 'hold' ? 0 : 10000, maxOutputBytes: 8192 });
     const facts = resourceFacts(result?.stdout);
+    if (result?.code === 0 && operation === 'apply') {
+      const owner = startPersistentResourceOwner(processId, processSpawner);
+      return Object.freeze({ state: 'applied', verified: true, operation, managedId: resourceAuthorityId(processId), scope: 'named-job-object', limits: facts?.limits || null, owner });
+    }
     return Object.freeze(result?.code === 0
-      ? { state: operation === 'release' ? 'released' : 'observed', verified: true, operation, managedId: resourceAuthorityId(processId), scope: 'named-job-object', limits: operation === 'query' ? facts?.limits || null : null }
+      ? { state: operation === 'release' ? 'released' : operation === 'hold' ? 'held' : 'observed', verified: true, operation, managedId: resourceAuthorityId(processId), scope: 'named-job-object', limits: operation === 'query' ? facts?.limits || null : null }
       : result?.code === 170 && operation === 'release'
         ? { state: 'restart-required', verified: false, operation, managedId: resourceAuthorityId(processId), scope: 'named-job-object', reason: 'RESTART_REQUIRED_TO_RELAX_LIMIT' }
       : { state: 'rejected', verified: false, operation, managedId: resourceAuthorityId(processId), reason: result?.stderr || `Windows resource authority ${operation} failed` });
@@ -108,6 +127,7 @@ async function resourceAuthorityOperation(operation, processId, { commandRunner 
 
 export function queryWindowsResourceLimit(processId, options) { return resourceAuthorityOperation('query', processId, options); }
 export function releaseWindowsResourceLimit(processId, options) { return resourceAuthorityOperation('release', processId, options); }
+export function holdWindowsResourceOwner(processId, options) { return resourceAuthorityOperation('hold', processId, options); }
 
 function approvedPid(context, pid) {
   const list = context?.approvedBackgroundPids;
@@ -116,7 +136,7 @@ function approvedPid(context, pid) {
   return false;
 }
 
-export function createWindowsAdapter({ commandRunner, cacheCleaner, fpsController = null } = {}) {
+export function createWindowsAdapter({ commandRunner, cacheCleaner, fpsController = null, processSpawner = process.platform === 'win32' ? spawnProcess : null } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') throw new TypeError('Windows adapter requires a command runner');
   if (!cacheCleaner || typeof cacheCleaner.preview !== 'function' || typeof cacheCleaner.clean !== 'function') {
     throw new TypeError('Windows adapter requires a cache cleaner');
@@ -166,12 +186,8 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner, fpsControlle
           if (action.value === 'io-bytes-per-second') return { ok: false, reason: 'I/O byte-rate limits are not supported by the Windows adapter' };
           if (!validResourceLimit(action)) return { ok: false, reason: 'resource limit value is invalid' };
           {
-            const result = await commandRunner.run('powershell.exe', [
-            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
-            RESOURCE_LIMIT_SCRIPT, '--', 'apply', String(pid), String(action.limit), action.value
-            ]);
-            const outcome = resultFromCommand(result, 'set-process-resource-limit');
-            return result?.code === 0 ? { ...outcome, mechanism: 'named-job-object', managedId: resourceAuthorityId(pid), scope: 'process-job', verified: true } : outcome;
+            const outcome = await resourceAuthorityOperation('apply', pid, { commandRunner, processSpawner, limit: action.limit, value: action.value });
+            return { ok: outcome.state === 'applied', operation: 'set-process-resource-limit', mechanism: 'named-job-object', managedId: resourceAuthorityId(pid), scope: 'process-job', ...outcome };
           }
         case 'set-process-network-limit':
           if (!validPid(action.pid)) return { ok: false, reason: 'network policy requires a valid process id' };

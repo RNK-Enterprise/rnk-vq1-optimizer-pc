@@ -34,6 +34,7 @@ import {
   runVolumeStorageCommand,
   runWorkloadBudgetCommand,
   runWorkloadCommand,
+  runWindowsResourceLimitCommand,
   runWorkstationPolicyCommand,
   runWorkstationShellCommand,
   runWorkstationTrayCommand
@@ -181,6 +182,16 @@ describe('native top-level CLI adapter', () => {
     await expect(runPlacementPolicyCommand('placement-policy-preview', { scan: '{}', 'target-roots': '{}', 'max-entries': '1' }, { preview })).resolves.toEqual(plan);
     await expect(runPlacementRecommendationCommand({ volumes: '[]', categories: '["model"]', 'media-preferences': '{"model":"hdd"}', 'protected-root': root, 'min-free-bytes': '10' })).resolves.toBeDefined();
     await expect(runPlacementRecommendationCommand({ volumes: '[]' })).resolves.toBeDefined();
+    await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', { pid: '42' }, { platform: 'linux' })).resolves.toMatchObject({ state: 'unsupported-platform' });
+    await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', {})).resolves.toMatchObject({ state: 'unsupported-platform' });
+    const resourceRunner = { run: jest.fn(async () => ({ code: 0, stdout: JSON.stringify({ limits: { cpuPercent: 10 } }) })) };
+    await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', { pid: '42' }, { platform: 'win32', commandRunner: resourceRunner })).resolves.toMatchObject({ state: 'observed', operation: 'query' });
+    await expect(runWindowsResourceLimitCommand('windows-resource-limit-release', { pid: '42' }, { platform: 'win32', commandRunner: resourceRunner })).resolves.toMatchObject({ state: 'released', operation: 'release' });
+    await expect(runWindowsResourceLimitCommand('windows-resource-limit-query', { pid: '0' }, { platform: 'win32', commandRunner: resourceRunner })).resolves.toMatchObject({ state: 'rejected' });
+    const evidenceJson = JSON.stringify({ volumes: [], drives: [], hardFailureEvidence: [] });
+    await expect(runPlacementCommand('placement-preview', { ...placementArgs, 'storage-evidence': evidenceJson }, { preview })).resolves.toEqual(plan);
+    await expect(runPlacementPolicyCommand('placement-policy-preview', { ...policyArgs, 'storage-evidence': evidenceJson }, { preview })).resolves.toEqual(plan);
+    await expect(runPlacementRecommendationCommand({ volumes: '[]', drives: '[]', 'hard-failure-evidence': '[]' })).resolves.toBeDefined();
   });
 
   test('runs assistant, policy, and direct CLI routing boundaries', async () => {
@@ -205,6 +216,8 @@ describe('native top-level CLI adapter', () => {
 
     const routed = [
       ['facts'],
+      ['windows-resource-limit-query', '--pid=42'],
+      ['windows-resource-limit-release', '--pid=42'],
       ['optimize'],
       ['cache-preview'],
       ['storage-preview'],

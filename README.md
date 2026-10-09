@@ -503,8 +503,10 @@ Odinn's sign-off.
 ## Release provenance
 
 Public release tags must be annotated, signed, and point at the exact tested
-commit. Release automation produces a deterministic archive, SHA-256
-checksum, provenance metadata, and a GitHub build attestation. The release
+commit. Release automation imports the public key before verification, pins the
+exact signer fingerprint, requires a green CI run for the tag commit, and
+produces deterministic ZIP and tar archives, SHA-256 checksums, provenance
+metadata, a checksum attestation, and a GitHub build attestation. The release
 workflow runs the same full `npm run verify` gate before producing those
 artifacts. Unsigned or floating branch installs are not release evidence.
 

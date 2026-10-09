@@ -8,7 +8,7 @@ import { collectVolumeStorage, parseDarwinVolumeStorage, parseLinuxVolumeStorage
 describe('native volume storage', () => {
   test('parses bounded Windows volume facts', () => {
     const parsed = parseWindowsVolumeStorage(JSON.stringify([
-      { DriveLetter: 'c', FileSystem: 'NTFS', HealthStatus: 'Healthy', Size: '100', SizeRemaining: '40', IsReadOnly: true, DriveType: 'Fixed' },
+      { DriveLetter: 'c', FileSystem: 'NTFS', HealthStatus: 'Healthy', DiskNumber: 2, VolumeId: 'volume-c', PhysicalDevicePath: '\\\\.\\PhysicalDrive2', Size: '100', SizeRemaining: '40', IsReadOnly: true, DriveType: 'Fixed' },
       { DriveLetter: 'E:', Size: 200, SizeRemaining: null },
       { DriveLetter: null, Size: 300 }
     ]));

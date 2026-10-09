@@ -10,8 +10,9 @@ import { runDownloadGuardHashVerificationTurbo } from '../pc/engines/download-gu
 import { mergeDownloadGuardHashVerificationReports, buildDownloadGuardHashVerificationPlan, buildDownloadGuardHashVerificationEnvelope, createDownloadGuardHashVerificationLibrary } from '../pc/engines/download-guard/turbos/hash-verification/library.js';
 
 const hash = 'a'.repeat(64);
-const storage = [{ mount: 'C:', totalBytes: 100, freeBytes: 8, kind: 'ssd', system: true }, { mount: 'E:', totalBytes: 1000, freeBytes: 2 * 1024 ** 3, kind: 'hdd' }];
-const facts = { engine: 'system-facts', systemMount: 'C:', storage, download: { name: 'model.zip', path: 'E:/Downloads/model.zip', sizeBytes: 120, destinationMount: 'C:', sha256: hash } };
+const storage = [{ mount: 'C:', volumeId: 'volume-c', physicalDiskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', totalBytes: 100, freeBytes: 8, kind: 'ssd', system: true }, { mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', totalBytes: 1000, freeBytes: 2 * 1024 ** 3, kind: 'hdd' }];
+const drives = [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }, { diskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', smart: 'passed' }];
+const facts = { engine: 'system-facts', systemMount: 'C:', storage, drives, download: { name: 'model.zip', path: 'E:/Downloads/model.zip', sizeBytes: 120, destinationMount: 'C:', sha256: hash } };
 const report = (state, fields = {}) => ({ engine: 'download-guard', state, recommendations: ['review'], actions: [], targetMount: 'e:', ...fields });
 const turboReport = (turbo, state, fields = {}) => ({ turbo, state, ...fields });
 
@@ -23,6 +24,11 @@ describe('download-guard engine and library', () => {
     expect(result).toMatchObject({ state: 'redirect', systemMount: 'c:', requestedMount: 'c:', targetMount: 'e:', targetKind: 'hdd', redirected: true, hashStatus: 'available', requiredBytes: 120 + 512 * 1024 ** 2 });
     expect(result.actions).toEqual([]);
     expect(result.recommendations).toContain('use-e:-instead');
+    expect(runDownloadGuardEngine({ ...facts, hardFailureEvidence: [], download: { ...facts.download, sizeBytes: 1, destinationMount: 'E:' } }, { trigger: 'health.interval' }).state).toBe('allow');
+    expect(runDownloadGuardEngine({ engine: 'download-guard-input', storage: [], download: { sizeBytes: 1 } }, { trigger: 'health.interval' }).state).toBe('insufficient-space');
+    expect(runDownloadGuardEngine({ ...facts, download: { sizeBytes: 1, destinationMount: 'E:' } }, { trigger: 'health.interval' }).recommendations).toContain('verify-hash-when-available');
+    const twoSafeCandidates = runDownloadGuardEngine({ ...facts, storage: [...facts.storage, { mount: 'F:', volumeId: 'volume-f', physicalDiskNumber: 2, physicalDevicePath: '\\\\.\\PhysicalDrive2', health: 'healthy', freeBytes: 3 * 1024 ** 3, kind: 'hdd' }], drives: [...drives, { diskNumber: 2, physicalDevicePath: '\\\\.\\PhysicalDrive2', health: 'healthy', smart: 'passed' }], download: { sizeBytes: 1, destinationMount: 'C:' } }, { trigger: 'health.interval' });
+    expect(twoSafeCandidates.targetMount).toBe('f:');
   });
 
   test('fails closed for protected, duplicate, incomplete, and missing evidence', () => {
@@ -31,7 +37,7 @@ describe('download-guard engine and library', () => {
     const incomplete = runDownloadGuardEngine({ ...facts, download: { ...facts.download, partial: true, destinationMount: 'E:' } }, { trigger: 'health.interval' });
     const insufficient = runDownloadGuardEngine({ ...facts, storage: [{ mount: 'C:', freeBytes: 1, totalBytes: 2, system: true }], download: { sizeBytes: 10 } }, { trigger: 'health.interval' });
     const unknown = runDownloadGuardEngine({ engine: 'download-guard-input', storage: [{ mount: 'C:', freeBytes: 10, totalBytes: 20 }], download: { name: 'unknown' } }, { trigger: 'system.facts.request' });
-    expect(protectedTarget.state).toBe('protected-target'); expect(duplicate.state).toBe('duplicate-review'); expect(incomplete.state).toBe('incomplete-review'); expect(insufficient.state).toBe('insufficient-space'); expect(unknown.state).toBe('observation-required');
+    expect(protectedTarget.state).toBe('protected-target'); expect(duplicate.state).toBe('duplicate-review'); expect(incomplete.state).toBe('incomplete-review'); expect(insufficient.state).toBe('storage-safety-review'); expect(unknown.state).toBe('observation-required');
     expect(unknown.targetMount).toBe(null); expect(unknown.hashStatus).toBe('missing');
     const pressureFallback = runDownloadGuardEngine({ engine: 'system-facts', storagePressure: { mount: '/', freeBytes: 10, totalBytes: 20 }, download: { sizeBytes: 1 } }, { trigger: 'system.facts.request' });
     expect(pressureFallback.systemMount).toBe('/');
@@ -42,7 +48,7 @@ describe('download-guard engine and library', () => {
     const untrustedRows = runDownloadGuardEngine({ engine: 'system-facts', storage: [{}, { mount: 'F:', freeBytes: 2 * 1024 ** 3, totalBytes: 3 * 1024 ** 3, writable: false }, { mount: 'G:', freeBytes: 2 * 1024 ** 3, totalBytes: 3 * 1024 ** 3, protected: true }], safetyMarginBytes: 0, download: { sizeBytes: 1 } }, { trigger: 'health.interval' });
     const allowNoHash = runDownloadGuardEngine({ engine: 'system-facts', storage: [{ mount: 'E:', freeBytes: 10, totalBytes: 20 }], safetyMarginBytes: 0, download: { sizeBytes: 1, destinationMount: 'E:' } }, { trigger: 'health.interval' });
     const redirectNoHash = runDownloadGuardEngine({ engine: 'system-facts', storage: [{ mount: 'C:', freeBytes: 1, totalBytes: 2 }, { mount: 'E:', freeBytes: 10, totalBytes: 20 }], safetyMarginBytes: 0, download: { sizeBytes: 2, destinationMount: 'C:' } }, { trigger: 'health.interval' });
-    expect(exactProtected.state).toBe('protected-target'); expect(fallbackSystem.state).toBe('allow'); expect(fallbackNone.state).toBe('insufficient-space'); expect(sortedCandidates.targetMount).toBe('f:'); expect(untrustedRows.state).toBe('insufficient-space'); expect(allowNoHash.recommendations).toEqual(['verify-hash-when-available']); expect(redirectNoHash.recommendations).toEqual(['use-e:-instead', 'verify-hash-when-available']);
+    expect(exactProtected.state).toBe('protected-target'); expect(fallbackSystem.state).toBe('storage-safety-review'); expect(fallbackNone.state).toBe('storage-safety-review'); expect(sortedCandidates.targetMount).toBe(null); expect(untrustedRows.state).toBe('storage-safety-review'); expect(allowNoHash.state).toBe('storage-safety-review'); expect(redirectNoHash.state).toBe('storage-safety-review');
     expect(runDownloadGuardEngine({ engine: 'system-facts', download: {}, safetyMarginBytes: -1 }, { trigger: 'health.interval' }).state).toBe('observation-required');
     expect(runDownloadGuardEngine({ engine: 'system-facts', storage: [], storagePressure: {}, download: {} }, { trigger: 'health.interval' }).state).toBe('observation-required');
     expect(runDownloadGuardEngine({ engine: 'system-facts', storage: [{ mount: 'D:', freeBytes: 2, totalBytes: 4 }] }, { trigger: 'health.interval' }).state).toBe('observation-required');
@@ -85,18 +91,25 @@ describe('download-guard engine and library', () => {
 
 describe('download-guard turbos and libraries', () => {
   test('preflights space and chooses a destination', () => {
-    const enough = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 5, storage: [{ mount: 'E:', freeBytes: 20 }] }], { trigger: 'install.preflight', safetyMarginBytes: 1, now: () => 0 });
-    const shortfall = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 50, storage: [{ mount: 'C:', freeBytes: 2 }] }], { trigger: 'health.interval' });
+    const enough = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 5, storage: [{ ...storage[1], freeBytes: 20 }], drives }], { trigger: 'install.preflight', safetyMarginBytes: 1, now: () => 0 });
+    const shortfall = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 50, storage: [{ ...storage[0], freeBytes: 2 }], drives }], { trigger: 'health.interval' });
     const missing = runDownloadGuardSpacePreflightTurbo([{ storage: [] }], { trigger: 'health.interval' });
     const empty = runDownloadGuardSpacePreflightTurbo([], { trigger: 'health.interval' });
-    const nested = runDownloadGuardSpacePreflightTurbo([{ download: { sizeBytes: 1 }, storage: [{ mount: 'E:', freeBytes: 2 }] }], { trigger: 'health.interval', safetyMarginBytes: NaN });
+    const nested = runDownloadGuardSpacePreflightTurbo([{ download: { sizeBytes: 1 }, storage: [{ ...storage[1], freeBytes: 2 }], drives }], { trigger: 'health.interval', safetyMarginBytes: NaN });
     const noStorageField = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 1 }], { trigger: 'health.interval' });
+    const evidenceProvided = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 1, hardFailureEvidence: [], drives, storage: [{ ...storage[1], freeBytes: 20, storageSuitability: { admission: 'ALLOW' } }] }], { trigger: 'health.interval', safetyMarginBytes: 0 });
+    const noPrecomputedEvidence = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 1, storage: [{ ...storage[1], freeBytes: 20 }], drives }], { trigger: 'health.interval', safetyMarginBytes: 0 });
+    const rejectedStorage = runDownloadGuardSpacePreflightTurbo([{ downloadSizeBytes: 1, storage: [{ ...storage[1], health: 'degraded', freeBytes: 20 }], drives }], { trigger: 'health.interval', safetyMarginBytes: 0 });
     expect(enough.state).toBe('enough-space'); expect(shortfall.state).toBe('space-shortfall'); expect(missing.state).toBe('observation-required'); expect(empty.state).toBe('observation-required'); expect(noStorageField.state).toBe('observation-required');
     expect(nested.state).toBe('enough-space');
+    expect(evidenceProvided.state).toBe('enough-space');
+    expect(noPrecomputedEvidence.state).toBe('enough-space');
+    expect(rejectedStorage.state).toBe('storage-safety-review');
     const spaceReport = (state, eligibleMounts = []) => turboReport('download-guard.space-preflight', state, { eligibleMounts });
     expect(mergeDownloadGuardSpacePreflightReports([]).state).toBe('observation-required');
     expect(mergeDownloadGuardSpacePreflightReports([spaceReport('enough-space', ['E:'])]).eligibleMounts).toEqual(['E:']);
     expect(mergeDownloadGuardSpacePreflightReports([spaceReport('space-shortfall'), spaceReport('enough-space')]).state).toBe('space-shortfall');
+    expect(mergeDownloadGuardSpacePreflightReports([spaceReport('storage-safety-review')]).state).toBe('storage-safety-review');
     expect(buildDownloadGuardSpacePreflightPlan(spaceReport('enough-space'), 'interactive').mode).toBe('download-review');
     expect(buildDownloadGuardSpacePreflightPlan(spaceReport('space-shortfall'), 'interactive').mode).toBe('storage-review');
     expect(buildDownloadGuardSpacePreflightPlan(spaceReport('space-shortfall')).mode).toBe('profile-required');
@@ -117,17 +130,22 @@ describe('download-guard turbos and libraries', () => {
     expect(() => buildDownloadGuardSpacePreflightEnvelope(spaceReport('enough-space'))).toThrow('trigger');
     expect(() => buildDownloadGuardSpacePreflightEnvelope(spaceReport('enough-space'), { trigger: 'health.interval', now: () => NaN })).toThrow('clock');
     expect(() => mergeDownloadGuardSpacePreflightReports(Array.from({ length: 65 }, () => spaceReport('enough-space')))).toThrow('at most 64');
-    const selected = runDownloadGuardDestinationSelectionTurbo([{ targetMount: 'E:', redirected: true }], { trigger: 'health.interval', now: () => 0 });
+    const selected = runDownloadGuardDestinationSelectionTurbo([{ targetMount: 'E:', redirected: true, targetSuitability: { admission: 'ALLOW' } }], { trigger: 'health.interval', now: () => 0 });
     const none = runDownloadGuardDestinationSelectionTurbo([{ redirected: false }], { trigger: 'system.facts.request' });
     const emptyTarget = runDownloadGuardDestinationSelectionTurbo([], { trigger: 'health.interval' });
-    const selectedNoRedirect = runDownloadGuardDestinationSelectionTurbo([{ targetMount: 'C:', redirected: false }], { trigger: 'health.interval' });
+    const selectedNoRedirect = runDownloadGuardDestinationSelectionTurbo([{ targetMount: 'C:', redirected: false, targetSuitability: { admission: 'ALLOW' } }], { trigger: 'health.interval' });
     const emptyMount = runDownloadGuardDestinationSelectionTurbo([{ targetMount: '', redirected: false }], { trigger: 'health.interval' });
+    const observedWithoutPrecomputedEvidence = runDownloadGuardDestinationSelectionTurbo([{ targetMount: 'E:', redirected: false, storage: [], drives: [], hardFailureEvidence: [] }], { trigger: 'health.interval' });
+    const observedWithoutFields = runDownloadGuardDestinationSelectionTurbo([{ targetMount: 'E:', redirected: false }], { trigger: 'health.interval' });
     expect(selected.state).toBe('redirect-required'); expect(none.state).toBe('observation-required'); expect(emptyTarget.state).toBe('observation-required'); expect(emptyMount.state).toBe('observation-required');
     expect(selectedNoRedirect.state).toBe('destination-selected');
+    expect(observedWithoutPrecomputedEvidence.state).toBe('storage-safety-review');
+    expect(observedWithoutFields.state).toBe('storage-safety-review');
     const destinationReport = (state, finalTarget = null, redirectedCount = 0) => turboReport('download-guard.destination-selection', state, { finalTarget, redirectedCount });
     expect(mergeDownloadGuardDestinationSelectionReports([]).state).toBe('observation-required');
     expect(mergeDownloadGuardDestinationSelectionReports([destinationReport('destination-selected', 'E:')]).finalTarget).toBe('E:');
     expect(mergeDownloadGuardDestinationSelectionReports([destinationReport('redirect-required', 'E:', 1)]).state).toBe('redirect-required');
+    expect(mergeDownloadGuardDestinationSelectionReports([destinationReport('storage-safety-review')]).state).toBe('storage-safety-review');
     expect(buildDownloadGuardDestinationSelectionPlan(destinationReport('redirect-required', 'E:'), 'interactive').mode).toBe('approval-required');
     expect(buildDownloadGuardDestinationSelectionPlan(destinationReport('destination-selected', 'E:'), 'interactive').mode).toBe('destination-review');
     expect(buildDownloadGuardDestinationSelectionPlan(destinationReport('destination-selected', 'E:')).mode).toBe('profile-required');

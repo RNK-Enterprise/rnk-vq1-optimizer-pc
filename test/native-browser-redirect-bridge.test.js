@@ -6,7 +6,7 @@
 
 import { handleBrowserMessage } from '../native/browser-bridge.js';
 
-const factsProvider = async () => ({ volumes: { volumes: [{ mount: 'E:', freeBytes: 1000 }] } });
+const factsProvider = async () => ({ volumes: { volumes: [{ mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', freeBytes: 1000 }] }, drives: { drives: [{ diskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', smart: 'passed' }] } });
 
 describe('browser redirect bridge', () => {
   test('returns a preview through the trusted root policy', async () => {

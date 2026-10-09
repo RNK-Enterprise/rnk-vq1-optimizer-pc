@@ -60,6 +60,7 @@ import { applyWorkstationShell, buildWorkstationShellPlan } from './workstation-
 import { defaultWorkstationPaths } from './workstation-paths.js';
 import { applyWorkstationTray, buildWorkstationTrayPlan } from './workstation-tray.js';
 import { runGatewayVerifyCommand, runGpuFpsControlCommand, runMacosLaunchLimitCommand, runWindowsRogVerifyCommand } from './cli-live.mjs';
+import { queryWindowsResourceLimit, releaseWindowsResourceLimit } from './windows-adapter.js';
 
 export function agentFromArgs(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), env = process.env } = {}) {
   return new NativeOptimizerAgent({
@@ -229,6 +230,13 @@ export async function runProcessRateMonitorCommand(args, { platform = process.pl
   return { stopped: true };
 }
 
+export async function runWindowsResourceLimitCommand(command, args, { platform = process.platform, commandRunner = createCommandRunner() } = {}) {
+  if (platform !== 'win32') return { state: 'unsupported-platform', verified: false, operation: command, reason: 'Windows resource authority is only available on win32' };
+  const processId = numberOption(args, 'pid', null);
+  const operation = command === 'windows-resource-limit-query' ? queryWindowsResourceLimit : releaseWindowsResourceLimit;
+  return operation(processId, { commandRunner });
+}
+
 export async function runPlacementCommand(command, args, { preview = previewFilePlacement, apply = applyFilePlacement, rollback = rollbackFilePlacement } = {}) {
   if (command === 'placement-rollback') return rollback(jsonOption(args, 'result'));
   const plan = preview({
@@ -237,6 +245,7 @@ export async function runPlacementCommand(command, args, { preview = previewFile
     targetRoot: requireOption(args, 'target-root'),
     protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
     targetFreeBytes: numberOption(args, 'target-free-bytes', null),
+    storageEvidence: typeof args['storage-evidence'] === 'string' ? jsonOption(args, 'storage-evidence') : null,
     maxEntries: numberOption(args, 'max-entries', 256),
     preserveSource: args['preserve-source'] === true || args['preserve-source'] === 'true'
   });
@@ -252,6 +261,7 @@ export async function runPlacementPolicyCommand(command, args, { preview = previ
     sourceRoots: typeof args['source-root'] === 'string' ? args['source-root'].split(',').filter(Boolean) : undefined,
     protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
     targetFreeBytes: typeof args['target-free-bytes'] === 'string' ? jsonOption(args, 'target-free-bytes') : {},
+    storageEvidence: typeof args['storage-evidence'] === 'string' ? jsonOption(args, 'storage-evidence') : null,
     maxEntries: numberOption(args, 'max-entries', 256)
   });
   if (command === 'placement-policy-preview') return plan;
@@ -262,6 +272,8 @@ export async function runPlacementPolicyCommand(command, args, { preview = previ
 export async function runPlacementRecommendationCommand(args) {
   return recommendPlacementTargets({
     volumes: jsonOption(args, 'volumes'),
+    drives: typeof args.drives === 'string' ? jsonOption(args, 'drives') : [],
+    hardFailureEvidence: typeof args['hard-failure-evidence'] === 'string' ? jsonOption(args, 'hard-failure-evidence') : [],
     categories: typeof args.categories === 'string' ? jsonOption(args, 'categories') : undefined,
     mediaPreferences: typeof args['media-preferences'] === 'string' ? jsonOption(args, 'media-preferences') : undefined,
     protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').filter(Boolean) : [],
@@ -367,6 +379,7 @@ export async function runCli(argv = process.argv.slice(2), {
   if (command === 'facts') return agentFromArgs(args, { adapter }).collectFacts();
   if (command === 'gateway-verify') return runGatewayVerifyCommand(args, { adapter });
   if (command === 'windows-rog-verify') return runWindowsRogVerifyCommand({ platform, commandRunner });
+  if (['windows-resource-limit-query', 'windows-resource-limit-release'].includes(command)) return runWindowsResourceLimitCommand(command, args, { platform, commandRunner });
   if (['gpu-fps-preview', 'gpu-fps-apply'].includes(command)) return runGpuFpsControlCommand(command, args, { adapter });
   if (['macos-limit-preview', 'macos-limit-apply'].includes(command)) return runMacosLaunchLimitCommand(command, args, { platform, commandRunner });
   if (command === 'optimize') {

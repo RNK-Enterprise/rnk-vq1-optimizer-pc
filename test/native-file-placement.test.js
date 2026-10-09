@@ -7,7 +7,10 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { applyFilePlacement, FILE_PLACEMENT_VERSION, previewFilePlacement, rollbackFilePlacement } from '../native/file-placement.js';
+import { applyFilePlacement, FILE_PLACEMENT_VERSION, previewFilePlacement as buildFilePlacementPreview, rollbackFilePlacement } from '../native/file-placement.js';
+
+const safeStorage = { volumes: [{ mount: '/', volumeId: 'root-volume', physicalDiskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', writable: true }], drives: [{ diskNumber: 0, physicalDevicePath: 'disk0', health: 'healthy', smart: 'passed' }] };
+function previewFilePlacement(options = {}) { return buildFilePlacementPreview({ ...options, storageEvidence: options.storageEvidence || safeStorage }); }
 
 describe('native file placement', () => {
   let root;
@@ -34,6 +37,12 @@ describe('native file placement', () => {
   });
 
   test('returns observation-required or no-safe-moves when evidence or space is unavailable', () => {
+    expect(buildFilePlacementPreview({ files: [], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1 })).toMatchObject({ state: 'storage-target-rejected', mutation: 'none' });
+    expect(buildFilePlacementPreview({ files: [], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1, storageEvidence: { state: 'HEALTHY', admission: 'ALLOW' } })).toMatchObject({ state: 'no-safe-moves' });
+    expect(buildFilePlacementPreview({ files: [], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1, storageEvidence: { volumes: [], drives: [] } })).toMatchObject({ state: 'storage-target-rejected' });
+    expect(buildFilePlacementPreview({ files: [], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1, storageEvidence: {} })).toMatchObject({ state: 'storage-target-rejected' });
+    expect(buildFilePlacementPreview({ files: [], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1, storageEvidence: { state: 'UNKNOWN', admission: 'DENY' } })).toMatchObject({ state: 'storage-target-rejected', skipped: [{ reason: 'storage-suitability-required' }] });
+    expect(() => buildFilePlacementPreview()).toThrow('file facts');
     expect(previewFilePlacement({ files: [], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: null })).toMatchObject({ state: 'observation-required', remainingFreeBytes: null });
     expect(previewFilePlacement({ files: [{ path: path.join(sourceRoot, 'large.bin'), sizeBytes: 10 }], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 1 })).toMatchObject({ state: 'no-safe-moves', skipped: [{ reason: 'target-volume-lacks-space' }] });
     expect(() => previewFilePlacement({ files: [], sourceRoots: [], targetRoot, targetFreeBytes: 1 })).toThrow('at least one root');
@@ -54,15 +63,15 @@ describe('native file placement', () => {
     expect(await applyFilePlacement(plan)).toMatchObject({ dryRun: true, moved: [], skipped: [expect.objectContaining({ reason: 'dry-run' })] });
     await expect(applyFilePlacement(plan, { dryRun: false })).rejects.toThrow('explicit approval');
     const applied = await applyFilePlacement(plan, { approved: true, dryRun: false });
-    expect(applied.moved[0].method).toBe('rename');
+    expect(applied.moved[0].method).toBe('copy-delete');
     expect(await fs.readFile(applied.moved[0].destination, 'utf8')).toBe('note');
     const collision = await applyFilePlacement(plan, { approved: true, dryRun: false });
     expect(collision.skipped[0].reason).toBe('destination-exists');
     const rollback = await rollbackFilePlacement(applied);
-    expect(rollback.restored[0].method).toBe('rename');
+    expect(rollback.restored[0].method).toBe('copy-delete');
     expect(await fs.readFile(source, 'utf8')).toBe('note');
     const failedRollback = await rollbackFilePlacement({ moved: [plan.moves[0]] }, { fsImpl: { rename: jest.fn(async () => { throw new Error('rollback failed'); }) } });
-    expect(failedRollback.skipped[0].reason).toBe('rollback failed');
+    expect(failedRollback.skipped[0].reason).toBe('fsImpl.copyFile is not a function');
     await expect(rollbackFilePlacement(null)).rejects.toThrow('Invalid file placement result');
     await expect(applyFilePlacement(null)).rejects.toThrow('Invalid file placement plan');
   });
@@ -71,7 +80,7 @@ describe('native file placement', () => {
     const source = path.join(sourceRoot, 'copy.bin');
     await fs.writeFile(source, 'copy');
     const plan = previewFilePlacement({ files: [{ path: source, sizeBytes: 4 }], sourceRoots: [sourceRoot], targetRoot, targetFreeBytes: 10 });
-    const crossFs = { mkdir: fs.mkdir, lstat: jest.fn(async () => { const error = new Error('missing'); error.code = 'ENOENT'; throw error; }), rename: jest.fn(async () => { const error = new Error('cross'); error.code = 'EXDEV'; throw error; }), copyFile: fs.copyFile, stat: fs.stat, unlink: fs.unlink, open: fs.open };
+    const crossFs = { mkdir: fs.mkdir, lstat: jest.fn(async () => { const error = new Error('missing'); error.code = 'ENOENT'; throw error; }), rename: jest.fn(async (from, to) => { if (String(from).endsWith('.rnk-partial')) return fs.rename(from, to); const error = new Error('cross'); error.code = 'EXDEV'; throw error; }), copyFile: fs.copyFile, stat: fs.stat, unlink: fs.unlink, open: fs.open };
     const moved = await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: crossFs });
     expect(moved.moved[0].method).toBe('copy-delete');
     const bad = { ...plan, moves: [{ ...plan.moves[0], source: path.join(root, 'outside.txt') }] };
@@ -85,9 +94,23 @@ describe('native file placement', () => {
     expect((await applyFilePlacement(protectedPlan, { approved: true, dryRun: false })).skipped[0].reason).toBe('plan-path-boundary-failed');
     const noProtectedField = { ...plan, protectedRoots: undefined };
     const missingSourceFs = { mkdir: jest.fn(async () => {}), lstat: jest.fn(async () => { const error = new Error('missing destination'); error.code = 'ENOENT'; throw error; }), rename: jest.fn(async () => { throw new Error('missing source'); }) };
-    expect((await applyFilePlacement(noProtectedField, { approved: true, dryRun: false, fsImpl: missingSourceFs })).skipped[0].reason).toBe('missing source');
+    expect((await applyFilePlacement(noProtectedField, { approved: true, dryRun: false, fsImpl: missingSourceFs })).skipped[0].reason).toBe('fsImpl.copyFile is not a function');
     const deniedFs = { ...crossFs, lstat: jest.fn(async () => { const error = new Error('denied'); error.code = 'EACCES'; throw error; }) };
     expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: deniedFs })).skipped[0].reason).toBe('denied');
+    const deniedDestinationFs = { ...crossFs, lstat: jest.fn(async (file) => { if (file === plan.moves[0].source) return { isSymbolicLink: () => false }; if (String(file).endsWith('.rnk-partial')) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; } const error = new Error('destination denied'); error.code = 'EACCES'; throw error; }) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: deniedDestinationFs })).skipped[0].reason).toBe('destination denied');
+    const partialLinkFs = { ...crossFs, lstat: jest.fn(async (file) => { if (file === plan.moves[0].source) return { isSymbolicLink: () => false }; if (String(file).endsWith('.rnk-partial')) return { isSymbolicLink: () => true, isDirectory: () => false }; const error = new Error('missing'); error.code = 'ENOENT'; throw error; }) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: partialLinkFs })).skipped[0].reason).toBe('partial destination is not a regular file');
+    const partialDirectoryFs = { ...partialLinkFs, lstat: jest.fn(async (file) => { if (file === plan.moves[0].source) return { isSymbolicLink: () => false }; if (String(file).endsWith('.rnk-partial')) return { isSymbolicLink: () => false, isDirectory: () => true }; const error = new Error('missing'); error.code = 'ENOENT'; throw error; }) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: partialDirectoryFs })).skipped[0].reason).toBe('partial destination is not a regular file');
+    const existingPartialFs = { ...crossFs, lstat: jest.fn(async (file) => { if (file === plan.moves[0].source) return { isSymbolicLink: () => false }; if (String(file).endsWith('.rnk-partial')) return { isSymbolicLink: () => false, isDirectory: () => false }; const error = new Error('missing'); error.code = 'ENOENT'; throw error; }), unlink: jest.fn(async () => {}) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: existingPartialFs })).moved[0]).toMatchObject({ method: 'copy-delete' });
+    const existingCopyFs = { ...crossFs, lstat: existingPartialFs.lstat, copyFile: jest.fn(async () => { const error = new Error('exists'); error.code = 'EEXIST'; throw error; }) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: existingCopyFs })).skipped[0].reason).toBe('exists');
+    const cleanupMissingFs = { ...crossFs, copyFile: jest.fn(async () => { throw new Error('copy-failed'); }), unlink: jest.fn(async () => { const error = new Error('cleanup-missing'); error.code = 'ENOENT'; throw error; }) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: cleanupMissingFs })).skipped[0].reason).toBe('copy-failed');
+    const cleanupDeniedFs = { ...crossFs, copyFile: jest.fn(async () => { throw new Error('copy-failed'); }), unlink: jest.fn(async () => { const error = new Error('cleanup-denied'); error.code = 'EACCES'; throw error; }) };
+    expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: cleanupDeniedFs })).skipped[0].reason).toBe('copy-failed');
     const renameFailure = { ...crossFs, rename: jest.fn(async () => { throw new Error('rename failed'); }) };
     expect((await applyFilePlacement(plan, { approved: true, dryRun: false, fsImpl: renameFailure })).skipped[0].reason).toBe('rename failed');
     const fallbackFs = { mkdir: crossFs.mkdir, lstat: crossFs.lstat, rename: crossFs.rename, copyFile: crossFs.copyFile, stat: crossFs.stat, unlink: crossFs.unlink, readFile: jest.fn(async () => Buffer.from('copy')) };

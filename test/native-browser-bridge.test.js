@@ -13,7 +13,7 @@ function frame(message) { return encodeBrowserMessage(message); }
 
 describe('native browser bridge', () => {
   test('handles bounded preflight messages from volume facts', async () => {
-    const factsProvider = jest.fn(async () => ({ volumes: { volumes: [{ mount: 'C:', freeBytes: 100, writable: true }, { mount: 'E:', freeBytes: 1000, writable: true }] } }));
+    const factsProvider = jest.fn(async () => ({ volumes: { volumes: [{ mount: 'C:', volumeId: 'volume-c', physicalDiskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', freeBytes: 100, writable: true }, { mount: 'E:', volumeId: 'volume-e', physicalDiskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', freeBytes: 1000, writable: true }] }, drives: { drives: [{ diskNumber: 0, physicalDevicePath: '\\\\.\\PhysicalDrive0', health: 'healthy', smart: 'passed' }, { diskNumber: 1, physicalDevicePath: '\\\\.\\PhysicalDrive1', health: 'healthy', smart: 'passed' }] } }));
     await expect(handleBrowserMessage({ type: 'download-preflight', requestId: 'one', sizeBytes: 200, destinationMount: 'C:' }, { factsProvider })).resolves.toMatchObject({ version: 1, state: 'redirect', preflight: { targetMount: 'E:' } });
     await expect(handleBrowserMessage({ type: 'download-preflight', sizeBytes: 0, destinationMount: 'C:' }, { factsProvider })).resolves.toMatchObject({ state: 'allow' });
     await expect(handleBrowserMessage({ type: 'download-preflight', sizeBytes: null }, { factsProvider })).resolves.toMatchObject({ state: 'observation-required' });

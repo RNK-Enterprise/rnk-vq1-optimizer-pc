@@ -185,6 +185,11 @@ describe('native storage pressure classification and collection', () => {
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, pagefiles: { AllocatedBaseSize: -1, CurrentUsage: -1, PeakUsage: 'bad' } }), { targetFreeBytes: 0 }).pagefile.files[0]).toEqual({ name: null, allocatedBytes: null, currentBytes: null, peakBytes: null });
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, automaticManagedPagefile: true, committedBytes: 30, commitLimitBytes: 100 }), { targetFreeBytes: 0 }).pagefile).toMatchObject({ available: true, systemManaged: true, freeCommitBytes: 70 });
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100, freeBytes: 50, automaticManagedPagefile: true, committedBytes: 30, commitLimitBytes: 100, observedAt: '2030-01-02T00:00:00.000Z', source: 'test-commit-facts' }), { targetFreeBytes: 0 }).pagefile).toMatchObject({ observedAt: '2030-01-02T00:00:00.000Z', source: 'test-commit-facts' });
+    const providerUnknown = parseWindowsStorageOutput(JSON.stringify({ drive: 'C:', totalBytes: null, freeBytes: null, automaticManagedPagefile: null, committedBytes: null, commitLimitBytes: null, freeCommitBytes: null, pagefiles: [] }), { targetFreeBytes: 0 });
+    expect(providerUnknown).toMatchObject({ storage: [], pressure: { level: 'unknown' }, pagefile: { available: false, managementStatus: 'UNKNOWN', commitStatus: 'UNAVAILABLE', committedBytes: null, commitLimitBytes: null, freeCommitBytes: null } });
+    expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: null, freeBytes: null, freeCommitBytes: null }), { targetFreeBytes: 0 }).pagefile.commitStatus).toBe('UNAVAILABLE');
+    expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: null, freeBytes: null }), { targetFreeBytes: 0 })).toBeNull();
+    expect(parseWindowsStorageOutput('null', { targetFreeBytes: 0 })).toBeNull();
     expect(parseWindowsStorageOutput('not-json')).toBeNull();
     expect(parseWindowsStorageOutput()).toBeNull();
     expect(parseWindowsStorageOutput(JSON.stringify({ totalBytes: 100 }))).toBeNull();

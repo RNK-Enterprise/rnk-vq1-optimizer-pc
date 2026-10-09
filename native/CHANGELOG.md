@@ -1,5 +1,26 @@
 # Native whole-PC optimizer changelog
 
+## 3.1.3 repair candidate
+
+- Added a canonical physical-storage suitability gate that binds volume identity
+  to physical-disk identity, platform health, SMART evidence, writability, and
+  hard-failure evidence before any placement, relocation, cleanup, or rebalance
+  recommendation.
+- Hardened cross-volume placement and browser relocation with writable-handle
+  flushes, `.rnk-partial` cleanup, size plus SHA-256 verification, and
+  source-preserving failure behavior.
+- Completed the Windows named Job Object lifecycle with process access `0x1501`,
+  nested-job refusal, persistent owner helper, query/release CLI commands, and
+  explicit restart-required results.
+- Preserved unknown Windows pagefile and commit-provider values as UNKNOWN or
+  UNAVAILABLE instead of converting provider failures to zero or false.
+- Added hermetic coverage for the repair paths and Windows live-proof tests that
+  remain read-only and are executed only on Windows hosts.
+- Strengthened release provenance requirements for v3.1.3: imported signing
+  key before verification, exact signer fingerprint, green CI for the tagged
+  commit, deterministic ZIP/checksum artifacts, provenance metadata, and
+  attestations. Windows certification and Odinn sign-off remain outstanding.
+
 ## 3.1.2 candidate
 
 - Hardened Windows SMART, pagefile/commit, application-path network shaping,

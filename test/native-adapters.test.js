@@ -5,7 +5,7 @@
  */
 
 import { createLinuxAdapter } from '../native/linux-adapter.js';
-import { createWindowsAdapter, queryWindowsResourceLimit, releaseWindowsResourceLimit, windowsResourceLimitCommands } from '../native/windows-adapter.js';
+import { createWindowsAdapter, holdWindowsResourceOwner, queryWindowsResourceLimit, releaseWindowsResourceLimit, windowsResourceLimitCommands } from '../native/windows-adapter.js';
 import { createMacosAdapter } from '../native/macos-adapter.js';
 import { createPlatformAdapter } from '../native/platform.js';
 import path from 'path';
@@ -39,7 +39,7 @@ function harness() {
 
 describe('native adapters', () => {
   test('keeps Windows resource limits under a named, queryable job authority', async () => {
-    expect(windowsResourceLimitCommands()).toMatchObject({ scope: 'named-job-object', lifecycle: ['create-or-open', 'identify', 'query', 'update', 'release', 'verify'], script: expect.stringContaining('OpenJobObject') });
+    expect(windowsResourceLimitCommands()).toMatchObject({ scope: 'named-job-object', processAccess: '0x1501', nestedJobPolicy: 'refuse-different-existing-job', owner: 'persistent-helper-event', lifecycle: ['create-or-open', 'identify', 'apply', 'query', 'update', 'release', 'restart-required', 'verify'], script: expect.stringContaining('OpenJobObject') });
     await expect(queryWindowsResourceLimit(0)).resolves.toMatchObject({ state: 'rejected', verified: false });
     await expect(releaseWindowsResourceLimit(123)).resolves.toMatchObject({ state: 'unavailable', operation: 'release', managedId: 'Local\\RNK-Optimizer-123' });
     const h = harness();
@@ -48,6 +48,7 @@ describe('native adapters', () => {
     h.commandRunner.run.mockResolvedValueOnce({ code: 0, stdout: 'null' });
     await expect(queryWindowsResourceLimit(123, { commandRunner: h.commandRunner })).resolves.toMatchObject({ state: 'observed', verified: true, limits: null });
     await expect(releaseWindowsResourceLimit(123, { commandRunner: h.commandRunner })).resolves.toMatchObject({ state: 'released', verified: true });
+    await expect(holdWindowsResourceOwner(123, { commandRunner: h.commandRunner })).resolves.toMatchObject({ state: 'held', verified: true });
     h.commandRunner.run.mockResolvedValueOnce({ code: 170, stderr: 'active process' });
     await expect(releaseWindowsResourceLimit(123, { commandRunner: h.commandRunner })).resolves.toMatchObject({ state: 'restart-required', verified: false, reason: 'RESTART_REQUIRED_TO_RELAX_LIMIT' });
     h.commandRunner.run.mockResolvedValueOnce({ code: 1, stderr: 'active job' });
@@ -56,6 +57,18 @@ describe('native adapters', () => {
     await expect(queryWindowsResourceLimit(123, { commandRunner: h.commandRunner })).resolves.toMatchObject({ state: 'rejected', verified: false, reason: 'Windows resource authority query failed' });
     h.commandRunner.run.mockRejectedValueOnce(new Error('authority unavailable'));
     await expect(queryWindowsResourceLimit(123, { commandRunner: h.commandRunner })).resolves.toMatchObject({ state: 'rejected', verified: false, reason: 'authority unavailable' });
+    const ownerHarness = harness();
+    const owner = jest.fn(() => ({ unref: jest.fn() }));
+    const ownerAdapter = createWindowsAdapter({ ...ownerHarness, processSpawner: owner });
+    await expect(ownerAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: true, state: 'applied', owner: { state: 'started' } });
+    expect(owner).toHaveBeenCalledWith('powershell.exe', expect.arrayContaining(['hold', '123']), expect.objectContaining({ detached: true, stdio: 'ignore' }));
+    const noUnrefAdapter = createWindowsAdapter({ ...harness(), processSpawner: () => ({}) });
+    await expect(noUnrefAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ owner: { state: 'started' } });
+    const failedOwnerAdapter = createWindowsAdapter({ ...harness(), processSpawner: () => { throw new Error('owner launch failed'); } });
+    await expect(failedOwnerAdapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ owner: { state: 'failed', reason: 'owner launch failed' } });
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try { expect(createWindowsAdapter(harness()).platform).toBe('win32'); } finally { Object.defineProperty(process, 'platform', { value: originalPlatform }); }
   });
 
   test('Windows runs only fixed supported actions and gates process stops', async () => {
@@ -99,7 +112,7 @@ describe('native adapters', () => {
     await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'denied' });
     h.commandRunner.run.mockResolvedValue({ code: 1 });
     await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-priority failed' });
-    await expect(adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-resource-limit failed' });
+    await expect(adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'Windows resource authority apply failed' });
     for (const action of [valid.io, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect(h.calls[0]).toEqual(['powercfg.exe', ['/setactive', '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c']]);
     expect(h.calls).toEqual(expect.arrayContaining([['nvidia-smi.exe', ['--power-limit', '80']]]));

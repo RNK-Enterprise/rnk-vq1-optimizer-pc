@@ -53,7 +53,7 @@ Examples:
 ./install/linux/install.sh --mode headless --run-optimize \
   --gateway https://optimizer.example.invalid/v1/plan
 ./install/linux/install.sh --mode headless --min-free-bytes 1073741824
-./install/linux/install.sh --mode headless --ref v3.1.2 \
+./install/linux/install.sh --mode headless --ref v3.1.3 \
   --signing-fingerprint RNK_SIGNING_FINGERPRINT
 ```
 
@@ -62,15 +62,15 @@ Examples:
 .\install\windows\install.ps1 -EnvironmentMode headless -RunOptimize \
   -GatewayUrl https://optimizer.example.invalid/v1/plan
 .\install\windows\install.ps1 -EnvironmentMode headless -MinimumFreeBytes 1073741824
-.\install\windows\install.ps1 -EnvironmentMode interactive -InstallDirectory E:\RNK-Vortex-Optimizer -Ref v3.1.2 `
+.\install\windows\install.ps1 -EnvironmentMode interactive -InstallDirectory E:\RNK-Vortex-Optimizer -Ref v3.1.3 `
   -ExpectedSigningFingerprint RNK_SIGNING_FINGERPRINT
-.\install\windows\install.ps1 -EnvironmentMode interactive -InstallDirectory E:\RNK-Vortex-Optimizer -Ref v3.1.2 -RequireRog
-.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.2 -RunOptimize `
+.\install\windows\install.ps1 -EnvironmentMode interactive -InstallDirectory E:\RNK-Vortex-Optimizer -Ref v3.1.3 -RequireRog
+.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.3 -RunOptimize `
   -GatewayUrl https://optimizer.example.invalid/v1/plan -ApplyOptimize -AllowAdmin
 ```
 
 ```bash
-./install/macos/install.sh --mode interactive --ref v3.1.2 \
+./install/macos/install.sh --mode interactive --ref v3.1.3 \
   --signing-fingerprint RNK_SIGNING_FINGERPRINT
-./install/macos/install.sh --mode headless --ref v3.1.2
+./install/macos/install.sh --mode headless --ref v3.1.3
 ```

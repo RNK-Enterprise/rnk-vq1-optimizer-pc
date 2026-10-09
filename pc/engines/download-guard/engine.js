@@ -7,6 +7,8 @@
  * It never downloads, moves, deletes, or overwrites a file.
  */
 
+import { assessStorageSuitability } from '../../../native/storage-suitability.js';
+
 export const DOWNLOAD_GUARD_ENGINE_ID = 'download-guard';
 export const DOWNLOAD_GUARD_ENGINE_VERSION = 1;
 export const DOWNLOAD_GUARD_TRIGGERS = Object.freeze([
@@ -31,21 +33,31 @@ function requireFacts(facts) {
 function requireTrigger(trigger) { if (!DOWNLOAD_GUARD_TRIGGERS.includes(trigger)) throw new Error(`Unsupported download-guard trigger: ${trigger || 'unknown'}`); return trigger; }
 function requireClock(timestamp) { if (!Number.isFinite(timestamp)) throw new TypeError('Download-guard clock must return a number'); return timestamp; }
 function storageRows(source) { const rows = Array.isArray(source.storage) ? source.storage.filter(isRecord) : []; const pressure = isRecord(source.storagePressure) ? source.storagePressure : {}; return rows.length ? rows : pressure.mount ? [pressure] : []; }
-function normalizeStorage(source) { return storageRows(source).map((row) => Object.freeze({ mount: mountOf(row.mount), freeBytes: nonNegative(row.freeBytes), totalBytes: nonNegative(row.totalBytes), kind: text(row.kind)?.toLowerCase() || 'unknown', writable: row.writable !== false, protected: row.protected === true, system: row.system === true })); }
+function driveRows(source) { const drives = source.drives || source.driveHealth?.drives; return Array.isArray(drives) ? drives.filter(isRecord).slice(0, 64) : []; }
+function normalizeStorage(source) {
+  const drives = driveRows(source);
+  const hardFailureEvidence = Array.isArray(source.hardFailureEvidence) ? source.hardFailureEvidence : [];
+  return storageRows(source).map((row) => {
+    const normalized = { mount: mountOf(row.mount), freeBytes: nonNegative(row.freeBytes), totalBytes: nonNegative(row.totalBytes), kind: text(row.kind)?.toLowerCase() || 'unknown', health: row.health ?? row.healthStatus, volumeId: text(row.volumeId ?? row.uniqueId ?? row.device), physicalDiskNumber: Number.isInteger(row.physicalDiskNumber) && row.physicalDiskNumber >= 0 ? row.physicalDiskNumber : null, physicalDevicePath: text(row.physicalDevicePath), smart: row.smart, hardFailureEvidence: row.hardFailureEvidence, writable: row.writable !== false, protected: row.protected === true, system: row.system === true };
+    return Object.freeze({ ...normalized, storageSuitability: assessStorageSuitability({ volume: normalized, drives, hardFailureEvidence }) });
+  });
+}
 function downloadOf(source) { const download = isRecord(source.download) ? source.download : {}; const sizeBytes = nonNegative(download.sizeBytes); const safetyMarginBytes = Math.min(MAX_MARGIN_BYTES, nonNegative(download.safetyMarginBytes ?? source.safetyMarginBytes) ?? 512 * 1024 ** 2); return Object.freeze({ name: text(download.name), path: text(download.path), sizeBytes, partial: download.partial === true, destinationMount: mountOf(download.destinationMount || source.destinationMount || source.preferredMount), safetyMarginBytes, duplicateCandidates: Number.isInteger(download.duplicateCandidates) && download.duplicateCandidates >= 0 ? download.duplicateCandidates : 0, hashAvailable: typeof download.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(download.sha256) }); }
 function systemMount(source, rows) { const explicit = mountOf(source.systemMount); const marked = rows.find((row) => row.system && row.mount); return explicit || marked?.mount || rows.find((row) => row.mount === 'c:')?.mount || rows.find((row) => row.mount === '/')?.mount || null; }
 function usable(row, requiredBytes) { return Boolean(row?.mount && row.writable && !row.protected && row.freeBytes !== null && row.freeBytes >= requiredBytes); }
 function chooseTarget(rows, download, system) {
   const requested = download.destinationMount ? rows.find((row) => row.mount === download.destinationMount) : null;
-  if (requested && usable(requested, download.sizeBytes + download.safetyMarginBytes)) return Object.freeze({ row: requested, redirected: false });
-  const available = rows.filter((row) => usable(row, download.sizeBytes + download.safetyMarginBytes));
+  const safeRows = rows.filter((row) => row.storageSuitability?.admission === 'ALLOW');
+  const available = safeRows.filter((row) => usable(row, download.sizeBytes + download.safetyMarginBytes));
+  if (requested && requested.storageSuitability?.admission === 'ALLOW' && usable(requested, download.sizeBytes + download.safetyMarginBytes)) return Object.freeze({ row: requested, redirected: false, safetyReview: false });
   const nonSystem = available.filter((row) => row.mount !== system).sort((a, b) => b.freeBytes - a.freeBytes);
   const fallback = [...nonSystem, ...available.filter((row) => row.mount === system), ...available.filter((row) => row.mount !== system && !nonSystem.includes(row))][0] || null;
-  return Object.freeze({ row: fallback, redirected: Boolean(fallback && requested && fallback.mount !== requested.mount) });
+  return Object.freeze({ row: fallback, redirected: Boolean(fallback && requested && fallback.mount !== requested.mount), safetyReview: rows.length > 0 && safeRows.length === 0 });
 }
 function stateFor(download, target, targetPath, protectedPaths) {
   if (download.sizeBytes === null) return 'observation-required';
   if (targetPath && protectedPaths.some((prefix) => pathMatches(targetPath, prefix))) return 'protected-target';
+  if (target?.safetyReview) return 'storage-safety-review';
   if (download.partial) return 'incomplete-review';
   if (download.duplicateCandidates > 0) return 'duplicate-review';
   if (!target?.row) return 'insufficient-space';
@@ -57,6 +69,7 @@ function recommendations(state, download, target) {
   if (state === 'observation-required') return Object.freeze(['collect-download-size']);
   if (state === 'incomplete-review') return Object.freeze(['review-incomplete-download']);
   if (state === 'duplicate-review') return Object.freeze(['review-duplicate-candidates']);
+  if (state === 'storage-safety-review') return Object.freeze(['resolve-physical-storage-health-before-placement']);
   if (state === 'insufficient-space') return Object.freeze(['choose-volume-or-free-space']);
   if (state === 'redirect') return Object.freeze([`use-${target.row.mount}-instead`, hashRecommendation(download)]);
   return Object.freeze([hashRecommendation(download)]);
@@ -75,5 +88,5 @@ export function runDownloadGuardEngine(facts, { trigger, now = Date.now } = {}) 
   const state = stateFor(download, target, targetPath, protectedPaths);
   const requiredBytes = download.sizeBytes === null ? null : download.sizeBytes + download.safetyMarginBytes;
   const targetFreeBytes = target.row?.freeBytes ?? null;
-  return Object.freeze({ protocolVersion: 1, engine: DOWNLOAD_GUARD_ENGINE_ID, engineVersion: DOWNLOAD_GUARD_ENGINE_VERSION, trigger, generatedAt: new Date(timestamp).toISOString(), state, systemMount: system, requestedMount: download.destinationMount, targetMount: target.row?.mount || null, targetKind: target.row?.kind || null, targetFreeBytes, download, requiredBytes, storage: Object.freeze(rows), protectedPaths: Object.freeze(protectedPaths), redirected: target.redirected, hashStatus: download.hashAvailable ? 'available' : 'missing', recommendations: recommendations(state, download, target), actions: EMPTY_ARRAY });
+  return Object.freeze({ protocolVersion: 1, engine: DOWNLOAD_GUARD_ENGINE_ID, engineVersion: DOWNLOAD_GUARD_ENGINE_VERSION, trigger, generatedAt: new Date(timestamp).toISOString(), state, systemMount: system, requestedMount: download.destinationMount, targetMount: target.row?.mount || null, targetKind: target.row?.kind || null, targetFreeBytes, targetSuitability: target.row?.storageSuitability || null, rejectedMounts: Object.freeze(rows.filter((row) => row.storageSuitability?.admission !== 'ALLOW').map((row) => row.mount).filter(Boolean)), download, requiredBytes, storage: Object.freeze(rows), protectedPaths: Object.freeze(protectedPaths), redirected: target.redirected, hashStatus: download.hashAvailable ? 'available' : 'missing', recommendations: recommendations(state, download, target), actions: EMPTY_ARRAY });
 }
