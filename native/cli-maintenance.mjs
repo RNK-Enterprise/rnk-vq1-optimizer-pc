@@ -30,7 +30,8 @@ import {
   requireOption,
   storageGuardFromArgs,
   storageOptionsFromArgs,
-  storagePolicyFromArgs
+  storagePolicyFromArgs,
+  textListOption
 } from './cli-utils.mjs';
 
 export async function runStorageCommand(command, args) {
@@ -120,10 +121,11 @@ export async function runCacheCommand(command, args) {
 
 export async function runOrganizerCommand(command, args) {
   const root = requireOption(args, 'root');
-  const plan = await previewOrganization(root, { recursive: args.recursive === true, maxEntries: numberOption(args, 'max-entries', 1000) });
+  const protectedRoots = textListOption(args, 'protected-root');
+  const plan = await previewOrganization(root, { recursive: args.recursive === true, maxEntries: numberOption(args, 'max-entries', 1000), protectedRoots });
   if (command === 'organize-preview') return plan;
   if (args.confirm !== true) throw new Error('organize-apply requires --confirm');
-  return { plan, result: await applyOrganization(plan, { approved: true, dryRun: false }) };
+  return { plan, result: await applyOrganization(plan, { approved: true, dryRun: false, protectedRoots }) };
 }
 
 export async function runFileInsightsCommand(args) {

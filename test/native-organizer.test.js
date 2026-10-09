@@ -35,6 +35,13 @@ describe('native organizer', () => {
     expect(plan.moves.some((move) => move.source.endsWith('.hidden.txt'))).toBe(false);
     expect(plan.moves.some((move) => move.source.endsWith('nested.txt'))).toBe(false);
     expect(plan.moves.some((move) => move.source.endsWith('linked.txt'))).toBe(false);
+    const protectedPlan = await previewOrganization(root, { protectedRoots: [path.join(root, 'note.txt')] });
+    expect(protectedPlan.moves.some((move) => move.source.endsWith('note.txt'))).toBe(false);
+    expect(protectedPlan.protectedRoots).toEqual([path.join(root, 'note.txt')]);
+    const protectedDestination = await previewOrganization(root, { protectedRoots: [path.join(root, 'documents')] });
+    expect(protectedDestination.moves.some((move) => move.destination.endsWith(path.join('documents', 'note.txt')))).toBe(false);
+    const invalidProtectedRoots = await previewOrganization(root, { protectedRoots: 'not-a-list' });
+    expect(invalidProtectedRoots.protectedRoots).toEqual([]);
 
     const recursive = await previewOrganization(root, { recursive: true, maxEntries: 1 });
     expect(recursive.moves).toHaveLength(1);
@@ -65,6 +72,8 @@ describe('native organizer', () => {
     expect(collision.skipped).toEqual(expect.arrayContaining([expect.objectContaining({ reason: 'destination-exists' })]));
     const outside = await applyOrganization({ root: plan.root, moves: [{ source: path.join(path.dirname(root), 'outside.txt'), destination: path.join(root, 'documents', 'outside.txt') }] }, { approved: true, dryRun: false });
     expect(outside.skipped[0].reason).toBe('outside-selected-root');
+    const protectedMove = await applyOrganization({ root: plan.root, protectedRoots: [path.join(root, 'note.txt')], moves: [{ source: path.join(root, 'note.txt'), destination: path.join(root, 'documents', 'note.txt') }] }, { approved: true, dryRun: false });
+    expect(protectedMove.skipped[0].reason).toBe('protected-path');
 
     const rollback = await rollbackOrganization(first);
     expect(rollback.restored).toHaveLength(1);
@@ -73,6 +82,8 @@ describe('native organizer', () => {
     expect(failedRollback.skipped).toHaveLength(1);
     const failedMove = await applyOrganization({ root: plan.root, moves: [{ source: path.join(root, 'missing.txt'), destination: path.join(root, 'documents', 'missing.txt') }] }, { approved: true, dryRun: false });
     expect(failedMove.skipped[0].reason).toContain('no such file');
+    const invalidApplyProtectedRoots = await applyOrganization({ root: plan.root, moves: [{ source: path.join(root, 'missing.txt'), destination: path.join(root, 'documents', 'missing.txt') }] }, { approved: true, dryRun: false, protectedRoots: 'not-a-list' });
+    expect(invalidApplyProtectedRoots.skipped[0].reason).toContain('no such file');
     const exactRoot = await applyOrganization({ root: plan.root, moves: [{ source: plan.root, destination: path.join(plan.root, 'documents', 'root') }] }, { approved: true, dryRun: false });
     expect(exactRoot.skipped[0].reason).toBe('outside-selected-root');
     const absolutePathImpl = { ...path, relative: () => '/absolute', isAbsolute: () => true };

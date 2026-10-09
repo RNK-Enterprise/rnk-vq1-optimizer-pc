@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Extended organizer preview/apply plans with protected-root precedence so
+  project, model, credential, WSL, and user-designated paths cannot be moved;
+  organizer CLI commands now accept the same comma-separated protected roots.
 - Added read-only fan-RPM telemetry from Linux hwmon and Windows
   `Win32_Fan`; macOS and missing sensor paths remain explicitly unavailable,
   with no firmware or fan-control authority.

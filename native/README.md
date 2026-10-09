@@ -41,8 +41,10 @@ node native/cli.mjs protected-roots-add \
   --root "$HOME/projects,$HOME/models,$HOME/.ssh" --confirm
 node native/cli.mjs protected-roots-read \
   --protected-store "$HOME/.rnk-optimizer/protected-roots.json"
-node native/cli.mjs organize-preview --root "$HOME/Downloads"
-node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
+node native/cli.mjs organize-preview --root "$HOME/Downloads" \
+  --protected-root "$HOME/projects,$HOME/models,$HOME/.ssh"
+node native/cli.mjs organize-apply --root "$HOME/Downloads" \
+  --protected-root "$HOME/projects,$HOME/models,$HOME/.ssh" --confirm
 node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
@@ -286,7 +288,9 @@ bandwidth remains available only when the host supplies that evidence.
 installers, large files, models, archives, ISO files, protected paths, and
 hash-backed duplicate groups. It returns a review-only plan; `organize-preview`
 and `placement-preview` remain the only move previews, and no file-insights
-command mutates the filesystem.
+command mutates the filesystem. Organizer preview/apply accepts
+`--protected-root` and preserves those roots even when the selected organizer
+root contains them.
 
 The media library provides a bounded read-only catalogue for local audio,
 video, and image files, plus explicit favorites, recently played entries,

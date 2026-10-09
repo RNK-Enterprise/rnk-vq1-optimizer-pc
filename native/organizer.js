@@ -45,15 +45,24 @@ function inside(root, candidate, pathImpl) {
   return relative !== '' && !relative.startsWith('..') && !pathImpl.isAbsolute(relative);
 }
 
+function protectedPath(candidate, roots, pathImpl) {
+  return roots.some((root) => {
+    const relative = pathImpl.relative(root, candidate);
+    return relative === '' || (!relative.startsWith('..') && !pathImpl.isAbsolute(relative));
+  });
+}
+
 export async function previewOrganization(root, {
   fsImpl = fs,
   pathImpl = path,
   recursive = false,
-  maxEntries = 1000
+  maxEntries = 1000,
+  protectedRoots = []
 } = {}) {
   if (typeof root !== 'string' || root.length === 0) throw new TypeError('Organization requires a root directory');
   if (!Number.isInteger(maxEntries) || maxEntries < 1 || maxEntries > 10000) throw new RangeError('maxEntries out of range');
   const resolvedRoot = pathImpl.resolve(root);
+  const resolvedProtectedRoots = Array.isArray(protectedRoots) ? protectedRoots.filter((item) => typeof item === 'string' && item.length > 0).map((item) => pathImpl.resolve(item)) : [];
   const moves = [];
   async function visit(directory, depth) {
     let entries;
@@ -79,28 +88,34 @@ export async function previewOrganization(root, {
       if (!info.isFile()) continue;
       const category = categoryFor(source, pathImpl);
       const destination = pathImpl.join(resolvedRoot, category, entry.name);
-      if (destination === source || !inside(resolvedRoot, destination, pathImpl)) continue;
+      if (destination === source || !inside(resolvedRoot, destination, pathImpl) || protectedPath(source, resolvedProtectedRoots, pathImpl) || protectedPath(destination, resolvedProtectedRoots, pathImpl)) continue;
       moves.push({ source, destination, category, sizeBytes: info.size });
     }
   }
   await visit(resolvedRoot, 0);
-  return { root: resolvedRoot, moves, truncated: moves.length >= maxEntries };
+  return { root: resolvedRoot, protectedRoots: resolvedProtectedRoots, moves, truncated: moves.length >= maxEntries };
 }
 
 export async function applyOrganization(plan, {
   approved = false,
   dryRun = true,
   fsImpl = fs,
-  pathImpl = path
+  pathImpl = path,
+  protectedRoots = []
 } = {}) {
   if (!plan || typeof plan.root !== 'string' || !Array.isArray(plan.moves)) throw new TypeError('Invalid organization plan');
   if (!approved && !dryRun) throw new Error('Organization requires explicit approval');
   if (dryRun) return { dryRun: true, moved: [], skipped: plan.moves.length };
+  const resolvedProtectedRoots = [...(Array.isArray(plan.protectedRoots) ? plan.protectedRoots : []), ...(Array.isArray(protectedRoots) ? protectedRoots : [])].filter((item) => typeof item === 'string' && item.length > 0).map((item) => pathImpl.resolve(item));
   const moved = [];
   const skipped = [];
   for (const move of plan.moves) {
     if (!inside(plan.root, move.source, pathImpl) || !inside(plan.root, move.destination, pathImpl)) {
       skipped.push({ move, reason: 'outside-selected-root' });
+      continue;
+    }
+    if (protectedPath(move.source, resolvedProtectedRoots, pathImpl) || protectedPath(move.destination, resolvedProtectedRoots, pathImpl)) {
+      skipped.push({ move, reason: 'protected-path' });
       continue;
     }
     try {

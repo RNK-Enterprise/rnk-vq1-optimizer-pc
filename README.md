@@ -203,8 +203,10 @@ node native/cli.mjs media-player --tracks '["/music/track-a.mp3","/music/track-b
 node native/cli.mjs media-panel --url "https://www.youtube.com/playlist?list=EXAMPLE"
 node native/cli.mjs media-panel-open --url "https://www.youtube.com/playlist?list=EXAMPLE" --confirm
 node native/cli.mjs media-metadata --file "$HOME/Videos/example.mp4"
-node native/cli.mjs organize-preview --root "$HOME/Downloads"
-node native/cli.mjs organize-apply --root "$HOME/Downloads" --confirm
+node native/cli.mjs organize-preview --root "$HOME/Downloads" \
+  --protected-root "$HOME/projects,$HOME/models,$HOME/.ssh"
+node native/cli.mjs organize-apply --root "$HOME/Downloads" \
+  --protected-root "$HOME/projects,$HOME/models,$HOME/.ssh" --confirm
 ```
 
 The gateway supplies bounded data. The native adapter validates the protocol,
