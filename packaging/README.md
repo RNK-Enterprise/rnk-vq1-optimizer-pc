@@ -3,7 +3,8 @@
 `npm run package:workstation -- --output /absolute/path --version 3.1.1`
 builds a bounded runtime package for Windows, Linux, or macOS. The builder
 copies the native authority, PC engines, package metadata, and safety
-documentation, then writes one fixed dashboard launcher and a manifest.
+documentation, then writes one fixed dashboard launcher and a manifest with a
+deterministic SHA-256 entry for every copied runtime file and launcher.
 
 Select the platform explicitly when building for another host:
 

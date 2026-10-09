@@ -8,6 +8,7 @@
  */
 
 import fs from 'fs/promises';
+import { createHash } from 'crypto';
 import path from 'path';
 import { pathToFileURL } from 'url';
 
@@ -61,6 +62,20 @@ function validPlan(plan) {
   return Boolean(plan) && typeof plan === 'object' && plan.version === WORKSTATION_PACKAGE_VERSION && plan.state === 'review-ready' && Array.isArray(plan.files) && plan.files.length === RUNTIME_FILES.length;
 }
 
+async function packageFileEntries(root, relativeRoot, { fsImpl, pathImpl }) {
+  const entries = (await fsImpl.readdir(pathImpl.join(root, relativeRoot), { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name));
+  const files = [];
+  for (const entry of entries) {
+    const relative = pathImpl.join(relativeRoot, entry.name);
+    if (entry.isDirectory()) files.push(...await packageFileEntries(root, relative, { fsImpl, pathImpl }));
+    else if (entry.isFile()) {
+      const content = await fsImpl.readFile(pathImpl.join(root, relative));
+      files.push(Object.freeze({ path: relative.split(pathImpl.sep).join('/'), sha256: createHash('sha256').update(content).digest('hex') }));
+    } else throw new Error(`unsupported package entry: ${relative}`);
+  }
+  return files;
+}
+
 export async function materializeWorkstationPackage(plan, { fsImpl = fs, pathImpl = path } = {}) {
   if (!validPlan(plan)) return Object.freeze({ state: 'refused', written: false, reason: 'workstation package plan is not ready' });
   await fsImpl.mkdir(plan.outputRoot, { recursive: true });
@@ -68,7 +83,8 @@ export async function materializeWorkstationPackage(plan, { fsImpl = fs, pathImp
   const launcherPath = pathImpl.join(plan.outputRoot, plan.launcher);
   await fsImpl.writeFile(launcherPath, renderWorkstationLauncher(plan.platform), 'utf8');
   if (plan.platform !== 'win32') await fsImpl.chmod(launcherPath, 0o755);
-  const manifest = { packageVersion: plan.version, releaseVersion: plan.releaseVersion, platform: plan.platform, files: [...plan.files, plan.launcher] };
+  const files = await packageFileEntries(plan.outputRoot, '.', { fsImpl, pathImpl });
+  const manifest = { packageVersion: plan.version, releaseVersion: plan.releaseVersion, platform: plan.platform, files };
   await fsImpl.writeFile(pathImpl.join(plan.outputRoot, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
   return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, manifest: Object.freeze(manifest) });
 }
