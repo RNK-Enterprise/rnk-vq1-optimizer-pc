@@ -11,6 +11,10 @@ const otherCommit = 'b'.repeat(40);
 const signedContents = 'object\n-----BEGIN PGP SIGNATURE-----\nsignature';
 
 describe('release provenance', () => {
+  test('rejects a missing provenance record before reading host state', () => {
+    expect(() => validateReleaseProvenance(undefined)).toThrow('vX.Y.Z');
+  });
+
   test('accepts an annotated signed tag pointing to the tested commit', () => {
     expect(validateReleaseProvenance({
       tag: 'v3.1.1',
@@ -55,9 +59,9 @@ describe('release provenance', () => {
   });
 
   test('keeps the default git executor available for the release command', () => {
-    expect(defaultGitExec('git', ['--version'])).toMatch(/git version/);
+    expect(defaultGitExec(process.execPath, ['--version'])).toMatch(/^v\d+/);
     expect(() => validateReleaseProvenance({ tag: 'v3.1.1', currentCommit: commit, taggedCommit: commit, tagType: 'tag' })).toThrow('PGP');
     expect(() => validateReleaseProvenance()).toThrow('vX.Y.Z');
-    expect(() => verifyReleaseProvenance({ env: {} })).toThrow();
+    expect(() => verifyReleaseProvenance({ env: {}, execFileSyncImpl: () => { throw new Error('no tag'); } })).toThrow('no tag');
   });
 });

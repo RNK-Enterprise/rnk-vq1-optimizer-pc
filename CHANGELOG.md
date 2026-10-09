@@ -8,6 +8,8 @@
 - Made the cross-platform CI test adapters independent of the runner's default
   operating system and bounded the public-boundary entrypoint test to a fixed
   injected scan.
+- Added an explicit missing-record release-provenance test so the strict branch
+  gate exercises the fail-closed validator before any host state is read.
 - Added a one-shot workstation snapshot/report command for immediate local
   health capture and JSON, Markdown, or HTML delivery through the existing
   history and approval boundaries.
