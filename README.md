@@ -439,8 +439,9 @@ The Jest configuration is a strict 100% statements, branches, functions, and
 lines gate over every collected JavaScript (`.js`) runtime authority file in
 `pc/`, `native/`, and the browser media host. The native and
 script ESM CLI adapters (`.mjs`) are intentionally kept as thin dispatch
-surfaces. `native/cli-utils.mjs` is included in the strict Jest gate; the
-remaining adapters are covered by ESLint and `node --check` while their
+surfaces. `native/cli-utils.mjs`, `scripts/verify-public-boundary.mjs`, and
+`scripts/verify-release-provenance.mjs` are included in the strict Jest gate;
+the remaining adapters are covered by ESLint and `node --check` while their
 dedicated coverage is being added. The benchmark adapter is observational
 tooling and is not part of the runtime coverage authority. The CI workflow
 runs these checks from a clean checkout; unsupported coverage is not presented

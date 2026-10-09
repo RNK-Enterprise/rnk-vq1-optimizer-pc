@@ -4,9 +4,9 @@
   "description": "RNK Vortex System Optimizer - bounded whole-PC optimization with explicit local approvals",
   "type": "module",
   "scripts": {
-    "test": "jest --coverage --verbose",
-    "test:watch": "jest --watch",
-    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --verbose",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --ci --coverage --maxWorkers=2",
     "verify": "npm test -- --runInBand && npm run lint && node --check native/cli.mjs && node --check native/cli-maintenance.mjs && node --check native/cli-media.mjs && node --check native/cli-utils.mjs && node --check scripts/pc-host-benchmark.mjs && node --check scripts/verify-release-provenance.mjs && node --check scripts/verify-public-boundary.mjs && node scripts/verify-public-boundary.mjs && npm run bench -- --json",
     "bench": "node scripts/pc-host-benchmark.mjs",
     "lint": "eslint scripts/**/*.js native/**/*.js native/**/*.mjs",
@@ -128,6 +128,8 @@
       "native/**/*.js",
       "native/gateway-url.js",
       "native/cli-utils.mjs",
+      "scripts/verify-public-boundary.mjs",
+      "scripts/verify-release-provenance.mjs",
       "!scripts/pc-host-benchmark.mjs"
     ],
     "testMatch": [

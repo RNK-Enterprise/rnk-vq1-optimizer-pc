@@ -250,6 +250,10 @@
   policy, and factory paths. The adapter refuses invalid values without
   changing native authority boundaries.
 
+- Added strict ESM-aware coverage for the public-boundary and release-
+  provenance command wrappers, including success, refusal, failure, and
+  direct-entrypoint behavior.
+
 - The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
   evidence, pagefile pressure, battery charge/cycles, throttle events,
   abnormal-process events, and cleanup action counts alongside the existing
