@@ -7,5 +7,7 @@
 - Added package manifest output and source/output boundary checks.
 - Added deterministic SHA-256 entries for each packaged runtime file and
   launcher.
+- Added manifest verification for path safety, file-set drift, and hash
+  mismatches.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.

@@ -23,3 +23,12 @@ The source and output roots must be absolute and distinct. Output inside the
 source tree is refused so a package cannot become an input to its own build.
 Use an immutable signed release checkout for release packaging; a working tree
 package is a local development artifact only.
+
+Verify a copied bundle with:
+
+```text
+node scripts/workstation-package.js --verify --source /absolute/path/to/bundle
+```
+
+Verification refuses unsafe manifest paths, duplicate entries, missing or extra
+files, and SHA-256 mismatches.

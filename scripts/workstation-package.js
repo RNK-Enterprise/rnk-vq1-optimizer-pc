@@ -89,6 +89,37 @@ export async function materializeWorkstationPackage(plan, { fsImpl = fs, pathImp
   return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, manifest: Object.freeze(manifest) });
 }
 
+function safeManifestPath(value, pathImpl) {
+  const raw = text(value);
+  if (!raw || raw.includes('\0') || pathImpl.isAbsolute(raw) || /^[A-Za-z]:[\\/]/.test(raw)) return null;
+  const parts = raw.split(/[\\/]+/);
+  if (parts.includes('..') || parts.some((part) => !part || part === '.')) return null;
+  return parts.join('/');
+}
+
+export async function verifyWorkstationPackage({ root, manifestPath, fsImpl = fs, pathImpl = path } = {}) {
+  const packageRoot = absolute(root, pathImpl);
+  if (!packageRoot) return Object.freeze({ state: 'invalid-input', verified: false, reason: 'absolute package root is required' });
+  const manifestFile = absolute(manifestPath, pathImpl) || pathImpl.join(packageRoot, 'package-manifest.json');
+  let manifest;
+  try { manifest = JSON.parse(await fsImpl.readFile(manifestFile, 'utf8')); } catch { return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest could not be read' }); }
+  if (manifest?.packageVersion !== WORKSTATION_PACKAGE_VERSION || !Array.isArray(manifest.files) || manifest.files.length === 0) return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest shape is invalid' });
+  const expected = [];
+  for (const item of manifest.files) {
+    const relative = safeManifestPath(item?.path, pathImpl);
+    if (!relative || typeof item?.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(item.sha256)) return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest contains an unsafe or invalid entry' });
+    expected.push({ path: relative, sha256: item.sha256 });
+  }
+  if (new Set(expected.map((item) => item.path)).size !== expected.length) return Object.freeze({ state: 'invalid-manifest', verified: false, reason: 'package manifest contains duplicate entries' });
+  let actual;
+  try { actual = (await packageFileEntries(packageRoot, '.', { fsImpl, pathImpl })).filter((item) => item.path !== 'package-manifest.json'); } catch (error) { return Object.freeze({ state: 'unavailable', verified: false, reason: error.message }); }
+  const actualMap = new Map(actual.map((item) => [item.path, item.sha256]));
+  if (actual.length !== expected.length || expected.some((item) => !actualMap.has(item.path))) return Object.freeze({ state: 'mismatch', verified: false, reason: 'package file set differs from the manifest' });
+  const mismatch = expected.find((item) => actualMap.get(item.path) !== item.sha256);
+  if (mismatch) return Object.freeze({ state: 'mismatch', verified: false, path: mismatch.path, reason: 'package file hash differs from the manifest' });
+  return Object.freeze({ state: 'verified', verified: true, fileCount: expected.length });
+}
+
 export async function packageWorkstation({ options = {}, fsImpl = fs, pathImpl = path } = {}) {
   const plan = buildWorkstationPackagePlan({ ...options, pathImpl });
   if (plan.state !== 'review-ready' || options.dryRun === true) return plan;
@@ -96,10 +127,11 @@ export async function packageWorkstation({ options = {}, fsImpl = fs, pathImpl =
 }
 
 export function parseWorkstationPackageArgs(argv = []) {
-  const options = { platform: process.platform, sourceRoot: process.cwd(), outputRoot: null, version: null, dryRun: false };
+  const options = { platform: process.platform, sourceRoot: process.cwd(), outputRoot: null, version: null, dryRun: false, verify: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--dry-run') { options.dryRun = true; continue; }
+    if (arg === '--verify') { options.verify = true; continue; }
     if (!['--platform', '--source', '--output', '--version'].includes(arg)) throw new Error(`unknown package option: ${arg}`);
     const value = argv[index + 1];
     if (!text(value)) throw new Error(`${arg} requires a value`);
@@ -109,6 +141,7 @@ export function parseWorkstationPackageArgs(argv = []) {
     if (arg === '--output') options.outputRoot = value;
     if (arg === '--version') options.version = value;
   }
+  if (options.verify) return options;
   if (!options.outputRoot) throw new Error('--output is required');
   if (!options.version) throw new Error('--version is required');
   return options;
@@ -116,7 +149,8 @@ export function parseWorkstationPackageArgs(argv = []) {
 
 export async function runWorkstationPackage({ argv = process.argv.slice(2), write = (value) => process.stdout.write(value), errorWrite = (value) => process.stderr.write(value), packageImpl = packageWorkstation } = {}) {
   try {
-    const result = await packageImpl({ options: parseWorkstationPackageArgs(argv) });
+    const options = parseWorkstationPackageArgs(argv);
+    const result = options.verify ? await verifyWorkstationPackage({ root: options.sourceRoot }) : await packageImpl({ options });
     write(`${JSON.stringify(result)}\n`);
     return result.state === 'written' || result.state === 'review-ready' ? 0 : 1;
   } catch (error) {

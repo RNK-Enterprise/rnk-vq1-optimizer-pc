@@ -6,7 +6,7 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { buildWorkstationPackagePlan, isEntrypoint, materializeWorkstationPackage, packageWorkstation, parseWorkstationPackageArgs, renderWorkstationLauncher, runIfEntrypoint, runWorkstationPackage, setExitCode, WORKSTATION_PACKAGE_VERSION } from '../scripts/workstation-package.js';
+import { buildWorkstationPackagePlan, isEntrypoint, materializeWorkstationPackage, packageWorkstation, parseWorkstationPackageArgs, renderWorkstationLauncher, runIfEntrypoint, runWorkstationPackage, setExitCode, verifyWorkstationPackage, WORKSTATION_PACKAGE_VERSION } from '../scripts/workstation-package.js';
 
 describe('workstation package boundary', () => {
   test('plans only supported platforms and bounded source files', () => {
@@ -36,6 +36,7 @@ describe('workstation package boundary', () => {
     expect(() => parseWorkstationPackageArgs(['--output', '/tmp/out'])).toThrow('--version');
     expect(() => parseWorkstationPackageArgs(['--output', '/tmp/out', '--version', '3.1.1', '--bad'])).toThrow('unknown');
     expect(() => parseWorkstationPackageArgs(['--output', '/tmp/out', '--version', '3.1.1', '--platform'])).toThrow('requires');
+    expect(parseWorkstationPackageArgs(['--verify', '--source', '/tmp/bundle'])).toMatchObject({ verify: true, sourceRoot: '/tmp/bundle' });
   });
 
   test('materializes a runtime package and refuses invalid plans', async () => {
@@ -53,6 +54,25 @@ describe('workstation package boundary', () => {
     await expect(fs.readFile(path.join(output, 'bundle', 'package-manifest.json'), 'utf8')).resolves.toContain('3.1.1');
     const manifest = JSON.parse(await fs.readFile(path.join(output, 'bundle', 'package-manifest.json'), 'utf8'));
     expect(manifest.files).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'native/cli.mjs', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-dashboard', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) })]));
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'verified', fileCount: manifest.files.length });
+    await fs.writeFile(path.join(output, 'bundle', 'native', 'cli.mjs'), 'tampered');
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'mismatch', path: 'native/cli.mjs' });
+    await fs.writeFile(path.join(output, 'bundle', 'native', 'cli.mjs'), 'native-runtime');
+    await fs.writeFile(path.join(output, 'bundle', 'extra.txt'), 'extra');
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'mismatch', reason: expect.stringContaining('file set') });
+    await expect(verifyWorkstationPackage({ root: 'relative' })).resolves.toMatchObject({ state: 'invalid-input' });
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'missing') })).resolves.toMatchObject({ state: 'invalid-manifest' });
+    await expect(verifyWorkstationPackage()).resolves.toMatchObject({ state: 'invalid-input' });
+    await fs.writeFile(path.join(output, 'bundle', 'package-manifest.json'), JSON.stringify({ packageVersion: WORKSTATION_PACKAGE_VERSION, files: [] }));
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'invalid-manifest', reason: expect.stringContaining('shape') });
+    await fs.writeFile(path.join(output, 'bundle', 'package-manifest.json'), JSON.stringify({ packageVersion: WORKSTATION_PACKAGE_VERSION, files: [{ path: '../outside', sha256: 'a'.repeat(64) }] }));
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'invalid-manifest', reason: expect.stringContaining('unsafe') });
+    await fs.writeFile(path.join(output, 'bundle', 'package-manifest.json'), JSON.stringify({ packageVersion: WORKSTATION_PACKAGE_VERSION, files: [{ path: 'C:\\outside', sha256: 'a'.repeat(64) }] }));
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'invalid-manifest', reason: expect.stringContaining('unsafe') });
+    await fs.writeFile(path.join(output, 'bundle', 'package-manifest.json'), JSON.stringify({ packageVersion: WORKSTATION_PACKAGE_VERSION, files: [{ path: 'native/cli.mjs', sha256: 'a'.repeat(64) }, { path: 'native/cli.mjs', sha256: 'a'.repeat(64) }] }));
+    await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'invalid-manifest', reason: expect.stringContaining('duplicate') });
+    const invalidEntryFs = { readFile: jest.fn(async () => JSON.stringify({ packageVersion: WORKSTATION_PACKAGE_VERSION, files: [{ path: 'socket', sha256: 'a'.repeat(64) }] })), readdir: jest.fn(async () => [{ name: 'socket', isDirectory: () => false, isFile: () => false }]) };
+    await expect(verifyWorkstationPackage({ root: '/tmp/bundle', fsImpl: invalidEntryFs })).resolves.toMatchObject({ state: 'unavailable', reason: expect.stringContaining('unsupported') });
     const windowsPlan = buildWorkstationPackagePlan({ platform: 'win32', sourceRoot: source, outputRoot: path.join(output, 'windows'), version: '3.1.1' });
     await expect(materializeWorkstationPackage(windowsPlan)).resolves.toMatchObject({ state: 'written', launcherPath: path.join(output, 'windows', 'rnk-optimizer-dashboard.cmd') });
     const fakeFs = { mkdir: jest.fn(), cp: jest.fn(), writeFile: jest.fn(), chmod: jest.fn(), readdir: jest.fn(async () => [{ name: 'socket', isDirectory: () => false, isFile: () => false }]) };
@@ -71,6 +91,7 @@ describe('workstation package boundary', () => {
     await expect(runWorkstationPackage({ argv: options, write, packageImpl: async () => ({ state: 'written' }) })).resolves.toBe(0);
     await expect(runWorkstationPackage({ argv: options, packageImpl: async () => ({ state: 'review-ready' }) })).resolves.toBe(0);
     await expect(runWorkstationPackage({ argv: options, packageImpl: async () => ({ state: 'refused' }) })).resolves.toBe(1);
+    await expect(runWorkstationPackage({ argv: ['--verify', '--source', '/tmp/missing'], write, errorWrite })).resolves.toBe(1);
     await expect(runWorkstationPackage({ argv: ['--bad'], errorWrite })).resolves.toBe(1);
     expect(write).toHaveBeenCalled();
     expect(errorWrite).toHaveBeenCalledWith(expect.stringContaining('unknown package option'));
