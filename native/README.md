@@ -194,8 +194,9 @@ the host application owns lifecycle installation.
 
 `steward-trends` reduces retained reports over a bounded multi-day window and
 reports storage fill rate, battery-health movement, CPU/GPU thermal movement,
-memory-pressure movement, pagefile growth, drive-failure evidence, and
-recommendations.
+memory-pressure movement, battery charge movement while discharging, pagefile
+growth, drive-failure evidence, and recommendations. Battery health decline
+and active charge drain remain separate observations.
 
 `collectSystemFacts()` now includes bounded process, startup, battery, thermal,
 and network telemetry when the host exposes it. Windows uses fixed PowerShell

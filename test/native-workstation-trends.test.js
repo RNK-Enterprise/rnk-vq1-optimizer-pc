@@ -27,6 +27,17 @@ describe('workstation trends', () => {
     expect(result.recommendations).toEqual(expect.arrayContaining(['gpu-thermal-readings-are-rising', 'pagefile-usage-is-rising']));
   });
 
+  test('separates battery charge movement from battery health and filters drain samples', () => {
+    const first = facts(0, 100, 95, 60, 50);
+    first.facts.battery.batteries[0].capacityPercent = 80;
+    first.facts.battery.batteries[0].status = 'Discharging';
+    const second = facts(DAY, 100, 95, 60, 50);
+    second.facts.battery.batteries[0].capacityPercent = 55;
+    second.facts.battery.batteries[0].status = 'discharging';
+    const result = buildWorkstationTrends([first, second], { now: () => DAY, windowMs: 2 * DAY });
+    expect(result).toMatchObject({ battery: { direction: 'stable' }, batteryCharge: { delta: -25, direction: 'falling' }, batteryDischarge: { delta: -25, direction: 'falling' }, recommendations: ['battery-drain-observed'] });
+  });
+
   test('preserves missing evidence and validates bounds', () => {
     expect(buildWorkstationTrends([{ event: 'other', timestamp: 1, facts: {} }, { event: 'report', timestamp: DAY, facts: null }], { now: () => DAY })).toMatchObject({ sampleCount: 1, storage: { direction: 'unknown' }, recommendations: ['no-material-change-observed'] });
     expect(buildWorkstationTrends([{ event: 'other', timestamp: 1, facts: {} }], { now: () => DAY })).toMatchObject({ sampleCount: 0, recommendations: ['collect-workstation-evidence'] });

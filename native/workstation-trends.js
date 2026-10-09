@@ -24,7 +24,7 @@ function factSample(entry) {
   const memory = record(facts.memory) ? facts.memory : {};
   const pagefile = record(facts.pagefile) ? facts.pagefile : {};
   const drives = rows(facts.drives?.drives);
-  return Object.freeze({ timestamp: entry.timestamp, storageFreeBytes: number(storage.freeBytes), batteryHealthPercent: number(battery.healthPercent), thermalC: number(thermal.maxTemperatureC), gpuThermalC: number(gpu.temperatureC ?? gpu.temperature), memoryUsedPercent: number(memory.usedPercent), pagefileBytes: number(pagefile.currentBytes), driveFailures: drives.filter((item) => item.health === 'failed').length });
+  return Object.freeze({ timestamp: entry.timestamp, storageFreeBytes: number(storage.freeBytes), batteryHealthPercent: number(battery.healthPercent), batteryChargePercent: number(battery.capacityPercent ?? battery.chargePercent), batteryStatus: typeof battery.status === 'string' ? battery.status.trim().toLowerCase() : null, thermalC: number(thermal.maxTemperatureC), gpuThermalC: number(gpu.temperatureC ?? gpu.temperature), memoryUsedPercent: number(memory.usedPercent), pagefileBytes: number(pagefile.currentBytes), driveFailures: drives.filter((item) => item.health === 'failed').length });
 }
 
 export function buildWorkstationTrends(entries, { now = Date.now, windowMs = 30 * 24 * 60 * 60 * 1000, maxEntries = 512 } = {}) {
@@ -39,6 +39,8 @@ export function buildWorkstationTrends(entries, { now = Date.now, windowMs = 30 
   const samples = entries.filter((entry) => record(entry) && entry.event === 'report' && Number.isFinite(entry.timestamp) && entry.timestamp >= from && entry.timestamp <= to).slice(-maxEntries).map(factSample);
   const storage = trendOf(metricSeries(samples, (item) => item.storageFreeBytes), from, to);
   const battery = trendOf(metricSeries(samples, (item) => item.batteryHealthPercent), from, to);
+  const batteryCharge = trendOf(metricSeries(samples, (item) => item.batteryChargePercent), from, to);
+  const batteryDischarge = trendOf(metricSeries(samples.filter((item) => item.batteryStatus === 'discharging'), (item) => item.batteryChargePercent), from, to);
   const thermal = trendOf(metricSeries(samples, (item) => item.thermalC), from, to);
   const gpuThermals = trendOf(metricSeries(samples, (item) => item.gpuThermalC), from, to);
   const memory = trendOf(metricSeries(samples, (item) => item.memoryUsedPercent), from, to);
@@ -47,11 +49,12 @@ export function buildWorkstationTrends(entries, { now = Date.now, windowMs = 30 
   const recommendations = [];
   if (storage.direction === 'falling') recommendations.push('storage-is-filling');
   if (battery.direction === 'falling') recommendations.push('battery-health-is-declining');
+  if (batteryDischarge.direction === 'falling') recommendations.push('battery-drain-observed');
   if (thermal.delta !== null && thermal.delta >= 5) recommendations.push('thermal-readings-are-rising');
   if (gpuThermals.delta !== null && gpuThermals.delta >= 5) recommendations.push('gpu-thermal-readings-are-rising');
   if (memory.delta !== null && memory.delta >= 5) recommendations.push('memory-pressure-is-rising');
   if (pagefile.delta !== null && pagefile.delta > 0) recommendations.push('pagefile-usage-is-rising');
   if (failures.latest > 0) recommendations.push('drive-failure-evidence-present');
   if (!recommendations.length) recommendations.push(samples.length ? 'no-material-change-observed' : 'collect-workstation-evidence');
-  return Object.freeze({ version: WORKSTATION_TRENDS_VERSION, period: 'multi-day', window: Object.freeze({ from: new Date(from).toISOString(), to: new Date(to).toISOString(), windowMs }), sampleCount: samples.length, storage, battery, thermals: thermal, gpuThermals, memory, pagefile, drives: failures, recommendations: Object.freeze(recommendations) });
+  return Object.freeze({ version: WORKSTATION_TRENDS_VERSION, period: 'multi-day', window: Object.freeze({ from: new Date(from).toISOString(), to: new Date(to).toISOString(), windowMs }), sampleCount: samples.length, storage, battery, batteryCharge, batteryDischarge, thermals: thermal, gpuThermals, memory, pagefile, drives: failures, recommendations: Object.freeze(recommendations) });
 }
