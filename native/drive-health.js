@@ -66,6 +66,27 @@ export function parseDarwinDriveHealth(output) {
   return Object.freeze({ version: DRIVE_HEALTH_VERSION, platform: 'darwin', available: drives.length > 0, drives: Object.freeze(drives), source: 'diskutil list' });
 }
 
+export function parseDarwinDriveInfo(output, base) {
+  const source = String(output || '');
+  const solidState = source.match(/<key>SolidState<\/key>\s*<(true|false)\s*\/>/i)?.[1]?.toLowerCase() || null;
+  const model = source.match(/<key>MediaName<\/key>\s*<string>([^<]*)<\/string>/i)?.[1] || base?.model || null;
+  const sizeMatch = source.match(/<key>TotalSize<\/key>\s*<integer>(\d+)<\/integer>/i);
+  const mediaType = solidState === 'true' ? 'ssd' : solidState === 'false' ? 'hdd' : base?.mediaType || 'unknown';
+  return Object.freeze({ ...base, model: text(model), sizeBytes: sizeMatch ? number(sizeMatch[1]) : base?.sizeBytes ?? null, mediaType });
+}
+
+async function enrichDarwinDrives(parsed, commandRunner) {
+  const drives = await Promise.all(parsed.drives.slice(0, 32).map(async (base) => {
+    try {
+      const result = await commandRunner.run('diskutil', ['info', '-plist', base.device], { timeoutMs: 2500, maxOutputBytes: 16384 });
+      return result?.code === 0 ? parseDarwinDriveInfo(result.stdout, base) : base;
+    } catch {
+      return base;
+    }
+  }));
+  return Object.freeze({ ...parsed, drives: Object.freeze(drives) });
+}
+
 function commandAvailable(commandRunner) { return Boolean(commandRunner && typeof commandRunner.run === 'function'); }
 
 export async function collectDriveHealth({ platform = process.platform, commandRunner } = {}) {
@@ -80,7 +101,8 @@ export async function collectDriveHealth({ platform = process.platform, commandR
     const result = await commandRunner.run(command[0], command[1], command[2]);
     if (result?.code !== 0) throw new Error(result?.stderr || 'drive inventory command failed');
     const parsed = platform === 'win32' ? parseWindowsDriveHealth(result.stdout) : platform === 'linux' ? parseLinuxDriveHealth(result.stdout) : parseDarwinDriveHealth(result.stdout);
-    return Object.freeze({ ...parsed, commandAvailable: true });
+    const enriched = platform === 'darwin' && parsed.available ? await enrichDarwinDrives(parsed, commandRunner) : parsed;
+    return Object.freeze({ ...enriched, commandAvailable: true });
   } catch (error) {
     return Object.freeze({ version: DRIVE_HEALTH_VERSION, platform, available: false, drives: Object.freeze([]), source: 'unavailable', reason: error.message });
   }

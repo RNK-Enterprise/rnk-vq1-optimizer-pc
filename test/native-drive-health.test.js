@@ -4,7 +4,7 @@
  * Contributor: Lisa's Dungeon
  */
 
-import { collectDriveHealth, collectSmartHealth, DRIVE_HEALTH_VERSION, parseDarwinDriveHealth, parseLinuxDriveHealth, parseSmartOutput, parseWindowsDriveHealth } from '../native/drive-health.js';
+import { collectDriveHealth, collectSmartHealth, DRIVE_HEALTH_VERSION, parseDarwinDriveHealth, parseDarwinDriveInfo, parseLinuxDriveHealth, parseSmartOutput, parseWindowsDriveHealth } from '../native/drive-health.js';
 
 describe('native drive health', () => {
   test('parses Windows, Linux, and macOS drive inventory evidence', () => {
@@ -14,6 +14,10 @@ describe('native drive health', () => {
     expect(linux.drives).toMatchObject([{ device: 'nvme0n1', mediaType: 'ssd', health: 'unknown', mountpoints: ['/'] }, { device: 'sda', mediaType: 'hdd' }]);
     const darwin = parseDarwinDriveHealth('/dev/disk0 (internal, physical):\n/dev/disk1 (external):');
     expect(darwin).toMatchObject({ available: true, drives: [{ device: '/dev/disk0', mediaType: 'hdd' }, { device: '/dev/disk1', mediaType: 'unknown' }] });
+    expect(parseDarwinDriveInfo('<key>SolidState</key><true/><key>MediaName</key><string>Apple SSD</string><key>TotalSize</key><integer>500</integer>', darwin.drives[0])).toMatchObject({ mediaType: 'ssd', model: 'Apple SSD', sizeBytes: 500 });
+    expect(parseDarwinDriveInfo('<key>SolidState</key><false/>', darwin.drives[0])).toMatchObject({ mediaType: 'hdd' });
+    expect(parseDarwinDriveInfo('', darwin.drives[1])).toMatchObject({ mediaType: 'unknown', sizeBytes: null });
+    expect(parseDarwinDriveInfo('', { model: null, mediaType: null, sizeBytes: 0 })).toMatchObject({ model: null, mediaType: 'unknown', sizeBytes: 0 });
   });
 
   test('fails closed on malformed or empty inventory', () => {
@@ -38,6 +42,19 @@ describe('native drive health', () => {
     await expect(collectDriveHealth({ platform: 'win32', commandRunner: windowsRunner })).resolves.toMatchObject({ available: true, drives: [{ mediaType: 'ssd' }] });
     const darwinRunner = { run: jest.fn(async () => ({ code: 0, stdout: '/dev/disk0 (internal, physical):' })) };
     await expect(collectDriveHealth({ platform: 'darwin', commandRunner: darwinRunner })).resolves.toMatchObject({ available: true, drives: [{ device: '/dev/disk0' }] });
+    const detailedDarwin = { run: jest.fn()
+      .mockResolvedValueOnce({ code: 0, stdout: '/dev/disk0 (internal, physical):' })
+      .mockResolvedValueOnce({ code: 0, stdout: '<key>SolidState</key><true/><key>MediaName</key><string>Apple SSD</string>' }) };
+    await expect(collectDriveHealth({ platform: 'darwin', commandRunner: detailedDarwin })).resolves.toMatchObject({ drives: [{ mediaType: 'ssd', model: 'Apple SSD' }] });
+    expect(detailedDarwin.run).toHaveBeenLastCalledWith('diskutil', ['info', '-plist', '/dev/disk0'], expect.any(Object));
+    const unavailableDarwinInfo = { run: jest.fn()
+      .mockResolvedValueOnce({ code: 0, stdout: '/dev/disk0 (internal, physical):' })
+      .mockRejectedValueOnce(new Error('diskutil info unavailable')) };
+    await expect(collectDriveHealth({ platform: 'darwin', commandRunner: unavailableDarwinInfo })).resolves.toMatchObject({ drives: [{ mediaType: 'hdd', model: 'internal, physical' }] });
+    const failedDarwinInfo = { run: jest.fn()
+      .mockResolvedValueOnce({ code: 0, stdout: '/dev/disk0 (internal, physical):' })
+      .mockResolvedValueOnce({ code: 1, stdout: '', stderr: 'not supported' }) };
+    await expect(collectDriveHealth({ platform: 'darwin', commandRunner: failedDarwinInfo })).resolves.toMatchObject({ drives: [{ mediaType: 'hdd', model: 'internal, physical' }] });
     const failure = { run: jest.fn(async () => ({ code: 1, stderr: 'denied' })) };
     await expect(collectDriveHealth({ platform: 'linux', commandRunner: failure })).resolves.toMatchObject({ available: false, reason: 'denied' });
     const bareFailure = { run: jest.fn(async () => ({ code: 1 })) };

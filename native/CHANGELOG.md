@@ -208,6 +208,8 @@
 - Added a local Windows/Linux agent with bounded gateway plan intake.
 - Added macOS `netstat -ib` receive/send byte-counter parsing so bandwidth
   history can derive interface rates when the host exposes those counters.
+- Added bounded macOS `diskutil info -plist` enrichment for SSD/HDD, model, and
+  size evidence while retaining the fixed-device and read-only boundary.
 - Added CPU, memory, load, and optional NVIDIA GPU observation.
 - Added fixed platform command allow-lists for safe power/process controls.
 - Added preview-first cache cleanup with explicit approval and symlink refusal.
