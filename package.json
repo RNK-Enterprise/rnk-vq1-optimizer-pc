@@ -127,6 +127,7 @@
       "scripts/pc-media-player.js",
       "native/**/*.js",
       "native/gateway-url.js",
+      "native/cli-utils.mjs",
       "!scripts/pc-host-benchmark.mjs"
     ],
     "testMatch": [
@@ -142,7 +143,7 @@
       "^file://(.*)$": "$1"
     },
     "transform": {
-      "^.+\\.js$": "babel-jest"
+      "^.+\\.(js|mjs)$": "babel-jest"
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(@jest)/)"

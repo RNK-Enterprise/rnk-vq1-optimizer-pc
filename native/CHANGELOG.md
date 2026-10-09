@@ -245,6 +245,11 @@
 - Added facts, optimization, cache, and organizer CLI commands.
 ## Unreleased
 
+- Added complete strict coverage for the bounded `cli-utils.mjs` adapter,
+  including option parsing, malformed input, protected-root state, storage
+  policy, and factory paths. The adapter refuses invalid values without
+  changing native authority boundaries.
+
 - The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
   evidence, pagefile pressure, battery charge/cycles, throttle events,
   abnormal-process events, and cleanup action counts alongside the existing

@@ -105,7 +105,7 @@ export async function storageOptionsFromArgs(args) {
   const configured = typeof args['protected-store'] === 'string'
     ? await protectedRootsStoreFromArgs(args).read()
     : { state: 'ready', roots: [] };
-  if (configured.state !== 'ready') throw new Error(configured.reason || 'protected roots store is unavailable');
+  if (configured.state !== 'ready') throw new Error(configured.reason);
   if (args.enable === true) throw new Error('--enable must be a comma-separated list');
   const requested = typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').map((value) => value.trim()).filter(Boolean) : [];
   return {
