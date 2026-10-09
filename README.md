@@ -288,7 +288,8 @@ persist the daily report as a bounded local artifact. HTML is a self-contained
 browser-readable dashboard with escaped report data. No external delivery is
 performed. The dashboard includes the current storage-volume table and
 per-drive device/model/media/health evidence, network rates/connections, development and gaming
-contention, cleanup recovery, and policy state; missing evidence remains
+contention, CPU/GPU load, pagefile pressure, battery, thermal, abnormal-process,
+cleanup, and policy evidence; missing evidence remains
 explicitly unknown.
 
 Use `node native/cli.mjs report-open --path PATH --confirm` to open one explicit

@@ -8,10 +8,11 @@ describe('native workstation report delivery', () => {
     expect(formatWorkstationReport(report, 'json')).toMatch(/^\{/);
     expect(formatWorkstationReport(report, 'markdown')).toMatch(/^# Daily Workstation Report/);
     expect(formatWorkstationReport({ generatedAt: '<now>', storage: { latestFreeBytes: 5 }, memory: {}, thermals: {}, battery: {}, priorities: ['review&protect'] }, 'html')).toContain('&lt;now&gt;');
-    const dashboard = formatWorkstationReport({ generatedAt: 'now', volumes: { latest: [{ mount: '<C:>', freeBytes: 5, usedBytes: null }] }, drives: { latest: [{ device: '<nvme0>', model: 'Fast', mediaType: 'ssd', health: 'healthy' }], latestCount: 2, latestDegradedCount: 1, latestFailedCount: 0 }, network: { latestConnectionCount: 3, peakReceivedBytesPerSecond: 4, peakSentBytesPerSecond: 5 }, development: { contentionEvents: 1 }, gaming: { contentionEvents: 1 }, cleanup: { recoveredBytes: 6 }, policy: { state: 'review-required' } }, 'html');
+    const dashboard = formatWorkstationReport({ generatedAt: 'now', volumes: { latest: [{ mount: '<C:>', freeBytes: 5, usedBytes: null }] }, drives: { latest: [{ device: '<nvme0>', model: 'Fast', mediaType: 'ssd', health: 'healthy' }], latestCount: 2, latestDegradedCount: 1, latestFailedCount: 0 }, cpuGpu: { peakCpuPercent: 8, peakGpuPercent: 9, peakGpuTemperatureC: 70, gpuThermalThrottleEvents: 0 }, pagefile: { peakPressurePercent: 10 }, battery: { latestChargePercent: 90, latestCycleCount: 4 }, thermals: { throttleEvents: 0 }, processes: { abnormalEvents: 0 }, network: { latestConnectionCount: 3, peakReceivedBytesPerSecond: 4, peakSentBytesPerSecond: 5 }, development: { contentionEvents: 1 }, gaming: { contentionEvents: 1 }, cleanup: { recoveredBytes: 6, actionCount: 2 }, policy: { state: 'review-required' } }, 'html');
     expect(dashboard).toContain('&lt;C:&gt;');
     expect(dashboard).toContain('&lt;nvme0&gt;');
     expect(dashboard).toContain('review-required');
+    expect(dashboard).toContain('Peak GPU temperature');
     const emptyDashboard = formatWorkstationReport({}, 'html');
     expect(emptyDashboard).toContain('<li>no-change</li>');
     expect(emptyDashboard).toContain('No volume evidence');

@@ -245,6 +245,11 @@
 - Added facts, optimization, cache, and organizer CLI commands.
 ## Unreleased
 
+- The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
+  evidence, pagefile pressure, battery charge/cycles, throttle events,
+  abnormal-process events, and cleanup action counts alongside the existing
+  storage and workload sections.
+
 - Daily reports now retain the latest bounded drive rows (device, model, media
   type, health, and available SMART fields) so the HTML dashboard can show
   which drive needs attention instead of only aggregate failure counts.
