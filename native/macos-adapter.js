@@ -41,6 +41,7 @@ export function createMacosAdapter({ commandRunner, cacheCleaner } = {}) {
         case 'set-process-affinity':
         case 'set-process-resource-limit':
         case 'set-gpu-policy':
+        case 'set-fps-policy':
         case 'set-memory-policy':
         case 'set-power-profile':
           return { ok: false, reason: `${action.type} is not supported by the macOS adapter` };

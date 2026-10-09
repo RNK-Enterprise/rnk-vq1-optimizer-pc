@@ -108,7 +108,8 @@ if ($RequireRog) {
   if ($rogJson.rog.state -ne 'observed' -or -not $rogJson.rog.isRog) { throw 'ROG hardware identity was not observed' }
 }
 if ($RunOptimize) {
-  node (Join-Path $InstallDirectory 'native\cli.mjs') gateway-verify --gateway $GatewayUrl
+  $gatewayResult = node (Join-Path $InstallDirectory 'native\cli.mjs') gateway-verify --gateway $GatewayUrl | ConvertFrom-Json
+  if ($gatewayResult.state -ne 'verified') { throw "live gateway verification failed: $($gatewayResult.state) $($gatewayResult.reason)" }
   $optimizeArgs = @('optimize', '--gateway', $GatewayUrl)
   if ($ApplyOptimize) {
     $optimizeArgs += '--apply'

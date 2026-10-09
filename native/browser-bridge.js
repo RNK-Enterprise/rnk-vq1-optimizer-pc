@@ -9,6 +9,7 @@
 
 import { collectSystemFacts } from './system-facts.js';
 import { preflightDownload } from './download-guard.js';
+import { applyBrowserRedirect, previewBrowserRedirect } from './browser-redirect.js';
 
 export const BROWSER_BRIDGE_VERSION = 1;
 export const MAX_BROWSER_MESSAGE_BYTES = 64 * 1024;
@@ -18,12 +19,25 @@ function record(value) { return Boolean(value) && typeof value === 'object' && !
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
 function validSize(value) { return Number.isFinite(value) && value >= 0; }
 
-function response(requestId, result) {
-  return Object.freeze({ version: BROWSER_BRIDGE_VERSION, type: 'download-preflight-result', requestId: text(requestId), ...result });
+function response(requestId, result, type = 'download-preflight-result') {
+  return Object.freeze({ version: BROWSER_BRIDGE_VERSION, type, requestId: text(requestId), ...result });
 }
 
-export async function handleBrowserMessage(message, { factsProvider = collectSystemFacts } = {}) {
+export async function handleBrowserMessage(message, { factsProvider = collectSystemFacts, redirectPolicy = null } = {}) {
   if (!record(message)) throw new TypeError('Browser bridge message must be an object');
+  if (message.type === 'download-redirect') {
+    if (!record(redirectPolicy) || typeof redirectPolicy.sourceRoot !== 'string' || !record(redirectPolicy.targetRoots)) throw new Error('Browser redirect policy is unavailable');
+    const targetRoot = redirectPolicy.targetRoots[message.targetMount];
+    const facts = await factsProvider();
+    const targetVolume = (facts?.volumes?.volumes || []).find((item) => String(item.mount).toUpperCase() === String(message.targetMount).toUpperCase());
+    const plan = previewBrowserRedirect({ sourcePath: message.sourcePath, sourceRoot: redirectPolicy.sourceRoot, targetRoot, targetMount: message.targetMount, sizeBytes: message.sizeBytes, targetFreeBytes: targetVolume?.freeBytes });
+    const result = plan.state !== 'preview-ready'
+      ? { state: plan.state, applied: false, plan }
+      : redirectPolicy.approved === true
+        ? await applyBrowserRedirect(plan, { approved: true, dryRun: false })
+        : { state: 'redirect-preview', applied: false, plan };
+    return response(message.requestId, { state: result.state, redirect: result }, 'download-redirect-result');
+  }
   if (message.type !== 'download-preflight') throw new Error('Browser bridge message type is unsupported');
   if (!validSize(message.sizeBytes)) return response(message.requestId, { state: 'observation-required', reason: 'download size is unavailable' });
   const facts = await factsProvider();
@@ -56,7 +70,7 @@ function parseFrames(buffer, maxBytes) {
 }
 
 export async function runBrowserBridge(options) {
-  const { input, output, factsProvider = collectSystemFacts, maxMessageBytes = MAX_BROWSER_MESSAGE_BYTES } = options || {};
+  const { input, output, factsProvider = collectSystemFacts, redirectPolicy = null, maxMessageBytes = MAX_BROWSER_MESSAGE_BYTES } = options || {};
   if (!input || typeof input.on !== 'function') throw new TypeError('Browser bridge input is required');
   if (!output || typeof output.write !== 'function') throw new TypeError('Browser bridge output is required');
   let buffer = Buffer.alloc(0);
@@ -66,7 +80,7 @@ export async function runBrowserBridge(options) {
       const parsed = parseFrames(buffer, maxMessageBytes);
       buffer = parsed.remainder;
       for (const message of parsed.messages) {
-        Promise.resolve(handleBrowserMessage(message, { factsProvider }))
+        Promise.resolve(handleBrowserMessage(message, { factsProvider, redirectPolicy }))
           .then((result) => output.write(encodeBrowserMessage(result, { maxBytes: maxMessageBytes })))
           .catch((error) => output.write(encodeBrowserMessage(response(null, { state: 'error', reason: error.message }), { maxBytes: maxMessageBytes })));
       }
@@ -80,4 +94,3 @@ export async function runBrowserBridge(options) {
     input.once('error', reject);
   });
 }
-

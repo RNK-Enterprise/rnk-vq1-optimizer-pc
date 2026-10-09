@@ -32,12 +32,15 @@ function messageFor(item, destinationMount) {
   return { type: 'download-preflight', requestId: `download-${item.id}`, sizeBytes: positiveBytes(item.fileSize), destinationMount: typeof destinationMount === 'string' ? destinationMount : null };
 }
 
-export function createDownloadExtension({ api, destinationMount = null, hostName = NATIVE_HOST_NAME, notify = () => {}, enforceStates: requestedStates } = {}) {
+export function createDownloadExtension({ api, destinationMount = null, hostName = NATIVE_HOST_NAME, notify = () => {}, enforceStates: requestedStates, redirectPolicy = null } = {}) {
   const browserApi = apiOrThrow(api);
   if (typeof hostName !== 'string' || !hostName.trim()) throw new TypeError('Download extension host name is required');
   const states = enforceStates(requestedStates);
+  const redirectEnabled = record(redirectPolicy);
+  if (redirectEnabled && typeof browserApi.downloads.onChanged?.addListener !== 'function') throw new TypeError('Download extension redirection requires download change events');
   if (states.length && typeof browserApi.downloads.cancel !== 'function') throw new TypeError('Download extension enforcement requires downloads cancellation');
   if (states.length && typeof browserApi.downloads.onDeterminingFilename?.addListener !== 'function') throw new TypeError('Download extension enforcement requires filename determination');
+  const pendingRedirects = new Map();
   function notifyDecision(item, result, action = null) {
     if (!record(result) || !ENFORCEABLE_STATES.includes(result.state)) return;
     notify(action ? { downloadId: item.id, result, action } : { downloadId: item.id, result });
@@ -49,8 +52,12 @@ export function createDownloadExtension({ api, destinationMount = null, hostName
     port.postMessage(messageFor(item, destinationMount));
     return port;
   }
+  function observeRedirect(item, result) {
+    if (!redirectEnabled || result?.state !== 'redirect') return;
+    pendingRedirects.set(item.id, { item, result });
+  }
   function onCreated(item) {
-    observe(item, (result) => notifyDecision(item, result));
+    observe(item, (result) => { observeRedirect(item, result); notifyDecision(item, result); });
   }
   function onDeterminingFilename(item, suggest) {
     if (typeof suggest === 'function') suggest();
@@ -61,5 +68,19 @@ export function createDownloadExtension({ api, destinationMount = null, hostName
         .catch(() => notifyDecision(item, result, 'cancel-failed'));
     });
   }
-  return Object.freeze({ version: DOWNLOAD_EXTENSION_VERSION, hostName, enforceStates: Object.freeze(states), attach() { browserApi.downloads.onCreated.addListener(onCreated); if (states.length) browserApi.downloads.onDeterminingFilename.addListener(onDeterminingFilename); return { state: 'attached' }; }, detach() { browserApi.downloads.onCreated.removeListener?.(onCreated); if (states.length) browserApi.downloads.onDeterminingFilename.removeListener?.(onDeterminingFilename); return { state: 'detached' }; }, messageFor });
+  function onChanged(change) {
+    if (!redirectEnabled || change?.state?.current !== 'complete') return;
+    const pending = pendingRedirects.get(change.id);
+    pendingRedirects.delete(change.id);
+    const sourcePath = change.filename?.current;
+    if (!pending || typeof sourcePath !== 'string' || !sourcePath.trim()) {
+      if (pending) notify({ downloadId: change.id, result: pending.result, action: 'redirect-source-unavailable' });
+      return;
+    }
+    const port = browserApi.runtime.connectNative(hostName);
+    port.onMessage?.addListener((result) => { notify({ downloadId: change.id, result, action: 'redirected' }); port.disconnect?.(); });
+    port.onDisconnect?.addListener(() => {});
+    port.postMessage({ type: 'download-redirect', requestId: `redirect-${change.id}`, sourcePath, sizeBytes: positiveBytes(pending.item.fileSize), targetMount: pending.result.targetMount });
+  }
+  return Object.freeze({ version: DOWNLOAD_EXTENSION_VERSION, hostName, enforceStates: Object.freeze(states), redirectEnabled, attach() { browserApi.downloads.onCreated.addListener(onCreated); if (states.length) browserApi.downloads.onDeterminingFilename.addListener(onDeterminingFilename); if (redirectEnabled) browserApi.downloads.onChanged.addListener(onChanged); return { state: 'attached' }; }, detach() { browserApi.downloads.onCreated.removeListener?.(onCreated); if (states.length) browserApi.downloads.onDeterminingFilename.removeListener?.(onDeterminingFilename); if (redirectEnabled) browserApi.downloads.onChanged.removeListener?.(onChanged); pendingRedirects.clear(); return { state: 'detached' }; }, messageFor });
 }

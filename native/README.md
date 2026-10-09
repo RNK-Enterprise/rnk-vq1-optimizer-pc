@@ -16,6 +16,10 @@ separately approved.
 
 ```sh
 node native/cli.mjs facts
+node native/cli.mjs gateway-verify --gateway https://optimizer.example.invalid/v1/plan
+node native/cli.mjs windows-rog-verify
+node native/cli.mjs gpu-fps-preview --fps-limit 120
+node native/cli.mjs macos-limit-preview --label rnk.game --executable /Applications/Game.app/Contents/MacOS/Game --memory-bytes 67108864
 node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan
 node native/cli.mjs optimize --gateway http://127.0.0.1:9999/optimizer/v1/plan
 node native/cli.mjs optimize --gateway https://optimizer.example.invalid/v1/plan --apply --approve=clear-cache
@@ -83,6 +87,11 @@ node native/cli.mjs resource-limit-apply --limits '{"memoryBytes":8589934592}' \
   --target-pids 1234 --approve-pids 1234 --allow-admin --confirm
 node native/cli.mjs gpu-policy-preview --policy balanced
 node native/cli.mjs gpu-policy-apply --policy battery --allow-admin --confirm
+node native/cli.mjs gpu-fps-preview --fps-limit 120
+node native/cli.mjs gateway-verify --gateway https://optimizer.example.invalid/v1/plan
+node native/cli.mjs windows-rog-verify
+node native/cli.mjs macos-limit-preview --label rnk-game --executable /bin/game \
+  --memory-bytes 8589934592
 node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234,5678 --interval-seconds 10
 node native/cli.mjs game-session-monitor --game-names game.exe \
@@ -157,8 +166,12 @@ available cgroup-v2 CPU/memory limits plus explicit `io.max` byte-rate limits
 when a block-device `major:minor` pair is supplied, and
 macOS process priority, bounded cache cleanup, and approved process stop.
 Affinity is limited to fixed balanced/performance masks and requires admin
-approval. macOS named power profiles, I/O policy, GPU policy, and memory policy
-remain explicit unsupported results; NVIDIA facts are observational only.
+approval. macOS named power profiles, GPU power caps, and existing-process hard
+resource limits remain explicit unsupported results; future launchd jobs can
+receive bounded CPU/RAM hard limits. NVIDIA facts are observational unless an
+approved bounded power-cap operation is applied. FPS control requires an
+observed named host controller backend (`rtss`, `gamescope`, or `driver`); the
+optimizer does not invent a controller when the host does not expose one.
 
 The `user-temp` target is optimizer-owned. D3D, NVIDIA, and Mesa shader
 caches are platform/driver-generated; the optimizer exposes only fixed,
@@ -320,10 +333,11 @@ The host accepts only a bounded `download-preflight` message containing a size
 and optional volume label, collects local volume facts, and returns an advisory
 allow/redirect/insufficient-space result. Install the browser-specific example
 manifest from `browser/native-host-manifest.example.json` with an exact
-extension origin. The bridge never receives arbitrary paths, opens a network
-listener, or rewrites a browser destination. The optional browser adapter can
-explicitly cancel selected redirect or insufficient-space decisions at filename
-determination; cancellation is disabled by default.
+extension origin. The bridge never receives arbitrary paths or opens a network
+listener. With an explicit trusted-root redirect policy, it can copy, verify,
+and remove a completed download across volumes; the optional browser adapter
+can also explicitly cancel selected redirect or insufficient-space decisions at
+filename determination. Both mutation paths are disabled by default.
 
 `media-player --action play --tracks ... --confirm` uses the selected local
 track from the deterministic queue and delegates only to the fixed platform
@@ -334,9 +348,10 @@ player state.
 `network-overview` combines interface facts with native Linux NetHogs or macOS
 `nettop` per-process rates when available, optional explicit caller rates,
 observed connection ownership, and latency to identify gaming/download
-contention. Per-process bandwidth remains unavailable when the host tool or
-permission boundary does not provide it, and no network throttle is claimed
-or applied.
+contention. Windows also ships a bounded IPv4 TCP EStats provider for
+per-process cumulative bytes and an approval-gated NetQos application-path
+shaper. Unsupported host families and missing permissions remain explicitly
+unavailable; no guessed bandwidth or cross-platform throttle is claimed.
 
 Workstation facts also include fixed read-only connection evidence from
 Windows `Get-NetTCPConnection`, Linux `ss`, or macOS `lsof` when available.
@@ -348,8 +363,9 @@ measurement or authorize traffic shaping.
 platform sampler. It emits stable, started, continued, and stopped contention
 events, preserves the sample source, and remains observation-only. The native
 CLI exposes it as `network-monitor`; missing per-process counters remain
-explicitly unavailable and do not become guessed rates. It does not intercept
-traffic or claim bandwidth enforcement.
+explicitly unavailable and do not become guessed rates. Direct Windows
+traffic shaping is a separate approval-gated native action and does not
+intercept traffic.
 
 `network-rate-monitor` derives interface receive/send rates from consecutive
 platform counters. The first sample, missing counters, and counter resets stay
@@ -411,7 +427,9 @@ types; Windows currently reports I/O priority as unsupported. Linux CPU limits
 use a dedicated cgroup-v2 group when the host exposes the CPU controller, and
 Linux memory limits use a dedicated cgroup-v2 `memory.max` group when the
 memory controller is available, otherwise the bounded `prlimit` address-space
-fallback; macOS hard CPU and memory limits remain explicit unsupported results.
+fallback; existing-process macOS hard CPU and memory limits remain explicit
+unsupported results, while future launchd jobs can receive bounded hard
+CPU/RAM limits.
 macOS process I/O priority uses the fixed `taskpolicy` background policy for
 approved targets. CPU and memory hard limits are available through the
 separate resource-limit authority when the adapter proves support. GPU hard
@@ -419,7 +437,9 @@ caps remain unsupported, and the governor does not claim an exact restore
 without pre-change priority evidence. `gpu-policy-preview` and
 `gpu-policy-apply` can apply a bounded NVIDIA power limit on Windows/Linux only
 when the facts layer reports current, minimum, and maximum watt limits;
-universal FPS control and non-NVIDIA caps remain unsupported.
+universal FPS enforcement remains capability-gated: plans are available only
+when the host exposes a named controller backend, and non-NVIDIA power caps
+remain unsupported.
 
 `workload-budget-preview` compares explicit CPU, memory, I/O, and GPU limits
 with observed process facts. The default priority mode can lower process and

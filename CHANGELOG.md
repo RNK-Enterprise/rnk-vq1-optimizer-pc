@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added live gateway verification, Windows ROG/admin evidence and installer
+  apply boundaries, IPv4 TCP EStats process-byte collection, approval-gated
+  Windows NetQos shaping, named GPU/FPS controller planning, macOS launchd
+  hard limits, trusted cross-volume browser relocation, and signed-tag release
+  attestations. Target-machine execution and Odinn sign-off remain separate.
 - Exposed the existing trigger-based network contention authority through the native CLI with bounded game, latency, and download-rate evidence; it remains observation-only.
 - Added `native:network:contention` as the package-level entry point for the bounded per-process contention monitor.
 - Added the bounded network-monitor launcher to each cross-platform workstation package and its hashed manifest.

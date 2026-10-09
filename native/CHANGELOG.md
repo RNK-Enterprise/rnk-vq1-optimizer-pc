@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added live gateway verification, Windows ROG/admin evidence, signed-tag
+  release attestation, bounded Windows NetQos shaping, provider-backed Windows
+  IPv4 TCP EStats process-network collection, GPU/FPS controller planning, macOS launchd hard
+  limits, and trusted-root browser cross-volume relocation. Target-machine
+  execution and Odinn sign-off remain separate evidence gates.
+
 - Packaged System Drive Guard observations now persist to the isolated append-only
   workstation history, including pressure, pagefile, eligible bytes, plan ID, and
   before/after cleanup audit facts without expanding cleanup authority.
@@ -356,4 +362,3 @@
   drive-health, network-rate, workload-contention, cleanup, and policy evidence.
   Missing evidence remains visibly `unknown` or an explicit empty-state row;
   the dashboard remains self-contained and does not transmit report data.
-

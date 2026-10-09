@@ -99,7 +99,7 @@ async function applyMemoryCgroupLimit(pid, limit, { fsImpl, pathImpl, cgroupRoot
   }
 }
 
-export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length, fsImpl = fs, pathImpl = path, cgroupRoot = '/sys/fs/cgroup' } = {}) {
+export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.cpus().length, fsImpl = fs, pathImpl = path, cgroupRoot = '/sys/fs/cgroup', fpsController = null } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') throw new TypeError('Linux adapter requires a command runner');
   if (!cacheCleaner || typeof cacheCleaner.preview !== 'function' || typeof cacheCleaner.clean !== 'function') {
     throw new TypeError('Linux adapter requires a cache cleaner');
@@ -116,6 +116,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         || (action.type === 'set-process-resource-limit' && action.value === 'cpu-percent')
         || (action.type === 'set-process-resource-limit' && action.value === 'io-bytes-per-second')
         || action.type === 'set-gpu-policy'
+        || action.type === 'set-fps-policy'
         || (action.type === 'set-process-priority' && action.value === 'high')
         || (action.type === 'set-process-io-priority' && action.value === 'high');
     },
@@ -152,6 +153,12 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         case 'set-gpu-policy':
           if (!validGpuPowerLimit(action.limitWatts)) return { ok: false, reason: 'GPU power limit requires a bounded watt value' };
           return resultFromCommand(await commandRunner.run('nvidia-smi', ['--power-limit', String(action.limitWatts)]), 'set-gpu-policy');
+        case 'set-fps-policy':
+          if (!fpsController || typeof fpsController.apply !== 'function') return { ok: false, reason: 'FPS controller backend is unavailable' };
+          {
+            const result = await fpsController.apply(action, context);
+            return { ok: result?.ok === true, ...result };
+          }
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'linux' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });

@@ -12,7 +12,9 @@ describe('Windows ROG host facts', () => {
   test('parses ROG and non-ROG identities', () => {
     expect(parseWindowsRogFacts(rog)).toMatchObject({ state: 'observed', isRog: true, isAdministrator: true, model: 'ROG Zephyrus G16' });
     expect(parseWindowsRogFacts(JSON.stringify({ Manufacturer: 'Dell', Model: 'XPS', ProductName: 'XPS', IsAdministrator: false }))).toMatchObject({ isRog: false, isAdministrator: false });
+    expect(parseWindowsRogFacts(JSON.stringify({}))).toMatchObject({ isRog: false, manufacturer: null, model: null, productName: null });
     expect(parseWindowsRogFacts('not-json')).toMatchObject({ state: 'unavailable', isRog: false });
+    expect(parseWindowsRogFacts()).toMatchObject({ state: 'unavailable' });
   });
 
   test('collects facts through the fixed Windows command and fails closed', async () => {

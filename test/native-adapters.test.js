@@ -22,6 +22,7 @@ const valid = {
   gpuLimit: { type: 'set-gpu-policy', key: 'gpu.policy', value: 'balanced', limitWatts: 80 },
   memory: { type: 'set-memory-policy', key: 'memory.policy', value: 'background-low' },
   cache: { type: 'clear-cache', key: 'cache', value: 'user-temp' },
+  network: { type: 'set-process-network-limit', key: 'process.network-limit', value: 'bytes-per-second', limit: 4096, pid: 123 },
   stop: { type: 'stop-approved-process', key: 'process.stop', value: 'background-approved' }
 };
 
@@ -44,12 +45,16 @@ describe('native adapters', () => {
     expect(adapter.requiresAdmin(valid.stop)).toBe(true);
     expect(adapter.requiresAdmin(valid.affinity)).toBe(true);
     expect(adapter.requiresAdmin(valid.cpuLimit)).toBe(true);
+    expect(adapter.requiresAdmin(valid.network)).toBe(true);
     expect(adapter.requiresAdmin(valid.power)).toBe(false);
     expect((await adapter.applyAction(valid.power)).ok).toBe(true);
     expect((await adapter.applyAction(valid.priority, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.affinity, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(true);
+    expect((await adapter.applyAction(valid.network)).ok).toBe(false);
+    expect((await adapter.applyAction(valid.network, { approved: true })).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.network, pid: 0 }, { approved: true })).ok).toBe(false);
     expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.ioLimit, { targetPid: 123 })).reason).toContain('not supported');
     expect(adapter.requiresAdmin(valid.gpuLimit)).toBe(true);

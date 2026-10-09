@@ -36,7 +36,21 @@ describe('live gateway verification', () => {
     await expect(verifyLiveGateway({ gatewayUrl: 'https://gateway.example/plan', facts: {}, fetchFn: async () => ({ ok: true, json: async () => ({ plan: { ...plan, expiresAt: new Date(now - 1).toISOString() } }) }), now: () => now })).resolves.toMatchObject({ state: 'unavailable', reason: 'Native plan expired' });
   });
 
+  test('aborts a gateway request when the bounded timeout expires', async () => {
+    jest.useFakeTimers();
+    try {
+      const fetchFn = jest.fn((_url, { signal }) => new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(new Error('timed out')))));
+      const pending = verifyLiveGateway({ gatewayUrl: 'https://gateway.example/plan', facts: {}, fetchFn, timeoutMs: 25, now: () => now });
+      jest.advanceTimersByTime(25);
+      await expect(pending).resolves.toMatchObject({ state: 'unavailable', reason: 'timed out' });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('rejects invalid verification inputs and delegates to an adapter', async () => {
+    await expect(verifyLiveGateway()).rejects.toThrow('gateway URL');
+    await expect(verifyLiveGateway({ gatewayUrl: 'https://gateway.example/plan', profile: ' ', fetchFn: async () => { throw new Error('offline'); } })).resolves.toMatchObject({ state: 'unavailable', reason: 'offline' });
     await expect(verifyLiveGateway({ gatewayUrl: 'http://remote.example/plan', facts: {}, fetchFn: jest.fn() })).rejects.toThrow('Remote optimizer gateways must use HTTPS');
     await expect(verifyLiveGateway({ gatewayUrl: 'https://gateway.example/plan', facts: [], fetchFn: jest.fn() })).rejects.toThrow('facts');
     await expect(verifyLiveGateway({ gatewayUrl: 'https://gateway.example/plan', facts: {}, fetchFn: null })).rejects.toThrow('Fetch');
@@ -45,5 +59,7 @@ describe('live gateway verification', () => {
     await expect(verifyLiveGatewayWithAdapter({ gatewayUrl: 'https://gateway.example/plan', adapter: {}, fetchFn: jest.fn() })).rejects.toThrow('platform adapter');
     const adapter = { collectFacts: jest.fn(async () => ({ platform: 'linux' })) };
     await expect(verifyLiveGatewayWithAdapter({ gatewayUrl: 'https://gateway.example/plan', adapter, fetchFn: async () => ({ ok: true, json: async () => plan }), now: () => now })).resolves.toMatchObject({ state: 'verified' });
+    await expect(verifyLiveGatewayWithAdapter()).rejects.toThrow('platform adapter');
+    await expect(verifyLiveGateway({ gatewayUrl: 'https://gateway.example/plan', facts: {}, clientId: ' ', fetchFn: async () => ({ ok: false }), now: () => now })).resolves.toMatchObject({ state: 'rejected', status: null });
   });
 });

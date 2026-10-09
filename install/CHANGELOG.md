@@ -1,5 +1,10 @@
 # PC installation changelog
 
+## Unreleased
+
+- Added Windows ROG identity/admin checks, live gateway verification before
+  optional approved optimization, and explicit administrator/apply flags.
+
 ## 2026-10-06
 
 - Added an explicit headless-or-interactive installation choice for Linux and Windows.

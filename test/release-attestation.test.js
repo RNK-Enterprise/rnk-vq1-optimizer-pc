@@ -19,6 +19,9 @@ describe('release artifact attestation', () => {
   });
 
   test('rejects invalid or unsigned records', async () => {
+    await expect(buildReleaseAttestation()).rejects.toThrow('vX.Y.Z');
+    await expect(buildReleaseAttestation({ ...provenance, tag: null, artifacts: ['one.zip'] })).rejects.toThrow('vX.Y.Z');
+    await expect(buildReleaseAttestation({ ...provenance, commit: null, artifacts: ['one.zip'] })).rejects.toThrow('full SHA');
     await expect(buildReleaseAttestation({ ...provenance, signed: false, artifacts: ['one.zip'] })).rejects.toThrow('signed-tag');
     await expect(buildReleaseAttestation({ ...provenance, artifacts: [] })).rejects.toThrow('1 to 256');
     await expect(buildReleaseAttestation({ ...provenance, tag: 'main', artifacts: ['one.zip'] })).rejects.toThrow('vX.Y.Z');
@@ -39,6 +42,7 @@ describe('release artifact attestation', () => {
     await expect(verifyReleaseAttestation(attestation, { hashFileImpl: async () => hash, provenanceVerifier: () => ({ ...provenance, tag: 'v3.1.2' }) })).rejects.toThrow('signed Git provenance');
     await expect(verifyReleaseAttestation({ ...attestation, artifacts: [{ path: 'one.zip', sha256: 'bad' }] }, { hashFileImpl: async () => hash, provenanceVerifier: () => provenance })).rejects.toThrow('checksum mismatch');
     await expect(verifyReleaseAttestation({ ...attestation, artifacts: [] }, { provenanceVerifier: () => provenance })).rejects.toThrow('1 to 256');
+    await expect(verifyReleaseAttestation()).rejects.toThrow('unsigned');
   });
 
   test('hashes explicit files and exposes the command adapter', async () => {
@@ -51,12 +55,19 @@ describe('release artifact attestation', () => {
     const result = await createAttestation(['--output', 'attestation.json', '--artifact', 'one.zip'], { verify: () => provenance, writeFile, hashFileImpl: async () => hash });
     expect(result.signing.verified).toBe(true);
     expect(writeFile).toHaveBeenCalledWith('attestation.json', expect.stringContaining('one.zip'), 'utf8');
+    await expect(createAttestation(['--output', 'attestation.json', '--artifact', 'README.md'], { verify: () => provenance, writeFile })).resolves.toMatchObject({ signing: { verified: true } });
+    await expect(createAttestation()).rejects.toThrow();
     await expect(createAttestation(['--output', 'out.json'], { verify: () => provenance })).rejects.toThrow('artifact');
     await expect(createAttestation(['--artifact', 'one.zip'], { verify: () => provenance })).rejects.toThrow('output');
     await expect(createAttestation(['--output', 'out.json', '--artifact', 'one.zip', '--bad'], { verify: () => provenance })).rejects.toThrow('Unsupported option');
     const write = jest.fn();
     const errorWrite = jest.fn();
     await expect(runAttestationEntrypoint({ entrypoint: false, write, errorWrite })).resolves.toBe(0);
+    await expect(runAttestationEntrypoint({ entrypoint: true, run: async () => ({ ok: true }), write })).resolves.toBe(0);
+    await expect(runAttestationEntrypoint({ entrypoint: true, run: async () => ({ ok: true }), write, errorWrite })).resolves.toBe(0);
+    await expect(runAttestationEntrypoint({ entrypoint: true, run: async () => ({ ok: true }), errorWrite, target: {} })).resolves.toBe(0);
+    await expect(runAttestationEntrypoint({ entrypoint: true, run: async () => { throw new Error('default error writer'); }, write, target: {} })).resolves.toBe(1);
+    await expect(runAttestationEntrypoint()).resolves.toBe(0);
     await expect(runAttestationEntrypoint({ entrypoint: true, argv: [], run: async () => { throw new Error('attestation failed'); }, write, errorWrite, target: {} })).resolves.toBe(1);
     expect(errorWrite).toHaveBeenCalledWith('attestation failed\n');
   });

@@ -20,7 +20,7 @@ function profile(value) {
   if (!PROFILES.includes(selected)) throw new Error(`Unsupported gateway verification profile: ${selected}`);
   return selected;
 }
-function result(state, gateway, details = {}) {
+function result(state, gateway, details) {
   return Object.freeze({ version: LIVE_GATEWAY_VERSION, state, gateway, ...details });
 }
 

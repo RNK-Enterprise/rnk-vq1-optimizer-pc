@@ -33,6 +33,10 @@ export const RESOURCE_LIMITS = Object.freeze(['cpu-percent', 'memory-bytes', 'io
 export const MIN_RESOURCE_MEMORY_BYTES = 16 * 1024 * 1024;
 export const MAX_RESOURCE_MEMORY_BYTES = 1024 ** 4;
 export const MAX_RESOURCE_IO_BYTES_PER_SECOND = 10 * 1024 ** 3;
+export const MIN_NETWORK_BYTES_PER_SECOND = 1024;
+export const MAX_NETWORK_BYTES_PER_SECOND = 10 * 1024 ** 3;
+export const MIN_FPS_LIMIT = 30;
+export const MAX_FPS_LIMIT = 500;
 
 export const NATIVE_ACTIONS = Object.freeze([
   'set-power-profile',
@@ -40,6 +44,8 @@ export const NATIVE_ACTIONS = Object.freeze([
   'set-process-io-priority',
   'set-process-affinity',
   'set-process-resource-limit',
+  'set-process-network-limit',
+  'set-fps-policy',
   'set-gpu-policy',
   'set-memory-policy',
   'clear-cache',
@@ -102,6 +108,20 @@ export function validateNativeAction(action) {
       if (action.value === 'io-bytes-per-second' && (action.limit > MAX_RESOURCE_IO_BYTES_PER_SECOND || typeof action.device !== 'string' || !/^[1-9]\d*:\d+$/u.test(action.device))) {
         throw new Error('I/O resource limit requires a bounded major:minor device');
       }
+      break;
+    case 'set-process-network-limit':
+      requireKey(action, 'process.network-limit');
+      if (action.value !== 'bytes-per-second' || !Number.isInteger(action.limit) || action.limit < MIN_NETWORK_BYTES_PER_SECOND || action.limit > MAX_NETWORK_BYTES_PER_SECOND) {
+        throw new Error('Network byte limit is outside the bounded range');
+      }
+      if (!Number.isInteger(action.pid) || action.pid < 1 || action.pid > 2147483647) throw new Error('Network byte limit requires a valid process id');
+      break;
+    case 'set-fps-policy':
+      requireKey(action, 'fps.policy');
+      if (action.value !== 'cap' || !Number.isInteger(action.limit) || action.limit < MIN_FPS_LIMIT || action.limit > MAX_FPS_LIMIT) {
+        throw new Error('FPS limit is outside the bounded range');
+      }
+      if ('pid' in action && (!Number.isInteger(action.pid) || action.pid < 1 || action.pid > 2147483647)) throw new Error('FPS policy process id is invalid');
       break;
     case 'set-gpu-policy':
       requireKey(action, 'gpu.policy');

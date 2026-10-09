@@ -9,11 +9,12 @@ import { createDownloadExtension, DOWNLOAD_EXTENSION_VERSION, NATIVE_HOST_NAME }
 function browserHarness() {
   const listeners = new Set();
   const filenameListeners = new Set();
+  const changedListeners = new Set();
   const notifications = [];
   const ports = [];
   const cancelled = [];
   const api = {
-    downloads: { onCreated: { addListener: (listener) => listeners.add(listener), removeListener: (listener) => listeners.delete(listener) }, onDeterminingFilename: { addListener: (listener) => filenameListeners.add(listener), removeListener: (listener) => filenameListeners.delete(listener) }, cancel: jest.fn(async (id) => { cancelled.push(id); }) },
+    downloads: { onCreated: { addListener: (listener) => listeners.add(listener), removeListener: (listener) => listeners.delete(listener) }, onDeterminingFilename: { addListener: (listener) => filenameListeners.add(listener), removeListener: (listener) => filenameListeners.delete(listener) }, onChanged: { addListener: (listener) => changedListeners.add(listener), removeListener: (listener) => changedListeners.delete(listener) }, cancel: jest.fn(async (id) => { cancelled.push(id); }) },
     runtime: { connectNative: jest.fn(() => {
       const messageListeners = new Set();
       const port = { postMessage: jest.fn(), disconnect: jest.fn(), onMessage: { addListener: (listener) => messageListeners.add(listener) }, onDisconnect: { addListener: (listener) => listener() }, emit: (value) => messageListeners.forEach((listener) => listener(value)) };
@@ -21,7 +22,7 @@ function browserHarness() {
       return port;
     }) }
   };
-  return { api, listeners, filenameListeners, notifications, ports, cancelled };
+  return { api, listeners, filenameListeners, changedListeners, notifications, ports, cancelled };
 }
 
 describe('browser download guard', () => {
@@ -83,6 +84,7 @@ describe('browser download guard', () => {
     expect(() => createDownloadExtension({ api: h.api, enforceStates: ['allow'] })).toThrow('enforceStates');
     expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, cancel: null } }, enforceStates: ['redirect'] })).toThrow('cancellation');
     expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, onDeterminingFilename: null } }, enforceStates: ['redirect'] })).toThrow('filename determination');
+    expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, onChanged: null } }, redirectPolicy: {} })).toThrow('change events');
   });
 
   test('reports cancellation failures without hiding the preflight decision', async () => {
@@ -95,5 +97,26 @@ describe('browser download guard', () => {
     h.ports[0].emit({ state: 'redirect' });
     await new Promise((resolve) => setImmediate(resolve));
     expect(h.notifications).toEqual([{ downloadId: 13, result: { state: 'redirect' }, action: 'cancel-failed' }]);
+  });
+
+  test('relocates a completed redirected download through native messaging', async () => {
+    const h = browserHarness();
+    const extension = createDownloadExtension({ api: h.api, destinationMount: 'C:', redirectPolicy: {}, notify: (item) => h.notifications.push(item) });
+    extension.attach();
+    [...h.listeners][0]({ id: 20, fileSize: 100 });
+    h.ports[0].emit({ state: 'redirect', targetMount: 'E:' });
+    [...h.changedListeners][0]({ id: 20, state: { current: 'complete' }, filename: { current: 'C:\\Users\\Odinn\\Downloads\\game.zip' } });
+    expect(h.ports[1].postMessage).toHaveBeenCalledWith({ type: 'download-redirect', requestId: 'redirect-20', sourcePath: 'C:\\Users\\Odinn\\Downloads\\game.zip', sizeBytes: 100, targetMount: 'E:' });
+    h.ports[1].emit({ state: 'applied' });
+    expect(h.notifications.at(-1)).toMatchObject({ downloadId: 20, action: 'redirected' });
+    [...h.changedListeners][0]({ id: 20, state: { current: 'in_progress' }, filename: { current: 'C:\\other.zip' } });
+    [...h.changedListeners][0]({ id: 20, state: { current: 'complete' }, filename: { current: 'C:\\other.zip' } });
+    expect(h.notifications.at(-1).action).toBe('redirected');
+    [...h.listeners][0]({ id: 21, fileSize: 100 });
+    h.ports[2].emit({ state: 'redirect', targetMount: 'E:' });
+    [...h.changedListeners][0]({ id: 21, state: { current: 'complete' } });
+    expect(h.notifications.at(-1)).toMatchObject({ downloadId: 21, action: 'redirect-source-unavailable' });
+    extension.detach();
+    expect(h.changedListeners.size).toBe(0);
   });
 });

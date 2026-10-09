@@ -61,13 +61,15 @@ analysis and review; it does not bypass the native adapter.
 
 The native agent collects bounded local facts and can request a bounded plan
 from the configured gateway. The platform adapters own all executable actions.
-Supported documented controls are Windows power profile and process priority,
-Linux power profile/process priority/process I/O priority, optimizer-owned
-temporary-cache cleanup, and read-only host facts.
+Supported documented controls include Windows ROG/admin-boundary facts, power
+profiles, process priority, per-process NetQos shaping, bounded NVIDIA power
+caps, observed-controller FPS caps, Linux resource controls, macOS launchd
+hard limits, optimizer-owned temporary-cache cleanup, and read-only host facts.
 
-GPU policy, CPU affinity, memory policy, network tuning, and frame-rate
-control remain explicit unsupported results until a safe platform-specific
-implementation is added and proven.
+Universal FPS enforcement remains a capability result: the local authority
+refuses to claim a hard cap unless the host reports a named controller backend.
+Existing macOS PIDs are refused for hard CPU/RAM attachment; only future
+launchd jobs receive those limits.
 
 ## Cache ownership
 
@@ -81,6 +83,8 @@ reclamation; the optimizer does not claim ownership of their contents.
 
 The repository gates validate the PC inventory, native protocol, local mesh,
 install scripts, strict coverage, host benchmark, and release provenance
-policy. A passing local suite does not prove a clean-machine install,
-Windows execution, a live gateway, or a real administrative apply. Those
-require platform-specific verification and Odinn's sign-off.
+policy. A passing local suite does not prove a clean-machine install, Windows
+ROG execution, a live gateway, or a real administrative apply. Those require
+the target environment and Odinn's sign-off. Release attestation binds
+artifact SHA-256 values to a verified signed tag but does not manufacture a
+signing key or deployment proof.

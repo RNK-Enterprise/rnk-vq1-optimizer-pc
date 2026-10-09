@@ -22,6 +22,7 @@
 import { collectSystemFacts } from './system-facts.js';
 import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
 import { collectWindowsRogFacts } from './windows-rog.js';
+import { applyWindowsTrafficShape, collectWindowsNetworkCounters } from './windows-network.js';
 
 const POWER_GUIDS = Object.freeze({
   balanced: '381b4222-f694-41f0-9685-ff5bb260df2e',
@@ -86,7 +87,7 @@ function approvedPid(context, pid) {
   return false;
 }
 
-export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
+export function createWindowsAdapter({ commandRunner, cacheCleaner, fpsController = null } = {}) {
   if (!commandRunner || typeof commandRunner.run !== 'function') throw new TypeError('Windows adapter requires a command runner');
   if (!cacheCleaner || typeof cacheCleaner.preview !== 'function' || typeof cacheCleaner.clean !== 'function') {
     throw new TypeError('Windows adapter requires a cache cleaner');
@@ -99,12 +100,15 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
       return action.type === 'stop-approved-process'
         || action.type === 'set-process-affinity'
         || action.type === 'set-process-resource-limit'
+        || action.type === 'set-process-network-limit'
+        || action.type === 'set-fps-policy'
         || action.type === 'set-gpu-policy';
     },
 
     async collectFacts() {
       const facts = await collectSystemFacts({ platform: 'win32', commandRunner });
       facts.windows = { rog: await collectWindowsRogFacts({ commandRunner }) };
+      facts.networkProcesses = await collectWindowsNetworkCounters({ commandRunner });
       return facts;
     },
 
@@ -136,6 +140,18 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
             '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
             RESOURCE_LIMIT_SCRIPT, '--', String(pid), String(action.limit), action.value
           ]), 'set-process-resource-limit');
+        case 'set-process-network-limit':
+          if (!validPid(action.pid)) return { ok: false, reason: 'network policy requires a valid process id' };
+          {
+            const result = await applyWindowsTrafficShape(action, { commandRunner, approved: context.approved === true, dryRun: false });
+            return { ok: result.state === 'applied', ...result };
+          }
+        case 'set-fps-policy':
+          if (!fpsController || typeof fpsController.apply !== 'function') return { ok: false, reason: 'FPS controller backend is unavailable' };
+          {
+            const result = await fpsController.apply(action, context);
+            return { ok: result?.ok === true, ...result };
+          }
         case 'set-gpu-policy':
           if (!validGpuPowerLimit(action.limitWatts)) return { ok: false, reason: 'GPU power limit requires a bounded watt value' };
           return resultFromCommand(await commandRunner.run('nvidia-smi.exe', ['--power-limit', String(action.limitWatts)]), 'set-gpu-policy');

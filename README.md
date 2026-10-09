@@ -57,13 +57,15 @@ boundaries are tracked in [`STATUS.md`](STATUS.md).
 
 The current platform adapters provide documented controls for:
 
-- Windows power profile, process priority, bounded process affinity, and
-  approved Job Object CPU/memory limits.
+- Windows power profile, process priority, bounded process affinity, approved
+  Job Object CPU/memory limits, ROG host evidence, and per-process NetQos
+  traffic shaping with shipped IPv4 TCP EStats byte evidence.
 - Linux power profile, process priority, process I/O priority, bounded process
   affinity, approved cgroup-v2 CPU/memory limits with an explicit address-space
   fallback when Linux memory control is unavailable, and approved cgroup-v2
   `io.max` byte-rate limits when block-device evidence is supplied.
-- macOS process priority, bounded cache cleanup, and approved process stop.
+- macOS process priority, bounded cache cleanup, approved process stop, and
+  launchd hard CPU/RAM limits for future jobs.
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
   explicitly approved cleanup of regenerable categories.
@@ -72,14 +74,16 @@ The current platform adapters provide documented controls for:
   returns explicit unavailable evidence when the platform or sensor does not
   provide it.
 
-GPU hard caps, network tuning, and frame-rate control remain explicit
-unsupported results until a platform-safe implementation is added and proven.
-macOS resource limits remain explicit unsupported results. Windows resource
+Universal FPS control requires an observed named controller backend. NVIDIA
+power caps are bounded where the host exposes current/minimum/maximum limits;
+other vendor power caps remain explicit unsupported results. Windows resource
 limits use a fixed Job Object authority. Linux uses cgroup-v2 `cpu.max` and
 `memory.max` when controllers are available, with `prlimit` as the explicit
 address-space fallback for unavailable memory control; neither platform claims
 a portable GPU cap. CPU affinity is supported only through fixed
-balanced/performance masks for explicitly approved processes. NVIDIA facts are observational only. The
+balanced/performance masks for explicitly approved processes. NVIDIA facts are
+observational unless an approved bounded power-cap operation is explicitly
+applied. The
 browser media host under `scripts/pc-media-player.js` does not execute
 operating-system commands.
 
@@ -344,7 +348,8 @@ approval before applying them. Hard CPU and RAM limits are delegated to the
 separate platform resource-limit authority where the adapter proves support. The
 bounded GPU policy authority can apply an approved NVIDIA power limit on
 supported Windows/Linux hosts when current, minimum, and maximum watt evidence
-is present; universal FPS control and non-NVIDIA caps remain unsupported.
+is present; universal FPS control requires an observed named controller backend,
+and non-NVIDIA caps remain unsupported.
 
 `workload-budget-preview` compares explicit per-process CPU, memory, I/O, and
 GPU limits with observed facts. `workload-budget-apply` can apply only the
@@ -352,8 +357,9 @@ supported soft responses—lower process priority and, on Linux, lower I/O
 priority—to explicitly approved background PIDs. Hard CPU and memory limits
 use the existing resource-limit authority. Linux hard I/O byte-rate limits
 require an observed `ioDevice` major:minor pair and use cgroup-v2 `io.max`;
-Windows and macOS report that dimension as unsupported. GPU percentage caps and
-universal frame-rate control remain unsupported evidence.
+Windows and macOS report that dimension as unsupported. GPU percentage caps
+remain unsupported evidence, while FPS plans refuse to apply without a named
+host controller.
 
 `resource-limit-preview` and `resource-limit-apply` are the separate hard-limit
 authority for approved background PIDs. Windows applies CPU and per-process
