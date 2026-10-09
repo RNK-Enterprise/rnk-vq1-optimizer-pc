@@ -159,18 +159,18 @@ export async function runReportViewerCommand(args, { apply = applyReportViewer, 
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }
 
-export async function runWorkstationShellCommand(args, { apply = applyWorkstationShell, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath, env = process.env, pathResolver = defaultWorkstationPaths } = {}) {
+export async function runWorkstationShellCommand(args, { apply = applyWorkstationShell, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath, env = process.env, pathResolver = defaultWorkstationPaths, pathImpl, cliPath = fileURLToPath(new URL('./cli.mjs', import.meta.url)) } = {}) {
   const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
   if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
-  const plan = buildWorkstationShellPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
+  const plan = buildWorkstationShellPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath, nodePath, pathImpl });
   if (args.confirm !== true) return plan;
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }
 
-export async function runWorkstationTrayCommand(args, { apply = applyWorkstationTray, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath, env = process.env, pathResolver = defaultWorkstationPaths } = {}) {
+export async function runWorkstationTrayCommand(args, { apply = applyWorkstationTray, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath, env = process.env, pathResolver = defaultWorkstationPaths, pathImpl, cliPath = fileURLToPath(new URL('./cli.mjs', import.meta.url)) } = {}) {
   const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
   if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
-  const plan = buildWorkstationTrayPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
+  const plan = buildWorkstationTrayPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath, nodePath, pathImpl });
   if (args.confirm !== true) return plan;
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }

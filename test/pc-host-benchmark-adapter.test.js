@@ -43,7 +43,13 @@ describe('PC host benchmark command adapter', () => {
     const stderr = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
     await expect(runHostBenchmarkCli({ argv: ['--json'], benchmark: async () => ({ ok: true }) })).resolves.toBe(0);
     await expect(runHostBenchmarkCli({ benchmark: async () => { throw new Error('default failure'); } })).resolves.toBe(1);
-    await expect(runHostBenchmarkCli()).resolves.toBe(0);
+    const originalArgv = process.argv;
+    try {
+      process.argv = ['node', 'benchmark', '--rounds=0'];
+      await expect(runHostBenchmarkCli()).resolves.toBe(1);
+    } finally {
+      process.argv = originalArgv;
+    }
     await expect(runIfEntrypoint({ entrypoint: true, run: async () => 0 })).resolves.toBe(0);
     expect(stdout).toHaveBeenCalledWith('{"ok":true}\n');
     expect(stderr).toHaveBeenCalledWith('default failure\n');

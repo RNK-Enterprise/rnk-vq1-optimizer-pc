@@ -112,10 +112,16 @@ describe('PC host benchmark', () => {
   });
 
   test('constructs safe defaults for the unsupported local platform', async () => {
-    const result = await runHostBenchmark({ platform: 'darwin', repetitions: 1, eventLoopSamples: 1 });
-    expect(result.platform).toBe('darwin');
-    expect(result.domains.powerState.evidence.before.available).toBe(false);
-    const defaultResult = await runHostBenchmark();
-    expect(defaultResult.appliedSystemActions).toEqual([]);
+    await expect(runHostBenchmark({ platform: 'darwin', repetitions: 0, eventLoopSamples: 1 })).rejects.toThrow('repetitions');
+    await expect(runHostBenchmark({ repetitions: 0 })).rejects.toThrow('repetitions');
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'unsupported' });
+    try {
+      const result = await runHostBenchmark();
+      expect(result.platform).toBe('unsupported');
+      expect(result.appliedSystemActions).toEqual([]);
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
   }, 30000);
 });

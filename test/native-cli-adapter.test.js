@@ -137,15 +137,17 @@ describe('native top-level CLI adapter', () => {
 
     const reportPath = path.join(root, 'report.html');
     await fs.writeFile(reportPath, '<html></html>');
+    const linuxRoot = path.posix.join('/tmp', 'rnk-cli-adapter');
+    const linuxPaths = { platform: 'linux', pathImpl: path.posix, cliPath: '/app/native/cli.mjs', nodePath: '/usr/bin/node' };
     await expect(runReportViewerCommand({ path: reportPath }, { platform: 'linux', commandRunner })).resolves.toMatchObject({ state: 'review-ready' });
     await expect(runReportViewerCommand({ path: reportPath, confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'opened' })) })).resolves.toMatchObject({ result: { state: 'opened' } });
-    await expect(runWorkstationShellCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html') }, { platform: 'linux' })).resolves.toMatchObject({ state: 'review-ready', operation: 'open-workstation-dashboard' });
-    await expect(runWorkstationShellCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html'), confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
-    await expect(runWorkstationShellCommand({ packaged: true }, { platform: 'linux', env: { XDG_STATE_HOME: root }, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ state: 'review-ready', historyPath: path.join(root, 'RNK', 'Optimizer', 'history.jsonl') });
+    await expect(runWorkstationShellCommand({ path: path.posix.join(linuxRoot, 'history.jsonl'), 'output-path': path.posix.join(linuxRoot, 'report.html') }, linuxPaths)).resolves.toMatchObject({ state: 'review-ready', operation: 'open-workstation-dashboard' });
+    await expect(runWorkstationShellCommand({ path: path.posix.join(linuxRoot, 'history.jsonl'), 'output-path': path.posix.join(linuxRoot, 'report.html'), confirm: true }, { ...linuxPaths, commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
+    await expect(runWorkstationShellCommand({ packaged: true }, { ...linuxPaths, env: { XDG_STATE_HOME: linuxRoot }, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ state: 'review-ready', historyPath: path.posix.join(linuxRoot, 'RNK', 'Optimizer', 'history.jsonl') });
     await expect(runWorkstationShellCommand({ packaged: true }, { platform: 'linux', env: {}, pathResolver: () => ({ state: 'invalid-environment', reason: 'missing root' }) })).rejects.toThrow('missing root');
-    await expect(runWorkstationTrayCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html') }, { platform: 'linux' })).resolves.toMatchObject({ state: 'review-ready' });
-    await expect(runWorkstationTrayCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html'), confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
-    await expect(runWorkstationTrayCommand({ packaged: true }, { platform: 'linux', env: { XDG_STATE_HOME: root }, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ state: 'review-ready' });
+    await expect(runWorkstationTrayCommand({ path: path.posix.join(linuxRoot, 'history.jsonl'), 'output-path': path.posix.join(linuxRoot, 'report.html') }, linuxPaths)).resolves.toMatchObject({ state: 'review-ready' });
+    await expect(runWorkstationTrayCommand({ path: path.posix.join(linuxRoot, 'history.jsonl'), 'output-path': path.posix.join(linuxRoot, 'report.html'), confirm: true }, { ...linuxPaths, commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
+    await expect(runWorkstationTrayCommand({ packaged: true }, { ...linuxPaths, env: { XDG_STATE_HOME: linuxRoot }, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ state: 'review-ready' });
     await expect(runWorkstationTrayCommand({ packaged: true }, { platform: 'linux', env: {}, pathResolver: () => ({ state: 'invalid-environment', reason: 'missing root' }) })).rejects.toThrow('missing root');
     await expect(runVolumeStorageCommand({ collector: async () => ({ state: 'volumes' }), commandRunner })).resolves.toEqual({ state: 'volumes' });
     await expect(runFilesystemHealthCommand({ root }, { collector: async () => ({ state: 'filesystem' }), commandRunner })).resolves.toEqual({ state: 'filesystem' });
