@@ -288,7 +288,8 @@ result; the optimizer does not embed a decoder or claim control over external
 player state.
 
 `network-overview` combines interface facts with optional explicit per-process
-rates and latency to identify gaming/download contention. Per-process
+rates, observed connection ownership, and latency to identify gaming/download
+contention. Per-process
 bandwidth remains unavailable when the host does not provide counters, and no
 network throttle is claimed or applied.
 

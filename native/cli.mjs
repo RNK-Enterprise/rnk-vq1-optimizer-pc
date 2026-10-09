@@ -164,7 +164,7 @@ async function runDriveBenchmarkCommand(args) {
 async function runNetworkOverviewCommand(args) {
   const facts = await createPlatformAdapter().collectFacts();
   const samples = typeof args.samples === 'string' ? jsonOption(args, 'samples') : [];
-  return { facts, plan: buildNetworkContentionPlan({ samples, gamePid: args['game-pid'] === undefined ? null : numberOption(args, 'game-pid', null), latencyMs: args['latency-ms'] === undefined ? null : numberOption(args, 'latency-ms', null) }) };
+  return { facts, plan: buildNetworkContentionPlan({ samples, connections: facts.networkConnections?.connections, gamePid: args['game-pid'] === undefined ? null : numberOption(args, 'game-pid', null), latencyMs: args['latency-ms'] === undefined ? null : numberOption(args, 'latency-ms', null) }) };
 }
 
 async function runNetworkRateMonitorCommand(args) {

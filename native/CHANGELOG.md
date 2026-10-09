@@ -9,6 +9,8 @@
 - Added a self-contained escaped HTML daily-report dashboard format for local
   scheduled delivery; it opens in a browser without adding a server or network
   transport.
+- Extended network-overview to join explicit per-process rates with observed
+  PID connection counts without inferring byte ownership or adding throttling.
 - Added the bounded cross-platform `volume-storage` observer and system-facts
   integration for mounted-volume free/total/used evidence. PowerShell
   `Get-Volume`, Linux `df`, and macOS `df` remain fixed read-only commands;

@@ -7,11 +7,12 @@ import { buildNetworkContentionPlan, summarizeNetworkUsage, NETWORK_MANAGER_VERS
 
 describe('native network manager', () => {
   test('summarizes explicit per-process rates without claiming hidden counters', () => {
-    const usage = summarizeNetworkUsage([{ pid: 2, name: 'download', role: 'download', receivedBytesPerSecond: 3, sentBytesPerSecond: 4, connections: 2 }, { pid: 0, name: '', receivedBytesPerSecond: -1, sentBytesPerSecond: 'bad' }, null], { maxEntries: 2 });
+    const usage = summarizeNetworkUsage([{ pid: 2, name: 'download', role: 'download', receivedBytesPerSecond: 3, sentBytesPerSecond: 4 }, { pid: 3, name: 'explicit', connections: 5 }, { pid: 0, name: '', receivedBytesPerSecond: -1, sentBytesPerSecond: 'bad' }, null], { maxEntries: 2, connections: [{ pid: 2 }, { pid: 2 }, { pid: 0 }] });
     expect(usage).toMatchObject({ version: NETWORK_MANAGER_VERSION, available: true, perProcessAuthority: 'explicit-caller-or-platform-counter', mutation: 'none' });
-    expect(usage.perProcess[0]).toMatchObject({ pid: 2, name: 'download', totalBytesPerSecond: 7 });
+    expect(usage.perProcess[0]).toMatchObject({ pid: 2, name: 'download', totalBytesPerSecond: 7, connections: 2 });
     expect(summarizeNetworkUsage([])).toMatchObject({ available: false, perProcess: [], perProcessAuthority: 'unavailable' });
     expect(summarizeNetworkUsage()).toMatchObject({ available: false, perProcess: [] });
+    expect(summarizeNetworkUsage([{ pid: 2, receivedBytesPerSecond: 1 }], { connections: null })).toMatchObject({ perProcess: [{ connections: 0 }] });
     expect(() => summarizeNetworkUsage(null)).toThrow('array');
     expect(() => summarizeNetworkUsage([], { maxEntries: 0 })).toThrow('limit');
   });
