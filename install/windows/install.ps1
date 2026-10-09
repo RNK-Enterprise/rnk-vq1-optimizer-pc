@@ -14,6 +14,10 @@ param(
   [string]$InstallDirectory = "$env:LOCALAPPDATA\RNK-Vortex-Optimizer",
   [string]$Ref = '',
   [switch]$RunOptimize,
+  [switch]$ApplyOptimize,
+  [switch]$AllowAdmin,
+  [string]$Approve = '',
+  [switch]$RequireRog,
   [string]$GatewayUrl = $env:OPTIMIZER_GATEWAY_URL,
   [string]$EnvironmentMode = '',
   [UInt64]$MinimumFreeBytes = 5368709120
@@ -28,6 +32,12 @@ $nodeMajor = [int]((node -p "process.versions.node").Split('.')[0])
 if ($nodeMajor -lt 20) { throw 'Node.js 20 or newer is required' }
 if ($RunOptimize -and [string]::IsNullOrWhiteSpace($GatewayUrl)) {
   throw 'RunOptimize requires -GatewayUrl or OPTIMIZER_GATEWAY_URL'
+}
+if ($ApplyOptimize -and -not $RunOptimize) { throw 'ApplyOptimize requires RunOptimize' }
+if ($ApplyOptimize -and -not $AllowAdmin) { throw 'ApplyOptimize requires AllowAdmin' }
+if ($AllowAdmin) {
+  $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+  if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'AllowAdmin requires an elevated PowerShell session' }
 }
 if ($MinimumFreeBytes -lt 0) { throw 'MinimumFreeBytes must be non-negative' }
 if ([string]::IsNullOrWhiteSpace($Ref) -or ($Ref -notmatch '^v\d+\.\d+\.\d+$' -and $Ref -notmatch '^[0-9a-fA-F]{40}$')) {
@@ -93,7 +103,18 @@ $configRoot = if (-not [string]::IsNullOrWhiteSpace($env:APPDATA)) {
 New-Item -ItemType Directory -Force -Path $configRoot | Out-Null
 Set-Content -LiteralPath (Join-Path $configRoot 'environment-mode') -Value $EnvironmentMode -NoNewline
 node (Join-Path $InstallDirectory 'native\cli.mjs') facts
+if ($RequireRog) {
+  $rogJson = node (Join-Path $InstallDirectory 'native\cli.mjs') windows-rog-verify | ConvertFrom-Json
+  if ($rogJson.rog.state -ne 'observed' -or -not $rogJson.rog.isRog) { throw 'ROG hardware identity was not observed' }
+}
 if ($RunOptimize) {
-  node (Join-Path $InstallDirectory 'native\cli.mjs') optimize --gateway $GatewayUrl
+  node (Join-Path $InstallDirectory 'native\cli.mjs') gateway-verify --gateway $GatewayUrl
+  $optimizeArgs = @('optimize', '--gateway', $GatewayUrl)
+  if ($ApplyOptimize) {
+    $optimizeArgs += '--apply'
+    $optimizeArgs += '--allow-admin'
+    if (-not [string]::IsNullOrWhiteSpace($Approve)) { $optimizeArgs += "--approve=$Approve" }
+  }
+  node (Join-Path $InstallDirectory 'native\cli.mjs') @optimizeArgs
 }
 Write-Host "Installed in $InstallDirectory ($EnvironmentMode mode, commit $resolvedCommit)."

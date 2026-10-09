@@ -21,6 +21,7 @@
 
 import { collectSystemFacts } from './system-facts.js';
 import { MAX_RESOURCE_MEMORY_BYTES, MIN_RESOURCE_MEMORY_BYTES } from './protocol.js';
+import { collectWindowsRogFacts } from './windows-rog.js';
 
 const POWER_GUIDS = Object.freeze({
   balanced: '381b4222-f694-41f0-9685-ff5bb260df2e',
@@ -101,8 +102,10 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
         || action.type === 'set-gpu-policy';
     },
 
-    collectFacts() {
-      return collectSystemFacts({ platform: 'win32', commandRunner });
+    async collectFacts() {
+      const facts = await collectSystemFacts({ platform: 'win32', commandRunner });
+      facts.windows = { rog: await collectWindowsRogFacts({ commandRunner }) };
+      return facts;
     },
 
     async applyAction(action, context = {}) {

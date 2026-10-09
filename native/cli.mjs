@@ -59,6 +59,7 @@ import { applyReportViewer, buildReportViewerPlan } from './report-viewer.js';
 import { applyWorkstationShell, buildWorkstationShellPlan } from './workstation-shell.js';
 import { defaultWorkstationPaths } from './workstation-paths.js';
 import { applyWorkstationTray, buildWorkstationTrayPlan } from './workstation-tray.js';
+import { runGatewayVerifyCommand, runWindowsRogVerifyCommand } from './cli-live.mjs';
 
 export function agentFromArgs(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), env = process.env } = {}) {
   return new NativeOptimizerAgent({
@@ -363,6 +364,8 @@ export async function runCli(argv = process.argv.slice(2), {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
   if (command === 'facts') return agentFromArgs(args, { adapter }).collectFacts();
+  if (command === 'gateway-verify') return runGatewayVerifyCommand(args, { adapter });
+  if (command === 'windows-rog-verify') return runWindowsRogVerifyCommand({ platform, commandRunner });
   if (command === 'optimize') {
     const baseAgent = agentFromArgs(args, { adapter });
     const agent = typeof args['history-path'] === 'string'

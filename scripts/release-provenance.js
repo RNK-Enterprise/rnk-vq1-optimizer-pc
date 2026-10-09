@@ -40,5 +40,6 @@ export function verifyReleaseProvenance({
   const taggedCommit = exec('git', ['rev-list', '-1', `${tag}^{commit}`]).trim();
   const tagType = exec('git', ['cat-file', '-t', tag]).trim();
   const tagContents = exec('git', ['cat-file', '-p', tag]);
+  exec('git', ['verify-tag', tag]);
   return validateReleaseProvenance({ tag, currentCommit, taggedCommit, tagType, tagContents });
 }

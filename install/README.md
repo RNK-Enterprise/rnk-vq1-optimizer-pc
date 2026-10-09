@@ -29,6 +29,12 @@ Optimization requires the configured optimizer gateway. Set
 Windows. If `--run-optimize` or `-RunOptimize` is requested without a gateway,
 the installer stops before cloning or changing the installation directory.
 
+Windows performs a live, read-only gateway verification before the optimization
+preview. An administrative apply is separate: it requires an elevated
+PowerShell session, `-ApplyOptimize`, and `-AllowAdmin`; destructive actions
+must also be named with `-Approve`. Use `-RequireRog` to require an observed
+ASUS ROG host identity.
+
 Examples:
 
 ```bash
@@ -43,6 +49,9 @@ Examples:
 .\install\windows\install.ps1 -EnvironmentMode headless -RunOptimize \
   -GatewayUrl https://optimizer.example.invalid/v1/plan
 .\install\windows\install.ps1 -EnvironmentMode headless -MinimumFreeBytes 1073741824
+.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.1 -RequireRog
+.\install\windows\install.ps1 -EnvironmentMode interactive -Ref v3.1.1 -RunOptimize `
+  -GatewayUrl https://optimizer.example.invalid/v1/plan -ApplyOptimize -AllowAdmin
 ```
 
 ```bash

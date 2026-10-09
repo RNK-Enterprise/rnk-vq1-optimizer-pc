@@ -48,8 +48,9 @@ describe('release provenance', () => {
       return values.get(args.join(' '));
     });
     expect(verifyReleaseProvenance({ env: {}, execFileSyncImpl: exec }).signed).toBe(true);
-    expect(calls).toHaveLength(5);
+    expect(calls).toHaveLength(6);
     expect(exec).toHaveBeenCalledWith('git', ['cat-file', '-p', 'v3.1.1']);
+    expect(exec).toHaveBeenCalledWith('git', ['verify-tag', 'v3.1.1']);
   });
 
   test('uses a supplied tag and rejects a tag that is not a release tag', () => {
