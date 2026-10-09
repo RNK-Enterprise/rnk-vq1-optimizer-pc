@@ -7,6 +7,8 @@
   battery, process, workload, and cleanup evidence fields.
 - Normalized native plural thermal zones, nested battery telemetry, drive health,
   GPU temperature, and pagefile pressure before daily classification.
+- Fixed missing free-space normalization so invalid values remain unavailable
+  instead of becoming a false zero-byte reading.
 - Added explicit warning, critical, healthy, and observation-required states.
 - Added storage-trend, resource-pressure, workload-conflict, and cleanup-audit
   turbo/library pairs.

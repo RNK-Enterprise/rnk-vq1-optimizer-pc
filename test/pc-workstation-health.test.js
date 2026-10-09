@@ -102,6 +102,8 @@ describe('workstation-health engine', () => {
     expect(() => runWorkstationHealthEngine(null, { trigger: 'health.interval' })).toThrow('facts must be an object');
     expect(() => runWorkstationHealthEngine(completeFacts)).toThrow('Unsupported workstation-health trigger: unknown');
     expect(() => runWorkstationHealthEngine({ engine: 'workstation-health-input' }, { trigger: 'health.interval' })).not.toThrow();
+    const missingFree = runWorkstationHealthEngine({ ...completeFacts, storage: [{ mount: 'C:', totalBytes: 100, freeBytes: 'bad' }], storagePressure: undefined }, { trigger: 'health.interval', now: () => 4001 });
+    expect(missingFree.storage).toMatchObject({ totalBytes: 100, freeBytes: null, pressureLevel: 'unknown' });
   });
 });
 

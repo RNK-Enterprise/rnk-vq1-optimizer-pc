@@ -57,7 +57,8 @@ function storageEvidence(source) {
   const rows = Array.isArray(source.storage) ? source.storage.filter(isRecord) : [];
   const row = rows.find((item) => typeof item.mount === 'string' && (/^c:/i.test(item.mount) || item.mount === '/')) || rows[0] || {};
   const totalBytes = nonNegative(pressure.totalBytes ?? row.totalBytes);
-  const freeBytes = totalBytes === null ? nonNegative(pressure.freeBytes ?? row.freeBytes) : Math.min(totalBytes, nonNegative(pressure.freeBytes ?? row.freeBytes));
+  const observedFreeBytes = nonNegative(pressure.freeBytes ?? row.freeBytes);
+  const freeBytes = totalBytes === null || observedFreeBytes === null ? observedFreeBytes : Math.min(totalBytes, observedFreeBytes);
   const freePercent = boundedPercent(pressure.freePercent ?? (totalBytes && freeBytes !== null ? freeBytes / totalBytes * 100 : null));
   return Object.freeze({ freeBytes, totalBytes, freePercent, pressureLevel: level(pressure.level), health: driveHealth(source) });
 }
