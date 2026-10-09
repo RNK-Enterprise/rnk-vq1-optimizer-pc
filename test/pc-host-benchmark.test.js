@@ -73,17 +73,18 @@ describe('PC host benchmark', () => {
   test('previews cache reclamation without deleting files', async () => {
     expect(await measureCacheReclamation({ platform: 'linux', cacheCleaner: null })).toEqual(expect.objectContaining({ available: false }));
     const cacheCleaner = {
-      preview: jest.fn().mockResolvedValue({ target: 'user-temp', roots: ['/tmp/rnk'], items: [{ path: '/tmp/rnk/a' }], truncated: false }),
-      clean: jest.fn().mockResolvedValue({ dryRun: true, skipped: 1 })
+      preview: jest.fn().mockResolvedValue({ target: 'user-temp', roots: ['/tmp/rnk'], items: [{ path: '/tmp/rnk/a', sizeBytes: 4 }, { path: '/tmp/rnk/b', sizeBytes: -1 }], truncated: false }),
+      clean: jest.fn().mockResolvedValue({ dryRun: true, skipped: 2 })
     };
     expect(await measureCacheReclamation({ platform: 'linux', cacheCleaner })).toEqual({
       available: true,
       target: 'user-temp',
       roots: ['/tmp/rnk'],
-      candidateCount: 1,
+      candidateCount: 2,
       truncated: false,
       dryRun: true,
-      wouldReclaim: 1
+      wouldReclaim: 2,
+      wouldReclaimBytes: 4
     });
     expect(await measureCacheReclamation({ cacheCleaner })).toEqual(expect.objectContaining({ target: 'user-temp' }));
     expect(await measureCacheReclamation()).toEqual(expect.objectContaining({ available: false }));

@@ -21,6 +21,10 @@ function finiteSamples(samples) {
   return samples.filter((value) => Number.isFinite(value));
 }
 
+function nonNegative(value) {
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
 function summarize(samples) {
   const values = finiteSamples(samples);
   if (!values.length) return { count: 0, minMs: null, maxMs: null, meanMs: null, varianceMs: null };
@@ -124,7 +128,8 @@ export async function measureCacheReclamation({ cacheCleaner, platform = process
     candidateCount: preview.items.length,
     truncated: preview.truncated,
     dryRun: dryRun.dryRun === true,
-    wouldReclaim: dryRun.skipped
+    wouldReclaim: dryRun.skipped,
+    wouldReclaimBytes: preview.items.reduce((sum, item) => sum + nonNegative(item.sizeBytes), 0)
   };
 }
 

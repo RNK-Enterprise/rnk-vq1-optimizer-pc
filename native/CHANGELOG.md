@@ -11,6 +11,9 @@
   suggesting capacity-media destinations for models and archives.
 - Extended the deterministic workstation assistant's storage answers to retain
   bounded mounted-volume evidence alongside system-drive pressure facts.
+- Extended the observational host benchmark's cache-reclamation evidence with
+  bounded byte estimates in addition to candidate counts; it still performs
+  only a dry run and applies no system action.
 - Added an approval-gated, reversible user-level daily-report scheduler for
   Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
   schedule artifacts are fixed, local, and cleaned up on failed installation.
