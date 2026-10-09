@@ -203,6 +203,9 @@ rollback-preview, and quarantine-preview operations; `steward-monitor` records
 periodic steward reports and delivers them to stdout. `steward-report` reduces
 the retained facts into a daily report with storage, memory, CPU/GPU, thermal,
 battery, pagefile, process, network, workload, gaming, and cleanup evidence.
+`steward-snapshot` collects one fresh fact sample, appends it to the
+caller-owned history, and returns the current report immediately; an explicit
+`--output-path` can persist JSON, Markdown, or HTML delivery.
 When supplied by the host, GPU temperature is retained separately from the
 aggregate thermal reading; missing GPU sensors remain unavailable.
 On Windows and Linux, NVIDIA facts also retain the fixed-query thermal-throttle

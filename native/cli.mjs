@@ -44,6 +44,7 @@ import {
   runStewardHistoryCommand,
   runStewardMonitorCommand,
   runStewardReportCommand,
+  runStewardSnapshotCommand,
   runStewardScheduleCommand,
   runStewardTrendsCommand,
   runStorageCommand,
@@ -314,6 +315,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-schedule') return runStewardScheduleCommand(args);
   if (command === 'steward-daemon') return runStewardDaemonCommand(args);
   if (command === 'steward-report') return runStewardReportCommand(args);
+  if (command === 'steward-snapshot') return runStewardSnapshotCommand(args);
   if (command === 'steward-trends') return runStewardTrendsCommand(args);
   if (['report-schedule-preview', 'report-schedule-apply', 'report-schedule-restore'].includes(command)) return runReportScheduleCommand(command, args);
   if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);

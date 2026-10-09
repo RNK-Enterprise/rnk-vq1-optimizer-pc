@@ -19,6 +19,7 @@ import {
   runStewardHistoryCommand,
   runStewardMonitorCommand,
   runStewardReportCommand,
+  runStewardSnapshotCommand,
   runStewardScheduleCommand,
   runStewardTrendsCommand,
   runStorageCommand,
@@ -148,6 +149,25 @@ describe('native CLI maintenance adapter', () => {
     const reportPath = path.join(root, 'report.json');
     await expect(runStewardReportCommand({ path: historyPath, 'output-path': reportPath })).resolves.toMatchObject({ delivery: { state: 'delivered' } });
     await expect(runStewardTrendsCommand({ path: historyPath })).resolves.toBeDefined();
+
+    const snapshotStore = { append: jest.fn(async (value) => value), read: jest.fn(async () => []) };
+    const snapshotMonitorFactory = (config) => ({
+      async collect() {
+        const report = { state: 'snapshot' };
+        const entry = await config.store.append({ id: 'snapshot-1', event: 'report', timestamp: 1, report });
+        await config.onReport(report, entry);
+        return { report, entry };
+      }
+    });
+    await expect(runStewardSnapshotCommand({ path: historyPath }, { store: snapshotStore, adapter: {}, monitorFactory: snapshotMonitorFactory })).resolves.toMatchObject({ report: { state: 'snapshot' }, entry: { id: 'snapshot-1' } });
+    await expect(runStewardSnapshotCommand({ path: historyPath, 'output-path': reportPath }, { store: snapshotStore, adapter: {}, monitorFactory: snapshotMonitorFactory })).resolves.toMatchObject({ delivery: { state: 'delivered' } });
+    const fallbackSnapshotFactory = (config) => {
+      config.onReport();
+      config.onError();
+      return { collect: async () => ({ report: { state: 'fallback' }, entry: { id: 'fallback-1' } }) };
+    };
+    await expect(runStewardSnapshotCommand({ path: historyPath }, { store: snapshotStore, monitorFactory: fallbackSnapshotFactory })).resolves.toMatchObject({ report: { state: 'fallback' } });
+    await expect(runStewardSnapshotCommand({ path: historyPath }, { store: snapshotStore, adapter: { collectFacts: async () => ({ platform: 'linux', processes: [] }) } })).resolves.toMatchObject({ report: expect.any(Object), entry: expect.any(Object) });
 
     const scheduleArgs = { path: historyPath, 'output-path': reportPath, time: '09:00' };
     await expect(runReportScheduleCommand('report-schedule-preview', { ...scheduleArgs, time: '' })).resolves.toMatchObject({ state: 'plan-ready' });

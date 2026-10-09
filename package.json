@@ -32,6 +32,7 @@
     "native:report:schedule:restore": "node native/cli.mjs report-schedule-restore",
     "native:steward:daemon": "node native/cli.mjs steward-daemon",
     "native:steward:report": "node native/cli.mjs steward-report",
+    "native:steward:snapshot": "node native/cli.mjs steward-snapshot",
     "native:steward:trends": "node native/cli.mjs steward-trends",
     "native:workload:preview": "node native/cli.mjs workload-preview",
     "native:workload:apply": "node native/cli.mjs workload-apply",

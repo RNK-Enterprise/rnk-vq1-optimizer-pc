@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added the one-shot `steward-snapshot` command so a fresh workstation report
+  can be collected and persisted without starting a long-running monitor or
+  daemon; it reuses the existing append-only history and report delivery paths.
 - Added bounded cumulative per-process read/write I/O evidence to Windows
   `Win32_Process` rows and Linux `/proc/<pid>/io` observations. Missing or
   unsupported counters remain unavailable, and the facts layer does not turn

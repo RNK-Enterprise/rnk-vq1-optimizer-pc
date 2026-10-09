@@ -210,6 +210,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runCli(['steward-schedule'])).rejects.toThrow('--path is required');
     await expect(runCli(['steward-daemon'])).rejects.toThrow('--path is required');
     await expect(runCli(['steward-report'])).rejects.toThrow('--path is required');
+    await expect(runCli(['steward-snapshot'])).rejects.toThrow('--path is required');
     await expect(runCli(['steward-trends'])).rejects.toThrow('--path is required');
     await expect(runCli(['report-schedule-restore', '--receipt={}'])).rejects.toThrow('Report schedule receipt is invalid');
     await expect(runCli(['download-scan'])).rejects.toThrow('--root is required');

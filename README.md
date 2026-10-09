@@ -278,6 +278,11 @@ condition, abnormal processes, network counters, development/gaming
 contention, and cleanup evidence. It reports unavailable dimensions as missing
 evidence and never infers health from silence.
 
+`steward-snapshot --path PATH` collects one fresh workstation observation,
+appends it to the caller-owned history, and immediately emits the resulting
+daily report. Add `--output-path PATH --format json|markdown|html` to persist
+the report without starting a long-running monitor or daemon.
+
 `steward-schedule` delivers at most one report per UTC day through a
 caller-owned callback (the CLI writes JSON lines to stdout). It is trigger-based
 and remains active only while the command is running. The separate

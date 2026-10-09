@@ -191,6 +191,25 @@ export async function runStewardReportCommand(args) {
   return { report, delivery: await delivery.deliver(report) };
 }
 
+export async function runStewardSnapshotCommand(args, {
+  adapter,
+  store = historyStoreFromArgs(args),
+  monitorFactory = createStewardMonitor,
+  adapterFactory = async () => (await import('./platform.js')).createPlatformAdapter()
+} = {}) {
+  const monitor = monitorFactory({
+    adapter: adapter || await adapterFactory(),
+    store,
+    intervalMs: 86400000,
+    onReport: () => {},
+    onError: () => {}
+  });
+  const { report, entry } = await monitor.collect();
+  if (typeof args['output-path'] !== 'string') return { report, entry };
+  const delivery = createWorkstationReportFileDelivery({ filePath: args['output-path'], format: args.format || 'json' });
+  return { report, entry, delivery: await delivery.deliver(report) };
+}
+
 export async function runReportScheduleCommand(command, args, { commandRunner = createCommandRunner(), env = process.env } = {}) {
   if (command === 'report-schedule-restore') {
     return restoreReportSchedule(jsonOption(args, 'receipt'), {

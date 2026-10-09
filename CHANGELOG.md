@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a one-shot workstation snapshot/report command for immediate local
+  health capture and JSON, Markdown, or HTML delivery through the existing
+  history and approval boundaries.
 - Added a source-backed capability status matrix that separates the completed
   workstation wishlist from the eight remaining product or live-certification
   boundaries instead of repeating the original twenty-item request.
