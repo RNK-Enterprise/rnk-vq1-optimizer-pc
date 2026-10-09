@@ -6,12 +6,14 @@
 import { buildWorkstationTrends, WORKSTATION_TRENDS_VERSION } from '../native/workstation-trends.js';
 
 const DAY = 24 * 60 * 60 * 1000;
-const facts = (timestamp, freeBytes, healthPercent, thermal, memory, failed = 0) => ({ event: 'report', timestamp, facts: { storagePressure: { freeBytes }, battery: { batteries: [{ healthPercent }] }, thermals: { maxTemperatureC: thermal }, memory: { usedPercent: memory }, drives: { drives: Array.from({ length: failed }, () => ({ health: 'failed' })) } } });
+const facts = (timestamp, freeBytes, healthPercent, thermal, memory, failed = 0, fanRpm = null) => ({ event: 'report', timestamp, facts: { storagePressure: { freeBytes }, battery: { batteries: [{ healthPercent }] }, thermals: { maxTemperatureC: thermal }, fans: fanRpm === null ? undefined : { fans: [{ rpm: fanRpm }] }, memory: { usedPercent: memory }, drives: { drives: Array.from({ length: failed }, () => ({ health: 'failed' })) } } });
 
 describe('workstation trends', () => {
   test('reduces multi-day storage, battery, thermal, memory, and drive trends', () => {
-    const result = buildWorkstationTrends([facts(0, 100, 95, 60, 50), facts(DAY, 80, 90, 66, 57, 1)], { now: () => DAY, windowMs: 2 * DAY });
-    expect(result).toMatchObject({ version: WORKSTATION_TRENDS_VERSION, period: 'multi-day', sampleCount: 2, storage: { delta: -20, direction: 'falling' }, battery: { delta: -5 }, thermals: { delta: 6 }, memory: { delta: 7 }, drives: { latest: 1 }, recommendations: ['storage-is-filling', 'battery-health-is-declining', 'thermal-readings-are-rising', 'memory-pressure-is-rising', 'drive-failure-evidence-present'] });
+    const first = facts(0, 100, 95, 60, 50, 0, 1200);
+    first.facts.fans = { fans: [{ currentSpeed: 1200 }] };
+    const result = buildWorkstationTrends([first, facts(DAY, 80, 90, 66, 57, 1, 1800)], { now: () => DAY, windowMs: 2 * DAY });
+    expect(result).toMatchObject({ version: WORKSTATION_TRENDS_VERSION, period: 'multi-day', sampleCount: 2, storage: { delta: -20, direction: 'falling' }, battery: { delta: -5 }, thermals: { delta: 6 }, fans: { delta: 600, direction: 'rising' }, memory: { delta: 7 }, drives: { latest: 1 }, recommendations: ['storage-is-filling', 'battery-health-is-declining', 'thermal-readings-are-rising', 'fan-speed-is-rising', 'memory-pressure-is-rising', 'drive-failure-evidence-present'] });
     expect(result.window.windowMs).toBe(2 * DAY);
   });
 
