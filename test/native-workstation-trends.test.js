@@ -18,13 +18,13 @@ describe('workstation trends', () => {
   test('tracks pagefile growth and GPU thermal drift independently', () => {
     const first = facts(0, 100, 95, 60, 50);
     first.facts.pagefile = { currentBytes: 100 };
-    first.facts.gpu = { temperatureC: 60 };
+    first.facts.gpu = { temperatureC: 60, thermalThrottling: false };
     const second = facts(DAY, 80, 90, 60, 50);
     second.facts.pagefile = { currentBytes: 200 };
-    second.facts.gpu = { temperature: 72 };
+    second.facts.gpu = { temperature: 72, thermalThrottling: true };
     const result = buildWorkstationTrends([first, second], { now: () => DAY, windowMs: 2 * DAY });
-    expect(result).toMatchObject({ pagefile: { delta: 100, direction: 'rising' }, gpuThermals: { delta: 12, direction: 'rising' } });
-    expect(result.recommendations).toEqual(expect.arrayContaining(['gpu-thermal-readings-are-rising', 'pagefile-usage-is-rising']));
+    expect(result).toMatchObject({ pagefile: { delta: 100, direction: 'rising' }, gpuThermals: { delta: 12, direction: 'rising' }, gpuThrottleEvents: 1 });
+    expect(result.recommendations).toEqual(expect.arrayContaining(['gpu-thermal-readings-are-rising', 'gpu-thermal-throttle-observed', 'pagefile-usage-is-rising']));
   });
 
   test('separates battery charge movement from battery health and filters drain samples', () => {

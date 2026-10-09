@@ -63,10 +63,10 @@ The current platform adapters provide documented controls for:
   returns explicit unavailable evidence when the platform or sensor does not
   provide it.
 
-GPU policy, network tuning, and frame-rate control remain explicit unsupported
-results until a platform-safe implementation is added and proven. macOS
-resource limits remain explicit unsupported results. Windows resource limits
-use a fixed Job Object authority. Linux uses cgroup-v2 `cpu.max` and
+GPU hard caps, network tuning, and frame-rate control remain explicit
+unsupported results until a platform-safe implementation is added and proven.
+macOS resource limits remain explicit unsupported results. Windows resource
+limits use a fixed Job Object authority. Linux uses cgroup-v2 `cpu.max` and
 `memory.max` when controllers are available, with `prlimit` as the explicit
 address-space fallback for unavailable memory control; neither platform claims
 a portable GPU cap. CPU affinity is supported only through fixed

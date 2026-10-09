@@ -277,8 +277,10 @@ use a dedicated cgroup-v2 group when the host exposes the CPU controller, and
 Linux memory limits use a dedicated cgroup-v2 `memory.max` group when the
 memory controller is available, otherwise the bounded `prlimit` address-space
 fallback; macOS hard resource limits remain explicit
-unsupported results. GPU hard caps remain unsupported, and the governor does
-not claim an exact restore without pre-change priority evidence.
+unsupported results. CPU and memory hard limits are available through the
+separate resource-limit authority when the adapter proves support. GPU hard
+caps remain unsupported, and the governor does not claim an exact restore
+without pre-change priority evidence.
 
 `workload-budget-preview` compares explicit CPU, memory, I/O, and GPU limits
 with observed process facts. The default priority mode can lower process and
@@ -291,7 +293,9 @@ explicit. Hard mode does not claim I/O byte shaping or GPU hard caps.
 interval. It can apply only approved background priority/I/O operations when
 `--auto-apply --confirm` and `--approve-pids` are supplied. Session exit
 restoration uses exact captured priority evidence; without it, the result is
-review-required. Hard CPU, memory, GPU, and network caps remain unsupported.
+review-required. It does not automatically impose hard resource limits; use
+the separate resource-limit authority for approved CPU or memory caps. GPU and
+network caps remain unsupported.
 
 `drive-health` inventories physical drives with fixed platform commands. Windows
 uses `Get-PhysicalDisk`, Linux uses `lsblk`, and macOS uses `diskutil list`.

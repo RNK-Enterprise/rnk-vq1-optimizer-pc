@@ -13,6 +13,8 @@
 - Added fixed NVIDIA GPU thermal-throttle reason evidence on Windows and Linux;
   unsupported or missing GPU telemetry remains unavailable, and daily reports
   count observed GPU thermal-throttle events separately from CPU thermal data.
+- Added GPU thermal-throttle event counts and recommendations to multi-day
+  workstation trends, preserving unknown samples when the GPU sensor is absent.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added separate GPU temperature evidence to daily workstation reports, with
