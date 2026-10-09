@@ -33,6 +33,7 @@ function launcherName(platform) { return platform === 'win32' ? 'rnk-optimizer-d
 function stewardLauncherName(platform) { return platform === 'win32' ? 'rnk-optimizer-steward.cmd' : 'rnk-optimizer-steward'; }
 function trayLauncherName(platform) { return platform === 'win32' ? 'rnk-optimizer-tray.cmd' : 'rnk-optimizer-tray'; }
 function storageGuardLauncherName(platform) { return platform === 'win32' ? 'rnk-optimizer-storage-guard.cmd' : 'rnk-optimizer-storage-guard'; }
+function networkMonitorLauncherName(platform) { return platform === 'win32' ? 'rnk-optimizer-network-monitor.cmd' : 'rnk-optimizer-network-monitor'; }
 
 export function buildWorkstationPackagePlan({ platform = process.platform, sourceRoot, outputRoot, version, pathImpl = path } = {}) {
   const normalizedPlatform = text(platform)?.toLowerCase() || 'unknown';
@@ -53,7 +54,8 @@ export function buildWorkstationPackagePlan({ platform = process.platform, sourc
     launcher: launcherName(normalizedPlatform),
     stewardLauncher: stewardLauncherName(normalizedPlatform),
     trayLauncher: trayLauncherName(normalizedPlatform),
-    storageGuardLauncher: storageGuardLauncherName(normalizedPlatform)
+    storageGuardLauncher: storageGuardLauncherName(normalizedPlatform),
+    networkMonitorLauncher: networkMonitorLauncherName(normalizedPlatform)
   });
 }
 
@@ -85,6 +87,13 @@ export function renderWorkstationStorageGuardLauncher(platform) {
   return '#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "${RNK_NODE:-node}" "$SCRIPT_DIR/native/cli.mjs" storage-monitor --packaged --target-free-gb 5 --interval-seconds 60 "$@"\n';
 }
 
+export function renderWorkstationNetworkMonitorLauncher(platform) {
+  const normalizedPlatform = text(platform)?.toLowerCase();
+  if (!PLATFORMS.has(normalizedPlatform)) throw new Error('unsupported workstation package platform');
+  if (normalizedPlatform === 'win32') return '@echo off\r\nnode "%~dp0native\\cli.mjs" network-monitor --interval-seconds 5 %*\r\n';
+  return '#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "${RNK_NODE:-node}" "$SCRIPT_DIR/native/cli.mjs" network-monitor --interval-seconds 5 "$@"\n';
+}
+
 function validPlan(plan) {
   return Boolean(plan) && typeof plan === 'object' && plan.version === WORKSTATION_PACKAGE_VERSION && plan.state === 'review-ready' && Array.isArray(plan.files) && plan.files.length === RUNTIME_FILES.length;
 }
@@ -111,18 +120,21 @@ export async function materializeWorkstationPackage(plan, { fsImpl = fs, pathImp
   const stewardLauncherPath = pathImpl.join(plan.outputRoot, plan.stewardLauncher);
   const trayLauncherPath = pathImpl.join(plan.outputRoot, plan.trayLauncher);
   const storageGuardLauncherPath = pathImpl.join(plan.outputRoot, plan.storageGuardLauncher);
+  const networkMonitorLauncherPath = pathImpl.join(plan.outputRoot, plan.networkMonitorLauncher);
   await fsImpl.writeFile(launcherPath, renderWorkstationLauncher(plan.platform), 'utf8');
   await fsImpl.writeFile(stewardLauncherPath, renderWorkstationStewardLauncher(plan.platform), 'utf8');
   await fsImpl.writeFile(trayLauncherPath, renderWorkstationTrayLauncher(plan.platform), 'utf8');
   await fsImpl.writeFile(storageGuardLauncherPath, renderWorkstationStorageGuardLauncher(plan.platform), 'utf8');
+  await fsImpl.writeFile(networkMonitorLauncherPath, renderWorkstationNetworkMonitorLauncher(plan.platform), 'utf8');
   if (plan.platform !== 'win32') await fsImpl.chmod(launcherPath, 0o755);
   if (plan.platform !== 'win32') await fsImpl.chmod(stewardLauncherPath, 0o755);
   if (plan.platform !== 'win32') await fsImpl.chmod(trayLauncherPath, 0o755);
   if (plan.platform !== 'win32') await fsImpl.chmod(storageGuardLauncherPath, 0o755);
+  if (plan.platform !== 'win32') await fsImpl.chmod(networkMonitorLauncherPath, 0o755);
   const files = await packageFileEntries(plan.outputRoot, '.', { fsImpl, pathImpl });
   const manifest = { packageVersion: plan.version, releaseVersion: plan.releaseVersion, platform: plan.platform, files };
   await fsImpl.writeFile(pathImpl.join(plan.outputRoot, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-  return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, stewardLauncherPath, trayLauncherPath, storageGuardLauncherPath, manifest: Object.freeze(manifest) });
+  return Object.freeze({ state: 'written', written: true, outputRoot: plan.outputRoot, launcherPath, stewardLauncherPath, trayLauncherPath, storageGuardLauncherPath, networkMonitorLauncherPath, manifest: Object.freeze(manifest) });
 }
 
 function safeManifestPath(value, pathImpl) {

@@ -409,7 +409,9 @@ into a canonical question; the deterministic assistant remains the authority.
 The CLI exposes this boundary as `assistant-adapted` with `--adapter-response`.
 `steward-dashboard --path HISTORY --output-path REPORT.html --confirm` captures
 one report and opens the local HTML dashboard through the fixed platform opener;
-`npm run package:workstation` builds its bounded cross-platform runtime bundle.
+`npm run package:workstation` builds its bounded cross-platform runtime bundle,
+including fixed dashboard, steward, tray, storage-guard, and network-monitor
+launchers.
 When supplied a workstation report, it also answers which observed process is
 the latest CPU or I/O leader; without sampled report evidence it returns an
 observation-required result.
