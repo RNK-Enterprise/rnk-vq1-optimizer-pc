@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added the reproducible cross-platform runtime package boundary and fixed
+  Windows, Linux, and macOS dashboard launchers; tray lifecycle remains outside
+  this public authority.
 - Added the one-shot `steward-snapshot` command so a fresh workstation report
   can be collected and persisted without starting a long-running monitor or
   daemon; it reuses the existing append-only history and report delivery paths.
