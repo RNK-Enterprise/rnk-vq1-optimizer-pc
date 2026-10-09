@@ -34,4 +34,4 @@ export function isEntrypoint(moduleUrl, executablePath) {
 }
 
 const entrypoint = isEntrypoint(import.meta.url, process.argv[1]);
-setExitCode(runIfEntrypoint({ entrypoint }));
+runIfEntrypoint({ entrypoint }).then((code) => setExitCode(code));

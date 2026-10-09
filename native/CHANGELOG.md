@@ -258,6 +258,11 @@
   catalogue state, player state, metadata refusal, playback approval, and
   allow-listed panel boundaries without launching external media hosts.
 
+- Added strict ESM-aware coverage for the observational host-benchmark adapter,
+  including argument parsing, JSON and human-readable output, failure handling,
+  and direct-entrypoint behavior. The adapter remains evidence-only and does
+  not claim a performance result from coverage.
+
 - The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
   evidence, pagefile pressure, battery charge/cycles, throttle events,
   abnormal-process events, and cleanup action counts alongside the existing

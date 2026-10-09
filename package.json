@@ -131,7 +131,7 @@
       "native/cli-media.mjs",
       "scripts/verify-public-boundary.mjs",
       "scripts/verify-release-provenance.mjs",
-      "!scripts/pc-host-benchmark.mjs"
+      "scripts/pc-host-benchmark.mjs"
     ],
     "testMatch": [
       "**/test/**/*.test.js"
