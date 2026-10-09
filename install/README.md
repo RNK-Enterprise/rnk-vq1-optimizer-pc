@@ -16,6 +16,10 @@ The selected mode is stored in the optimizer application configuration area,
 not in the Git checkout. Installation does not apply an optimization unless
 the explicit `--run-optimize` option is supplied.
 
+Installers refuse before cloning or dependency installation when the target
+volume is below the free-space floor. The default is 5 GiB; Linux and macOS
+accept `--min-free-bytes BYTES`, and Windows accepts `-MinimumFreeBytes BYTES`.
+
 The installers require Node.js 20 or newer, Git, and npm. A fresh install uses
 the public optimizer repository by default; pass `--repo URL` on Linux or
 `-RepositoryUrl URL` on Windows to use another source.
@@ -31,12 +35,14 @@ Examples:
 ./install/linux/install.sh --mode interactive
 ./install/linux/install.sh --mode headless --run-optimize \
   --gateway https://optimizer.example.invalid/v1/plan
+./install/linux/install.sh --mode headless --min-free-bytes 1073741824
 ```
 
 ```powershell
 .\install\windows\install.ps1 -EnvironmentMode interactive
 .\install\windows\install.ps1 -EnvironmentMode headless -RunOptimize \
   -GatewayUrl https://optimizer.example.invalid/v1/plan
+.\install\windows\install.ps1 -EnvironmentMode headless -MinimumFreeBytes 1073741824
 ```
 
 ```bash

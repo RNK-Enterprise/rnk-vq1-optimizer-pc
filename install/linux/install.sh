@@ -17,6 +17,7 @@ release_ref=''
 run_optimize=0
 environment_mode=''
 gateway_url="${OPTIMIZER_GATEWAY_URL:-}"
+minimum_free_bytes=5368709120
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -24,6 +25,7 @@ while [ "$#" -gt 0 ]; do
     --ref) release_ref="$2"; shift 2 ;;
     --run-optimize) run_optimize=1; shift ;;
     --gateway) gateway_url="$2"; shift 2 ;;
+    --min-free-bytes) minimum_free_bytes="$2"; shift 2 ;;
     --mode|--environment-mode)
       [ "$#" -ge 2 ] || { echo '--mode requires headless or interactive' >&2; exit 2; }
       environment_mode="$2"; shift 2 ;;
@@ -56,6 +58,10 @@ case "$environment_mode" in
   *) echo '--mode must be headless or interactive' >&2; exit 2 ;;
 esac
 
+case "$minimum_free_bytes" in
+  ''|*[!0-9]*) echo '--min-free-bytes must be a non-negative integer' >&2; exit 2 ;;
+esac
+
 command -v git >/dev/null 2>&1 || { echo 'git is required' >&2; exit 1; }
 command -v npm >/dev/null 2>&1 || { echo 'npm is required' >&2; exit 1; }
 command -v node >/dev/null 2>&1 || { echo 'Node.js 20 or newer is required' >&2; exit 1; }
@@ -65,6 +71,14 @@ node -e "if (Number(process.versions.node.split('.')[0]) < 20) process.exit(1)" 
 }
 if [ "$run_optimize" -eq 1 ] && [ -z "$gateway_url" ]; then
   echo '--run-optimize requires --gateway or OPTIMIZER_GATEWAY_URL' >&2
+  exit 2
+fi
+
+probe_path="$install_directory"
+while [ ! -d "$probe_path" ] && [ "$probe_path" != '/' ]; do probe_path="$(dirname "$probe_path")"; done
+available_free_bytes="$(node -e 'const fs=require("fs");const stat=fs.statfsSync(process.argv[1]);process.stdout.write(String(stat.bavail*stat.bsize));' "$probe_path")"
+if [ "$available_free_bytes" -lt "$minimum_free_bytes" ]; then
+  echo "insufficient free space at $probe_path: ${available_free_bytes} bytes available, ${minimum_free_bytes} required" >&2
   exit 2
 fi
 

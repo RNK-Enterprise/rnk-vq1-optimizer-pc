@@ -7,6 +7,7 @@
 - Added the bounded network-monitor launcher to each cross-platform workstation package and its hashed manifest.
 - Hardened release automation to run the exact full verification gate before archive, checksum, and build-attestation steps.
 - Updated the capability ledger so packaged network-monitor and release-gate boundaries remain explicit.
+- Added installer free-space preflight so Linux, macOS, and Windows refuse before clone or dependency installation below the configured floor.
 - Added explicit path authority injection to packaged shell and tray CLI commands so simulated Linux, macOS, and Windows plans do not inherit the host runner's path syntax.
 - Made default benchmark dependency coverage fail fast before host I/O while retaining injected real benchmark evidence tests.
 - Made packaged workstation state paths select Windows or POSIX path semantics from the requested target platform, even when cross-platform plans are verified on another host.

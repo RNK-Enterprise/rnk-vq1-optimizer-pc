@@ -15,7 +15,8 @@ param(
   [string]$Ref = '',
   [switch]$RunOptimize,
   [string]$GatewayUrl = $env:OPTIMIZER_GATEWAY_URL,
-  [string]$EnvironmentMode = ''
+  [string]$EnvironmentMode = '',
+  [UInt64]$MinimumFreeBytes = 5368709120
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,6 +29,7 @@ if ($nodeMajor -lt 20) { throw 'Node.js 20 or newer is required' }
 if ($RunOptimize -and [string]::IsNullOrWhiteSpace($GatewayUrl)) {
   throw 'RunOptimize requires -GatewayUrl or OPTIMIZER_GATEWAY_URL'
 }
+if ($MinimumFreeBytes -lt 0) { throw 'MinimumFreeBytes must be non-negative' }
 if ([string]::IsNullOrWhiteSpace($Ref) -or ($Ref -notmatch '^v\d+\.\d+\.\d+$' -and $Ref -notmatch '^[0-9a-fA-F]{40}$')) {
   throw 'Ref is required and must be a release tag (vX.Y.Z) or a full 40-character commit SHA'
 }
@@ -46,6 +48,12 @@ switch ($EnvironmentMode.Trim().ToLowerInvariant()) {
   'i' { $EnvironmentMode = 'interactive' }
   'interactive' { $EnvironmentMode = 'interactive' }
   default { throw 'EnvironmentMode must be headless or interactive' }
+}
+
+$installRoot = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($InstallDirectory))
+$drive = [IO.DriveInfo]::new($installRoot)
+if (-not $drive.IsReady -or $drive.AvailableFreeSpace -lt $MinimumFreeBytes) {
+  throw "insufficient free space at ${installRoot}: $($drive.AvailableFreeSpace) bytes available, $MinimumFreeBytes required"
 }
 
 if (Test-Path (Join-Path $InstallDirectory '.git')) {
