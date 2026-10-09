@@ -29,6 +29,15 @@ host state so the embedding application can consume
 `host.getAppliedState()`. The client uses browser `localStorage` by default
 and falls back to memory when browser storage is unavailable.
 
+## Local music host
+
+`scripts/pc-media-player.js` provides an application-owned browser music host
+for user-selected `File` or `Blob` objects. It supports a bounded queue,
+shuffle, repeat, next/previous, seek, and deterministic disposal of object URLs
+through the host `HTMLAudioElement`. It never accepts remote URLs, arbitrary
+filesystem paths, or downloads. Hosts without browser audio or object-URL
+support return explicit `unsupported` evidence.
+
 ## Browser-host boundaries
 
 - Server responses are data-only plans. The client validates the protocol,

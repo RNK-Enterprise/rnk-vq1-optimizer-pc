@@ -8,6 +8,9 @@
 - Added explicit Linux cgroup-v2 `io.max` byte-rate enforcement for hard I/O
   budgets when the caller supplies observed block-device `major:minor` evidence;
   Windows and macOS continue to return unsupported I/O byte-rate results.
+- Added the browser-owned local music host with bounded queue, shuffle, repeat,
+  seek, next/previous, and object-URL cleanup for user-selected media objects;
+  remote URLs and filesystem-path access remain outside its authority.
 - Extended organizer preview/apply plans with protected-root precedence so
   project, model, credential, WSL, and user-designated paths cannot be moved;
   organizer CLI commands now accept the same comma-separated protected roots.

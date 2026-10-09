@@ -45,6 +45,11 @@ enforced, a file was moved, a report was scheduled, or media was downloaded.
 Those outcomes require an explicit platform authority, approval, verification,
 and (where applicable) a caller-owned append-only history store.
 
+The browser PC surface also includes an application-owned local music host in
+`scripts/pc-media-player.js`. It plays only user-selected local `File`/`Blob`
+objects through `HTMLAudioElement`, with bounded queue/shuffle/repeat controls
+and object-URL cleanup. Remote URLs and downloads are outside that authority.
+
 ## Supported native controls
 
 The current platform adapters provide documented controls for:
