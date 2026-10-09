@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added bounded storage-growth evidence for repeated free-space and
+  reclaimable-category observations; the live storage monitor now reports
+  growing categories without adding scan, delete, or move authority.
 - Split the native CLI into bounded argument, maintenance, media, and
   dispatch modules; each source file remains below the 500-line limit without
   changing the command surface or approval defaults.

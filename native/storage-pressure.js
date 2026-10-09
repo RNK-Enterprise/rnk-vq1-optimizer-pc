@@ -443,6 +443,7 @@ export function createStoragePressureGuard(options = {}) {
 export function createStoragePressureMonitor({
   readSnapshot,
   intervalMs = 60000,
+  onSample = async () => {},
   onChange = async () => {},
   onError = () => {},
   setIntervalImpl = setInterval,
@@ -450,11 +451,13 @@ export function createStoragePressureMonitor({
 } = {}) {
   if (typeof readSnapshot !== 'function') throw new TypeError('Storage pressure monitor requires readSnapshot');
   if (!Number.isFinite(intervalMs) || intervalMs <= 0) throw new RangeError('Storage pressure monitor interval must be positive');
+  if (typeof onSample !== 'function') throw new TypeError('Storage pressure monitor sample callback must be callable');
   let active = false;
   let timer = null;
   let lastKey = null;
   const poll = async () => {
     const snapshot = await readSnapshot();
+    await onSample(snapshot);
     const pressure = snapshot?.pressure || {};
     const key = `${pressure.level || 'unknown'}:${pressure.belowTargetFreeFloor === true}`;
     const changed = key !== lastKey;

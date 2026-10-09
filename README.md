@@ -122,7 +122,8 @@ node native/cli.mjs storage-preview --target-free-gb 5 \
 node native/cli.mjs storage-cleanup --target-free-gb 5 \
   --enable=temporary-files,package-cache --confirm
 node native/cli.mjs storage-monitor --target-free-gb 5 \
-  --enable=temporary-files,package-cache --interval-seconds 60
+  --enable=temporary-files,package-cache --interval-seconds 60 \
+  --growth-window-hours 720 --growth-threshold-bytes 1048576
 node native/cli.mjs steward-history --path "$HOME/.rnk-optimizer/history.jsonl"
 node native/cli.mjs steward-history --path "$HOME/.rnk-optimizer/history.jsonl" \
   --append '{"id":"preview-1","event":"preview","timestamp":0}'
@@ -226,6 +227,10 @@ byte counts, and records removed bytes plus measured post-cleanup recovery. It
 never recursively deletes a directory because it is large.
 Linux and macOS system-drive pressure use fixed read-only `df` collectors;
 Windows pagefile evidence remains separate from reclaimable storage.
+
+The live storage monitor also retains bounded in-process growth evidence. Its
+output identifies falling free space and reclaimable categories whose observed
+bytes are increasing; this does not add scan, move, or delete authority.
 
 The native media library is a bounded, cross-platform catalogue for local
 audio, video, and image files. It supports duplicate evidence, favorites,

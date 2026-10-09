@@ -19,6 +19,7 @@ import { createDownloadMonitor } from './download-monitor.js';
 import { applyQuarantine, previewQuarantine, rollbackQuarantine } from './quarantine.js';
 import { buildDailyWorkstationReport } from './workstation-report.js';
 import { buildWorkstationTrends } from './workstation-trends.js';
+import { createStorageGrowthTracker } from './storage-growth.js';
 import {
   downloadGuardFromArgs,
   historyStoreFromArgs,
@@ -42,6 +43,11 @@ export async function runStorageCommand(command, args) {
 export async function runStorageMonitorCommand(args) {
   const guard = storageGuardFromArgs(args);
   const options = await storageOptionsFromArgs(args);
+  const growth = createStorageGrowthTracker({
+    windowMs: numberOption(args, 'growth-window-hours', 24 * 30) * 60 * 60 * 1000,
+    maxEntries: numberOption(args, 'growth-max-entries', 512),
+    growthThresholdBytes: numberOption(args, 'growth-threshold-bytes', 1024 ** 2)
+  });
   if (args['auto-clean'] === true && options.enabledCategories.length === 0) {
     throw new Error('storage-monitor --auto-clean requires explicitly enabled categories');
   }
@@ -50,6 +56,15 @@ export async function runStorageMonitorCommand(args) {
   }
   const monitor = guard.monitor({
     intervalMs: numberOption(args, 'interval-seconds', 60) * 1000,
+    onSample: async (snapshot) => {
+      const preview = await guard.preview({ ...options, snapshot });
+      growth.observe({
+        timestamp: Date.parse(snapshot.collectedAt),
+        freeBytes: snapshot.pressure?.freeBytes,
+        reclaimableBytes: preview.eligibleBytes,
+        categories: Object.fromEntries(Object.entries(preview.categories).map(([category, item]) => [category, item.observedBytes]))
+      });
+    },
     onChange: async (snapshot) => {
       const preview = await guard.preview({ ...options, snapshot });
       const result = args['auto-clean'] === true
@@ -57,7 +72,7 @@ export async function runStorageMonitorCommand(args) {
         && preview.plan.selected.length > 0
         ? await guard.cleanup(preview.plan, { approved: true, dryRun: false })
         : null;
-      process.stdout.write(`${JSON.stringify({ snapshot, preview, result })}\n`);
+      process.stdout.write(`${JSON.stringify({ snapshot, preview, growth: growth.read(), result })}\n`);
     },
     onError: (error) => process.stderr.write(`storage monitor: ${error.message}\n`)
   });

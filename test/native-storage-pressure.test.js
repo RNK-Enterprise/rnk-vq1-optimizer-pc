@@ -413,11 +413,12 @@ describe('native storage pressure guard and monitor', () => {
   test('fires monitor changes once per state and reports polling errors', async () => {
     const levels = [pressure({ level: 'warning' }), pressure({ level: 'warning' }), pressure({ level: 'critical', belowTargetFreeFloor: true })];
     const readSnapshot = jest.fn().mockImplementation(async () => snapshot({ pressure: levels.shift() || pressure({ level: 'critical' }) }));
+    const onSample = jest.fn();
     const onChange = jest.fn();
     const onError = jest.fn();
     let callback;
     const monitor = createStoragePressureMonitor({
-      readSnapshot, intervalMs: 10, onChange, onError,
+      readSnapshot, intervalMs: 10, onSample, onChange, onError,
       setIntervalImpl: (fn) => { callback = fn; return 'timer'; },
       clearIntervalImpl: jest.fn()
     });
@@ -426,6 +427,7 @@ describe('native storage pressure guard and monitor', () => {
     await expect(monitor.poll()).resolves.toMatchObject({ changed: true });
     await expect(monitor.start()).resolves.toMatchObject({ changed: false });
     expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onSample).toHaveBeenCalled();
     expect(typeof callback).toBe('function');
     const clear = jest.spyOn(globalThis, 'clearInterval');
     monitor.stop();
@@ -458,6 +460,7 @@ describe('native storage pressure guard and monitor', () => {
     await new Promise((resolve) => setImmediate(resolve));
     defaultErrorMonitor.stop();
     expect(() => createStoragePressureMonitor()).toThrow('requires readSnapshot');
+    expect(() => createStoragePressureMonitor({ readSnapshot: async () => snapshot(), onSample: 1 })).toThrow('sample callback');
     expect(() => createStoragePressureMonitor({ readSnapshot: async () => snapshot(), intervalMs: 0 })).toThrow('positive');
   });
 });

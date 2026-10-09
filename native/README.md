@@ -168,7 +168,10 @@ snapshot and subsequent pressure/floor transitions. `--auto-clean` is opt-in
 and can only act on safe categories that were explicitly enabled; it does not
 authorize Windows Update or abandoned-runtime cleanup. Every real cleanup
 returns an audit record containing the plan ID, estimated bytes, removed bytes,
-and measured before/after free-space recovery.
+and measured before/after free-space recovery. The monitor output also includes
+bounded in-process growth evidence. Use `--growth-window-hours` and
+`--growth-threshold-bytes` to control its comparison window and minimum change;
+growth evidence does not expand cleanup authority.
 
 `protected-roots-add` persists user-selected repository, model, credential, WSL,
 or document roots in a path-only registry. Pass the same `--protected-store`
