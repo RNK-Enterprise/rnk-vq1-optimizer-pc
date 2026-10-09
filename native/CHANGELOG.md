@@ -263,6 +263,12 @@
   and direct-entrypoint behavior. The adapter remains evidence-only and does
   not claim a performance result from coverage.
 
+- Added strict ESM-aware coverage for the maintenance command adapter across
+  storage guard monitoring, protected roots, cache quarantine, organization,
+  file insights, steward history/reports/scheduling, and download observation.
+  Tests use bounded temporary roots or injected observation doubles so no live
+  cleanup, process control, or scheduled task is performed by the coverage run.
+
 - The HTML daily dashboard now surfaces observed CPU/GPU load and thermal
   evidence, pagefile pressure, battery charge/cycles, throttle events,
   abnormal-process events, and cleanup action counts alongside the existing

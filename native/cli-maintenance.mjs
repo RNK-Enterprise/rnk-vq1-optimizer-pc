@@ -36,29 +36,30 @@ import {
   textListOption
 } from './cli-utils.mjs';
 
-export async function runStorageCommand(command, args) {
-  const guard = storageGuardFromArgs(args);
-  const preview = await guard.preview(await storageOptionsFromArgs(args));
+export async function runStorageCommand(command, args, { guard = storageGuardFromArgs(args), getOptions = () => storageOptionsFromArgs(args) } = {}) {
+  const preview = await guard.preview(await getOptions());
   if (command === 'storage-preview') return preview;
   if (args.confirm !== true) throw new Error('storage-cleanup requires --confirm');
   return { preview, result: await guard.cleanup(preview.plan, { approved: true, dryRun: false }) };
 }
 
-export async function runStorageMonitorCommand(args) {
-  const guard = storageGuardFromArgs(args);
-  const options = await storageOptionsFromArgs(args);
-  const growth = createStorageGrowthTracker({
+export async function runStorageMonitorCommand(args, {
+  guard = storageGuardFromArgs(args),
+  growth = createStorageGrowthTracker({
     windowMs: numberOption(args, 'growth-window-hours', 24 * 30) * 60 * 60 * 1000,
     maxEntries: numberOption(args, 'growth-max-entries', 512),
     growthThresholdBytes: numberOption(args, 'growth-threshold-bytes', 1024 ** 2)
-  });
+  }),
+  monitorFactory = (config) => guard.monitor(config)
+} = {}) {
+  const options = await storageOptionsFromArgs(args);
   if (args['auto-clean'] === true && options.enabledCategories.length === 0) {
     throw new Error('storage-monitor --auto-clean requires explicitly enabled categories');
   }
   if (args['auto-clean'] === true && (options.allowUnsafeCategories || options.allowAdmin)) {
     throw new Error('storage-monitor --auto-clean only permits safe categories');
   }
-  const monitor = guard.monitor({
+  const monitor = monitorFactory({
     intervalMs: numberOption(args, 'interval-seconds', 60) * 1000,
     onSample: async (snapshot) => {
       const preview = await guard.preview({ ...options, snapshot });
@@ -97,9 +98,8 @@ export async function runProtectedRootsCommand(command, args) {
   return command === 'protected-roots-add' ? store.add(roots) : store.remove(roots);
 }
 
-export async function runCacheCommand(command, args) {
+export async function runCacheCommand(command, args, { cleaner = createCacheCleaner() } = {}) {
   if (command === 'cache-quarantine-rollback') return rollbackQuarantine(jsonOption(args, 'result'));
-  const cleaner = createCacheCleaner();
   const preview = await cleaner.preview({
     target: args.target || 'user-temp',
     maxAgeHours: numberOption(args, 'max-age-hours', 24),
@@ -158,10 +158,13 @@ export async function runStewardHistoryCommand(args) {
   return store.read();
 }
 
-export async function runStewardMonitorCommand(args) {
-  const store = historyStoreFromArgs(args);
-  const monitor = createStewardMonitor({
-    adapter: (await import('./platform.js')).createPlatformAdapter(),
+export async function runStewardMonitorCommand(args, {
+  store = historyStoreFromArgs(args),
+  monitorFactory = createStewardMonitor,
+  adapterFactory = async () => (await import('./platform.js')).createPlatformAdapter()
+} = {}) {
+  const monitor = monitorFactory({
+    adapter: await adapterFactory(),
     store,
     intervalMs: numberOption(args, 'interval-seconds', 900) * 1000,
     onReport: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
@@ -188,12 +191,12 @@ export async function runStewardReportCommand(args) {
   return { report, delivery: await delivery.deliver(report) };
 }
 
-export async function runReportScheduleCommand(command, args) {
+export async function runReportScheduleCommand(command, args, { commandRunner = createCommandRunner(), env = process.env } = {}) {
   if (command === 'report-schedule-restore') {
     return restoreReportSchedule(jsonOption(args, 'receipt'), {
       approved: true,
       dryRun: args.confirm !== true,
-      commandRunner: createCommandRunner()
+      commandRunner
     });
   }
   const plan = previewReportSchedule({
@@ -205,11 +208,11 @@ export async function runReportScheduleCommand(command, args) {
     format: args.format || 'json',
     time: args.time || '09:00',
     taskName: args['task-name'] || undefined,
-    env: process.env
+    env
   });
   if (command === 'report-schedule-preview') return plan;
   if (args.confirm !== true) throw new Error('report-schedule-apply requires --confirm');
-  return { plan, result: await applyReportSchedule(plan, { approved: true, dryRun: false, commandRunner: createCommandRunner() }) };
+  return { plan, result: await applyReportSchedule(plan, { approved: true, dryRun: false, commandRunner }) };
 }
 
 export async function runStewardTrendsCommand(args) {
@@ -217,12 +220,11 @@ export async function runStewardTrendsCommand(args) {
   return buildWorkstationTrends(await store.read(), { windowMs: numberOption(args, 'window-days', 30) * 24 * 60 * 60 * 1000, maxEntries: numberOption(args, 'max-entries', 512) });
 }
 
-export async function runStewardScheduleCommand(args) {
-  const store = historyStoreFromArgs(args);
+export async function runStewardScheduleCommand(args, { store = historyStoreFromArgs(args), schedulerFactory = createDailyWorkstationScheduler } = {}) {
   const deliver = typeof args['output-path'] === 'string'
     ? createWorkstationReportFileDelivery({ filePath: args['output-path'], format: args.format || 'json' }).deliver
     : (report) => process.stdout.write(`${JSON.stringify(report)}\n`);
-  const scheduler = createDailyWorkstationScheduler({
+  const scheduler = schedulerFactory({
     store,
     intervalMs: numberOption(args, 'interval-seconds', 900) * 1000,
     windowMs: numberOption(args, 'window-hours', 24) * 60 * 60 * 1000,
@@ -240,13 +242,16 @@ export async function runStewardScheduleCommand(args) {
   return { stopped: true };
 }
 
-export async function runStewardDaemonCommand(args) {
-  const store = historyStoreFromArgs(args);
+export async function runStewardDaemonCommand(args, {
+  store = historyStoreFromArgs(args),
+  daemonFactory = createStewardDaemon,
+  adapterFactory = async () => (await import('./platform.js')).createPlatformAdapter()
+} = {}) {
   const reportDelivery = typeof args['report-output-path'] === 'string'
     ? createWorkstationReportFileDelivery({ filePath: args['report-output-path'], format: args.format || 'json' })
     : null;
-  const daemon = createStewardDaemon({
-    adapter: (await import('./platform.js')).createPlatformAdapter(),
+  const daemon = daemonFactory({
+    adapter: await adapterFactory(),
     store,
     observationIntervalMs: numberOption(args, 'observation-interval-seconds', 900) * 1000,
     reportIntervalMs: numberOption(args, 'report-interval-seconds', 900) * 1000,
@@ -266,8 +271,7 @@ export async function runStewardDaemonCommand(args) {
   return { stopped: true };
 }
 
-export async function runDownloadCommand(command, args) {
-  const guard = downloadGuardFromArgs(args);
+export async function runDownloadCommand(command, args, { guard = downloadGuardFromArgs(args) } = {}) {
   if (command === 'download-scan') return guard.scan(requireOption(args, 'root'), { hashFiles: args['hash-files'] === true });
   if (command === 'download-verify') return guard.verify(requireOption(args, 'file'), requireOption(args, 'sha256'));
   let volumes = [];
@@ -275,15 +279,18 @@ export async function runDownloadCommand(command, args) {
   return guard.preflight({ sizeBytes: numberOption(args, 'size-bytes', null), destinationMount: args.destination || null, volumes });
 }
 
-export async function runDownloadMonitorCommand(args) {
-  const guard = downloadGuardFromArgs(args);
+export async function runDownloadMonitorCommand(args, {
+  guard = downloadGuardFromArgs(args),
+  monitorFactory = createDownloadMonitor,
+  storageSnapshot = collectStoragePressureSnapshot,
+  commandRunner = createCommandRunner()
+} = {}) {
   const root = requireOption(args, 'root');
-  const commandRunner = createCommandRunner();
   const policy = storagePolicyFromArgs(args);
-  const monitor = createDownloadMonitor({
+  const monitor = monitorFactory({
     scan: async (target) => {
       const download = await guard.scan(target, { hashFiles: false });
-      const storage = await collectStoragePressureSnapshot({ platform: process.platform, commandRunner, policy });
+      const storage = await storageSnapshot({ platform: process.platform, commandRunner, policy });
       return { ...download, storage: storage.pressure };
     },
     intervalMs: numberOption(args, 'interval-seconds', 30) * 1000
