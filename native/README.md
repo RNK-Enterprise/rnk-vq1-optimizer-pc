@@ -251,6 +251,12 @@ rates and latency to identify gaming/download contention. Per-process
 bandwidth remains unavailable when the host does not provide counters, and no
 network throttle is claimed or applied.
 
+Workstation facts also include fixed read-only connection evidence from
+Windows `Get-NetTCPConnection`, Linux `ss`, or macOS `lsof` when available.
+Each row carries PID, endpoint, protocol, and state context. This helps explain
+which workload owns an active connection, but it does not become a byte-rate
+measurement or authorize traffic shaping.
+
 `network-monitor` provides a reusable trigger loop around a caller-owned
 platform sampler. It emits stable, started, continued, and stopped contention
 events, preserves the sample source, and remains observation-only. It does not

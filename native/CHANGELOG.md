@@ -8,6 +8,9 @@
 - Added an explicit local media session that connects queue state to the fixed
   platform default-player opener only after approval; preview and failed-open
   results never mark the track as playing.
+- Added fixed read-only Windows, Linux, and macOS network-connection evidence
+  with PID, endpoint, protocol, and state attribution; connection facts remain
+  distinct from per-process byte rates and traffic-shaping authority.
 - Split the native CLI into bounded argument, maintenance, media, and
   dispatch modules; each source file remains below the 500-line limit without
   changing the command surface or approval defaults.

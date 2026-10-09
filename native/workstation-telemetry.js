@@ -10,6 +10,7 @@
 
 import fs from 'fs/promises';
 import { collectStartupTelemetry } from './startup-telemetry.js';
+import { collectNetworkConnectionTelemetry } from './network-connections.js';
 
 export const WORKSTATION_TELEMETRY_VERSION = 1;
 const EMPTY = Object.freeze([]);
@@ -275,12 +276,13 @@ export async function collectNetworkTelemetry({ platform = process.platform, com
 }
 
 export async function collectWorkstationTelemetry({ platform = process.platform, commandRunner, fsImpl = fs, env = process.env } = {}) {
-  const [processes, battery, thermals, network, startup] = await Promise.all([
+  const [processes, battery, thermals, network, networkConnections, startup] = await Promise.all([
     collectProcessTelemetry({ platform, commandRunner }),
     collectBatteryTelemetry({ platform, commandRunner, fsImpl }),
     collectThermalTelemetry({ platform, commandRunner, fsImpl }),
     collectNetworkTelemetry({ platform, commandRunner, fsImpl }),
+    collectNetworkConnectionTelemetry({ platform, commandRunner }),
     collectStartupTelemetry({ platform, commandRunner, env, fsImpl })
   ]);
-  return Object.freeze({ telemetryVersion: WORKSTATION_TELEMETRY_VERSION, platform, processes, battery, thermals, network, startup });
+  return Object.freeze({ telemetryVersion: WORKSTATION_TELEMETRY_VERSION, platform, processes, battery, thermals, network, networkConnections, startup });
 }

@@ -118,10 +118,12 @@ function processSample(facts) {
 
 function networkSample(facts) {
   const interfaces = rows(facts.network?.interfaces);
+  const connections = rows(facts.networkConnections?.connections);
   return {
     receivedBytes: interfaces.reduce((sum, item) => sum + (nonNegative(item.receivedBytes) || 0), 0),
     sentBytes: interfaces.reduce((sum, item) => sum + (nonNegative(item.sentBytes) || 0), 0),
-    interfaceCount: interfaces.length
+    interfaceCount: interfaces.length,
+    connectionCount: connections.length
   };
 }
 
@@ -213,7 +215,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
-    network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),
+    network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestConnectionCount: last(network.map((item) => item.connectionCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),
     development: Object.freeze({ activeClasses, contentionEvents: count(workloads, (item) => item.contention) }),
     gaming: Object.freeze({ detectedEvents: count(workloads, (item) => item.gameDetected), contentionEvents: count(workloads, (item) => item.contention) }),
     cleanup: Object.freeze({ performedSamples: count(cleanup, (item) => item.performed), recoveredBytes: cleanup.reduce((sum, item) => sum + item.recoveredBytes, 0), actionCount: cleanup.reduce((sum, item) => sum + item.actionCount, 0) }),
