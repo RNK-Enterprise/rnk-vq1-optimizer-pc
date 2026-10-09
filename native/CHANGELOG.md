@@ -11,6 +11,8 @@
   transport.
 - Extended network-overview to join explicit per-process rates with observed
   PID connection counts without inferring byte ownership or adding throttling.
+- Added an approval-gated `report-open` handoff for explicit local HTML reports;
+  it uses the fixed platform opener and refuses URLs and non-HTML paths.
 - Added the bounded cross-platform `volume-storage` observer and system-facts
   integration for mounted-volume free/total/used evidence. PowerShell
   `Get-Volume`, Linux `df`, and macOS `df` remain fixed read-only commands;

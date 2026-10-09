@@ -234,6 +234,11 @@ report as a bounded local artifact. `steward-daemon` accepts the corresponding
 self-contained browser-readable dashboard with escaped data. The file sink is
 local-only and does not upload or notify external services.
 
+`report-open --path PATH` previews opening one explicit local `.html` report;
+adding `--confirm` delegates only to the fixed platform default opener. Remote
+URLs, non-HTML files, server startup, and arbitrary command execution are
+refused.
+
 `steward-daemon` combines the observation and daily-report loops in one
 long-running process and stops cleanly on process signals. It does not install
 an operating-system service, tray process, scheduler task, or privileged daemon;

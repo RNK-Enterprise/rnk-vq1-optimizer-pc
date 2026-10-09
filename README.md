@@ -288,6 +288,10 @@ persist the daily report as a bounded local artifact. HTML is a self-contained
 browser-readable dashboard with escaped report data. No external delivery is
 performed.
 
+Use `node native/cli.mjs report-open --path PATH --confirm` to open one explicit
+local HTML report through the fixed platform default opener. The command does
+not serve files, fetch URLs, or execute arbitrary commands.
+
 `steward-daemon` combines the observation and daily-report loops in one
 long-running process. It records bounded facts, emits daily reports, and stops
 cleanly on process signals. It does not install an operating-system service,

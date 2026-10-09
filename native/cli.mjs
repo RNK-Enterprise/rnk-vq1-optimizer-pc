@@ -50,6 +50,7 @@ import {
   runStorageMonitorCommand
 } from './cli-maintenance.mjs';
 import { buildMediaPanelPlan, runMediaCommand, runMediaPlayerCommand } from './cli-media.mjs';
+import { applyReportViewer, buildReportViewerPlan } from './report-viewer.js';
 
 function agentFromArgs(args) {
   const adapter = createPlatformAdapter();
@@ -147,6 +148,12 @@ async function runDriveHealthCommand(args) {
   if (args['smart-all'] === true) return { inventory, smart: await collectSmartHealthForDrives(inventory.drives, { platform: process.platform, commandRunner: createCommandRunner() }) };
   if (typeof args['smart-device'] !== 'string') return inventory;
   return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
+}
+
+async function runReportViewerCommand(args) {
+  const plan = buildReportViewerPlan(requireOption(args, 'path'), { platform: process.platform });
+  if (args.confirm !== true) return plan;
+  return { plan, result: await applyReportViewer(plan, { commandRunner: createCommandRunner(), approved: true, dryRun: false }) };
 }
 
 async function runVolumeStorageCommand() {
@@ -323,6 +330,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['resource-limit-preview', 'resource-limit-apply'].includes(command)) return runResourceLimitCommand(command, args);
   if (command === 'game-session-monitor') return runGameSessionCommand(args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
+  if (command === 'report-open') return runReportViewerCommand(args);
   if (command === 'volume-storage') return runVolumeStorageCommand();
   if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
