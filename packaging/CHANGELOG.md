@@ -9,5 +9,7 @@
   launcher.
 - Added manifest verification for path safety, file-set drift, and hash
   mismatches.
+- Added signed-tag release workflow publication for Linux, macOS, and Windows
+  runtime bundles after build and manifest verification.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.

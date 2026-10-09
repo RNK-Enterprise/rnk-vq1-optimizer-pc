@@ -152,7 +152,7 @@ export async function runWorkstationPackage({ argv = process.argv.slice(2), writ
     const options = parseWorkstationPackageArgs(argv);
     const result = options.verify ? await verifyWorkstationPackage({ root: options.sourceRoot }) : await packageImpl({ options });
     write(`${JSON.stringify(result)}\n`);
-    return result.state === 'written' || result.state === 'review-ready' ? 0 : 1;
+    return ['written', 'review-ready', 'verified'].includes(result.state) ? 0 : 1;
   } catch (error) {
     errorWrite(`${error.message}\n`);
     return 1;

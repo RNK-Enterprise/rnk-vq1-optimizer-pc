@@ -36,10 +36,25 @@ jobs:
       - run: npm run lint
       - run: git archive --format=tar.gz --prefix=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}/ --output=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz "${GITHUB_SHA}"
       - run: sha256sum "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" > "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256"
-      - run: node --input-type=module -e "import { writeFile } from 'node:fs/promises'; await writeFile('provenance.json', JSON.stringify({ repository: process.env.GITHUB_REPOSITORY, tag: process.env.GITHUB_REF_NAME, commit: process.env.GITHUB_SHA, archive: 'rnk-vq1-optimizer-pc-' + process.env.GITHUB_REF_NAME + '.tar.gz' }, null, 2) + '\\n');"
+      - name: Build and verify runtime bundles
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          version="${RELEASE_VERSION#v}"
+          for platform in linux darwin win32; do
+            output="$RUNNER_TEMP/rnk-runtime-$platform"
+            archive="rnk-vq1-optimizer-pc-runtime-${platform}-${GITHUB_REF_NAME}.tar.gz"
+            node scripts/workstation-package.js --platform "$platform" --source "$GITHUB_WORKSPACE" --output "$output" --version "$version"
+            node scripts/workstation-package.js --verify --source "$output"
+            tar -czf "$archive" -C "$output" .
+            sha256sum "$archive" > "$archive.sha256"
+          done
+      - name: Write release provenance
+        run: |
+          node --input-type=module -e "import { writeFile } from 'node:fs/promises'; await writeFile('provenance.json', JSON.stringify({ repository: process.env.GITHUB_REPOSITORY, tag: process.env.GITHUB_REF_NAME, commit: process.env.GITHUB_SHA, archive: 'rnk-vq1-optimizer-pc-' + process.env.GITHUB_REF_NAME + '.tar.gz' }, null, 2) + '\\n');"
       - uses: actions/attest-build-provenance@v2
         with:
           subject-path: rnk-vq1-optimizer-pc-${{ github.ref_name }}.tar.gz
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256" provenance.json --verify-tag --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256" rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-linux-${GITHUB_REF_NAME}.tar.gz.sha256 rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-darwin-${GITHUB_REF_NAME}.tar.gz.sha256 rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz rnk-vq1-optimizer-pc-runtime-win32-${GITHUB_REF_NAME}.tar.gz.sha256 provenance.json --verify-tag --generate-notes

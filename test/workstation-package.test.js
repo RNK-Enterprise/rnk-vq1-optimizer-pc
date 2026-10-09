@@ -55,6 +55,7 @@ describe('workstation package boundary', () => {
     const manifest = JSON.parse(await fs.readFile(path.join(output, 'bundle', 'package-manifest.json'), 'utf8'));
     expect(manifest.files).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'native/cli.mjs', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-dashboard', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) })]));
     await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'verified', fileCount: manifest.files.length });
+    await expect(runWorkstationPackage({ argv: ['--verify', '--source', path.join(output, 'bundle')], write: jest.fn(), errorWrite: jest.fn() })).resolves.toBe(0);
     await fs.writeFile(path.join(output, 'bundle', 'native', 'cli.mjs'), 'tampered');
     await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'mismatch', path: 'native/cli.mjs' });
     await fs.writeFile(path.join(output, 'bundle', 'native', 'cli.mjs'), 'native-runtime');
