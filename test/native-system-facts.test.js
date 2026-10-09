@@ -4,7 +4,7 @@
  * Contributor: Lisa's Dungeon
  */
 
-import { collectBaseFacts, collectGpuFacts, collectSystemFacts } from '../native/system-facts.js';
+import { attachGpuProcessFacts, collectBaseFacts, collectGpuFacts, collectGpuProcessFacts, collectSystemFacts, parseNvidiaProcessFacts } from '../native/system-facts.js';
 
 const fakeOs = {
   cpus: () => [{ model: 'Test CPU' }, { model: 'Test CPU' }],
@@ -53,6 +53,20 @@ describe('native system facts', () => {
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: '1,2,3,x' }) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toEqual(expect.objectContaining({ available: false }));
     await expect(collectGpuFacts()).resolves.toEqual(expect.objectContaining({ available: false }));
+  });
+
+  test('reads bounded NVIDIA compute-process memory evidence and preserves gaps', async () => {
+    expect(parseNvidiaProcessFacts('10, 128\ninvalid\n11, N/A\n12, 0', { platform: 'linux' })).toMatchObject({ available: true, processes: [{ pid: 10, memoryBytes: 128 * 1024 ** 2 }, { pid: 12, memoryBytes: 0 }] });
+    expect(parseNvidiaProcessFacts('', { platform: 'linux' })).toMatchObject({ available: false, processes: [] });
+    expect(parseNvidiaProcessFacts('')).toMatchObject({ platform: 'unknown', available: false });
+    await expect(collectGpuProcessFacts({ platform: 'darwin', commandRunner: { run: jest.fn() } })).resolves.toMatchObject({ available: false, source: 'unavailable' });
+    await expect(collectGpuProcessFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 0, stdout: '20, 64' }) } })).resolves.toMatchObject({ available: true, processes: [{ pid: 20, memoryBytes: 64 * 1024 ** 2 }] });
+    await expect(collectGpuProcessFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue({ code: 1, stderr: 'denied' }) } })).resolves.toMatchObject({ available: false, source: 'denied' });
+    await expect(collectGpuProcessFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toMatchObject({ available: false, source: 'missing' });
+    await expect(collectGpuProcessFacts({ platform: 'linux', commandRunner: { run: jest.fn().mockResolvedValue(undefined) } })).resolves.toMatchObject({ available: false, source: "Cannot read properties of undefined (reading 'code')" });
+    await expect(collectGpuProcessFacts()).resolves.toMatchObject({ platform: 'unknown', available: false, source: 'unavailable' });
+    expect(attachGpuProcessFacts([{ pid: 20, name: 'model' }, { pid: 21, name: 'game' }], { processes: [{ pid: 20, memoryBytes: 64 }] })).toEqual([{ pid: 20, name: 'model', gpuMemoryBytes: 64 }, { pid: 21, name: 'game', gpuMemoryBytes: null }]);
+    expect(attachGpuProcessFacts(undefined, undefined)).toEqual([]);
   });
 
   test('combines base and optional GPU facts', async () => {

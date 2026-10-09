@@ -34,6 +34,10 @@ function unavailableGpu() {
   return { available: false, vendor: null, utilizationPercent: null, memoryUsedBytes: null, memoryTotalBytes: null, temperatureC: null, thermalThrottling: null };
 }
 
+function unavailableGpuProcesses(platform = 'unknown', reason = 'unavailable') {
+  return Object.freeze({ available: false, platform, processes: Object.freeze([]), source: reason });
+}
+
 export function collectBaseFacts({ platform = process.platform, osImpl = os } = {}) {
   const cpus = typeof osImpl.cpus === 'function' ? osImpl.cpus() : [];
   const totalMemory = typeof osImpl.totalmem === 'function' ? osImpl.totalmem() : null;
@@ -94,9 +98,42 @@ export async function collectGpuFacts({ platform, commandRunner } = {}) {
   }
 }
 
+export function parseNvidiaProcessFacts(output, { platform = 'unknown' } = {}) {
+  const processes = String(output || '').split(/\r?\n/).map((line) => {
+    const [pidValue, memoryValue] = line.split(',').map((part) => part.trim());
+    const pid = Number(pidValue);
+    const memoryMiB = Number(memoryValue);
+    return Number.isInteger(pid) && pid > 0 && Number.isFinite(memoryMiB) && memoryMiB >= 0
+      ? Object.freeze({ pid, memoryBytes: memoryMiB * 1024 ** 2 })
+      : null;
+  }).filter(Boolean).slice(0, 512);
+  return Object.freeze({ available: processes.length > 0, platform, processes: Object.freeze(processes), source: 'nvidia-smi-compute-apps' });
+}
+
+export async function collectGpuProcessFacts({ platform, commandRunner } = {}) {
+  if (!commandRunner || (platform !== 'win32' && platform !== 'linux')) return unavailableGpuProcesses(platform);
+  try {
+    const result = await commandRunner.run('nvidia-smi', [
+      '--query-compute-apps=pid,used_gpu_memory',
+      '--format=csv,noheader,nounits'
+    ], { timeoutMs: 2500, maxOutputBytes: 16384 });
+    return result.code === 0
+      ? parseNvidiaProcessFacts(result.stdout, { platform })
+      : unavailableGpuProcesses(platform, result.stderr || 'nvidia process query failed');
+  } catch (error) {
+    return unavailableGpuProcesses(platform, error.message);
+  }
+}
+
+export function attachGpuProcessFacts(processes, gpuFacts) {
+  const gpuByPid = new Map((Array.isArray(gpuFacts?.processes) ? gpuFacts.processes : []).map((item) => [item.pid, item.memoryBytes]));
+  return Object.freeze((Array.isArray(processes) ? processes : []).map((item) => Object.freeze({ ...item, gpuMemoryBytes: gpuByPid.get(item.pid) ?? null })));
+}
+
 export async function collectSystemFacts({ platform = process.platform, osImpl = os, commandRunner } = {}) {
   const facts = collectBaseFacts({ platform, osImpl });
   facts.gpu = await collectGpuFacts({ platform, commandRunner });
+  facts.gpuProcesses = await collectGpuProcessFacts({ platform, commandRunner });
   const storage = await collectStoragePressureSnapshot({ platform, commandRunner });
   const telemetry = await collectWorkstationTelemetry({ platform, commandRunner });
   const drives = await collectDriveHealth({ platform, commandRunner });
@@ -105,7 +142,7 @@ export async function collectSystemFacts({ platform = process.platform, osImpl =
   facts.pagefile = storage.pagefile;
   facts.storagePressure = storage.pressure;
   facts.storagePressureAvailable = storage.available;
-  facts.processes = telemetry.processes.processes;
+  facts.processes = attachGpuProcessFacts(telemetry.processes.processes, facts.gpuProcesses);
   facts.battery = telemetry.battery;
   facts.thermals = telemetry.thermals;
   facts.fans = telemetry.fans;

@@ -262,6 +262,9 @@ when exposed, and process rows include bounded `/proc/<pid>/io` counters when
 available. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots; macOS
 process I/O counters remain unavailable. Cumulative counters are not reported as
 rates without an explicit second sample.
+When `nvidia-smi` exposes compute-process rows, matching process records also
+carry observed GPU-memory bytes; graphics-process coverage and GPU enforcement
+remain unavailable unless the driver reports them through that fixed query.
 Windows battery telemetry combines `Win32_Battery` with the read-only `root/wmi`
 capacity and cycle-count classes when those classes are present; absent classes
 remain unavailable rather than being inferred.

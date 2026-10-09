@@ -8,6 +8,8 @@
 - Added bounded per-process cumulative read/write I/O evidence for Windows and
   Linux Developer Mode, Gaming+Build review, and workstation reports; missing
   platform counters remain unknown rather than inferred.
+- Added optional NVIDIA compute-process GPU-memory evidence to matching process
+  facts; graphics-process coverage and GPU hard caps remain unsupported.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

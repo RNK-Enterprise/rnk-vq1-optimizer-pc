@@ -6,6 +6,9 @@
   `Win32_Process` rows and Linux `/proc/<pid>/io` observations. Missing or
   unsupported counters remain unavailable, and the facts layer does not turn
   cumulative counters into rates without an explicit second sample.
+- Added optional fixed NVIDIA compute-process memory evidence and attached it to
+  matching process facts without claiming graphics-process coverage or GPU
+  enforcement.
 - Added an explicit bounded multi-drive SMART observer that reuses validated
   inventory devices without changing normal inventory-only facts collection.
 - Corrected the Linux mounted-volume command so GNU `df` no longer receives the

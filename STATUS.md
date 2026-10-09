@@ -14,7 +14,7 @@ means the authority deliberately refuses rather than pretending to enforce it.
 | Storage and drive health | Implemented | SMART/filesystem results depend on host tools and device permissions. |
 | File organizer and placement | Implemented | Preview, protected roots, copy verification, apply, and rollback are present. |
 | Download Guard | Implemented | It guards explicit roots; it does not intercept browser downloads. |
-| Developer Mode | Implemented | Windows/Linux priority and CPU/RAM/I/O authorities exist; live admin proof remains. |
+| Developer Mode | Implemented | Windows/Linux priority, CPU/RAM/I/O, and optional NVIDIA compute-memory evidence exist; live admin proof remains. |
 | Gaming Mode | Implemented | Foreground evidence and approved background priority changes exist; no GPU/FPS/network cap. |
 | Gaming + Build Mode | Implemented | Hard CPU/RAM limits use Windows Job Objects or Linux cgroups; live proof remains. |
 | Battery and power | Implemented | Telemetry and documented profiles exist; ASUS-specific live behavior is unverified. |
