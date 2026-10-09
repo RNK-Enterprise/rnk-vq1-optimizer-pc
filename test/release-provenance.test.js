@@ -58,6 +58,6 @@ describe('release provenance', () => {
     expect(defaultGitExec('git', ['--version'])).toMatch(/git version/);
     expect(() => validateReleaseProvenance({ tag: 'v3.1.1', currentCommit: commit, taggedCommit: commit, tagType: 'tag' })).toThrow('PGP');
     expect(() => validateReleaseProvenance()).toThrow('vX.Y.Z');
-    expect(() => verifyReleaseProvenance()).toThrow();
+    expect(() => verifyReleaseProvenance({ env: {} })).toThrow();
   });
 });
