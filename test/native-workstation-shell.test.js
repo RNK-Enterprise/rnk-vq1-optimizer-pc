@@ -10,6 +10,7 @@ import path from 'path';
 describe('workstation shell session', () => {
   test('resolves isolated platform user-data paths for packaged sessions', () => {
     expect(defaultWorkstationPaths()).toMatchObject({ version: WORKSTATION_PATHS_VERSION, state: 'ready' });
+    expect(defaultWorkstationPaths({ platform: 'win32', env: { LOCALAPPDATA: 'C:\\Users\\Odinn\\AppData\\Local' } })).toMatchObject({ state: 'ready', historyPath: 'C:\\Users\\Odinn\\AppData\\Local\\RNK\\Optimizer\\history.jsonl' });
     expect(defaultWorkstationPaths({ platform: 'win32', env: { LOCALAPPDATA: 'C:\\Users\\Odinn\\AppData\\Local' }, pathImpl: { isAbsolute: (value) => /^[A-Z]:\\/.test(value), join: (...values) => values.join('\\') } })).toMatchObject({ version: WORKSTATION_PATHS_VERSION, state: 'ready', historyPath: 'C:\\Users\\Odinn\\AppData\\Local\\RNK\\Optimizer\\history.jsonl' });
     expect(defaultWorkstationPaths({ platform: 'win32', env: { APPDATA: 'C:\\Users\\Odinn\\AppData\\Roaming' }, pathImpl: { isAbsolute: (value) => /^[A-Z]:\\/.test(value), join: (...values) => values.join('\\') } })).toMatchObject({ state: 'ready' });
     expect(defaultWorkstationPaths({ platform: 'linux', env: { XDG_STATE_HOME: '/state' } })).toMatchObject({ state: 'ready', root: '/state/RNK/Optimizer' });
@@ -29,14 +30,14 @@ describe('workstation shell session', () => {
 
   test('refuses invalid or unsupported targets', () => {
     expect(buildWorkstationShellPlan()).toMatchObject({ state: 'invalid-input' });
-    expect(buildWorkstationShellPlan({ historyPath: 'relative', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input' });
-    expect(buildWorkstationShellPlan({ historyPath: '/tmp/history', reportPath: '/tmp/report.txt', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input', reason: expect.stringContaining('HTML') });
-    expect(buildWorkstationShellPlan({ platform: 'freebsd', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform' });
-    expect(buildWorkstationShellPlan({ platform: null, historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform', platform: 'unknown' });
+    expect(buildWorkstationShellPlan({ historyPath: 'relative', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', nodePath: '/usr/bin/node', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input' });
+    expect(buildWorkstationShellPlan({ historyPath: '/tmp/history', reportPath: '/tmp/report.txt', cliPath: '/app/cli.mjs', nodePath: '/usr/bin/node', pathImpl: path.posix })).toMatchObject({ state: 'invalid-input', reason: expect.stringContaining('HTML') });
+    expect(buildWorkstationShellPlan({ platform: 'freebsd', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', nodePath: '/usr/bin/node', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform' });
+    expect(buildWorkstationShellPlan({ platform: null, historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', nodePath: '/usr/bin/node', pathImpl: path.posix })).toMatchObject({ state: 'unsupported-platform', platform: 'unknown' });
   });
 
   test('applies only approved plans through two fixed commands', async () => {
-    const plan = buildWorkstationShellPlan({ platform: 'linux', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', pathImpl: path.posix });
+    const plan = buildWorkstationShellPlan({ platform: 'linux', historyPath: '/tmp/history', reportPath: '/tmp/report.html', cliPath: '/app/cli.mjs', nodePath: '/usr/bin/node', pathImpl: path.posix });
     const run = jest.fn(async () => ({ code: 0 }));
     await expect(applyWorkstationShell(plan)).resolves.toMatchObject({ state: 'refused' });
     await expect(applyWorkstationShell(plan, { approved: true, dryRun: true })).resolves.toMatchObject({ state: 'preview' });

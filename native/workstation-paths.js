@@ -23,23 +23,29 @@ function baseRoot(platform, env, pathImpl) {
   return roots[platform].find(Boolean) || null;
 }
 
-export function defaultWorkstationPaths({ platform = process.platform, env = process.env, pathImpl = path } = {}) {
+function platformPath(platform, pathImpl) {
+  if (pathImpl) return pathImpl;
+  return platform === 'win32' ? path.win32 : path.posix;
+}
+
+export function defaultWorkstationPaths({ platform = process.platform, env = process.env, pathImpl } = {}) {
   const normalizedPlatform = text(platform)?.toLowerCase() || 'unknown';
   if (!['win32', 'linux', 'darwin'].includes(normalizedPlatform)) {
     return Object.freeze({ version: WORKSTATION_PATHS_VERSION, state: 'unsupported-platform', platform: normalizedPlatform, reason: 'packaged workstation paths support Windows, Linux, and macOS' });
   }
-  const base = baseRoot(normalizedPlatform, env, pathImpl);
-  if (!base || !pathImpl.isAbsolute(base)) {
+  const selectedPath = platformPath(normalizedPlatform, pathImpl);
+  const base = baseRoot(normalizedPlatform, env, selectedPath);
+  if (!base || !selectedPath.isAbsolute(base)) {
     return Object.freeze({ version: WORKSTATION_PATHS_VERSION, state: 'invalid-environment', platform: normalizedPlatform, reason: 'a platform user-data root is required' });
   }
-  const root = pathImpl.join(base, 'RNK', 'Optimizer');
+  const root = selectedPath.join(base, 'RNK', 'Optimizer');
   return Object.freeze({
     version: WORKSTATION_PATHS_VERSION,
     state: 'ready',
     platform: normalizedPlatform,
     root,
-    historyPath: pathImpl.join(root, 'history.jsonl'),
-    reportPath: pathImpl.join(root, 'daily-report.html'),
-    protectedRootsPath: pathImpl.join(root, 'protected-roots.json')
+    historyPath: selectedPath.join(root, 'history.jsonl'),
+    reportPath: selectedPath.join(root, 'daily-report.html'),
+    protectedRootsPath: selectedPath.join(root, 'protected-roots.json')
   });
 }

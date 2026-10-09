@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Made packaged workstation state paths select Windows or POSIX path semantics from the requested target platform, even when cross-platform plans are verified on another host.
 - Made the top-level native CLI accept injected adapters, command runners, guards, and cache cleaners so cross-platform routing tests remain deterministic without collecting the host machine during unit verification.
 - Routed the CLI's network/process rate monitors and storage monitor through the same injected platform dependencies.
 - Extended the public-boundary traversal test timeout for slower hosted filesystems while preserving its bounded full-checkout scan and strict coverage requirements.
