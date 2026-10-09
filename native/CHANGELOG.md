@@ -8,6 +8,8 @@
 - Added optional Linux NetHogs per-process receive/send-rate evidence to the
   facts layer and network overview. Missing NetHogs capabilities remain an
   explicit unavailable result; no traffic shaping is implied.
+- Extended daily workstation reports with the latest bounded top process
+  network user and the count of samples containing native process evidence.
 - Added a cross-platform packaged-session user-data path resolver for Windows,
   Linux, and macOS. Packaged dashboard launchers now use isolated per-user
   history and report paths instead of requiring manual path arguments.
