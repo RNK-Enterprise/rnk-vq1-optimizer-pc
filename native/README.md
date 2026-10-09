@@ -239,6 +239,8 @@ local-only and does not upload or notify external services. It includes bounded
 storage-volume and per-drive device/model/media/health, network, workload, cleanup, and policy sections;
 it also surfaces observed CPU/GPU, pagefile, battery, thermal, abnormal-process,
 and cleanup counts. Missing evidence remains an explicit unknown or empty state.
+The same dashboard also shows sampled process CPU/I/O peaks, latest leaders,
+sample counts, and counter-reset evidence when those observations exist.
 
 `report-open --path PATH` previews opening one explicit local `.html` report;
 adding `--confirm` delegates only to the fixed platform default opener. Remote
