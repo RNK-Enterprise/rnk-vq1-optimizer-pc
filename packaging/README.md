@@ -36,4 +36,5 @@ files, and SHA-256 mismatches.
 The signed-tag release workflow builds and verifies Linux, macOS, and Windows
 runtime archives before publishing each archive with its SHA-256 sidecar. The
 workflow still requires the repository signing key, an annotated signed tag,
-and the release attestation path.
+and the release attestation path. Archive ordering, timestamps, and ownership
+metadata are normalized by the release job.

@@ -46,7 +46,7 @@ jobs:
             archive="rnk-vq1-optimizer-pc-runtime-${platform}-${GITHUB_REF_NAME}.tar.gz"
             node scripts/workstation-package.js --platform "$platform" --source "$GITHUB_WORKSPACE" --output "$output" --version "$version"
             node scripts/workstation-package.js --verify --source "$output"
-            tar -czf "$archive" -C "$output" .
+            tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -czf "$archive" -C "$output" .
             sha256sum "$archive" > "$archive.sha256"
           done
       - name: Write release provenance

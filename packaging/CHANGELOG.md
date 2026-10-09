@@ -11,5 +11,7 @@
   mismatches.
 - Added signed-tag release workflow publication for Linux, macOS, and Windows
   runtime bundles after build and manifest verification.
+- Normalized runtime archive ordering, timestamps, and ownership metadata for
+  reproducible release artifacts.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.
