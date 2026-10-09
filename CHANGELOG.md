@@ -22,6 +22,8 @@
   answers and explicit missing-evidence results.
 - Extended the self-contained HTML daily dashboard with process CPU/I/O peaks,
   latest leaders, sampled-rate count, and counter-reset evidence.
+- Added an optional caller-owned language adapter that translates bounded JSON
+  into the deterministic assistant without granting model output execution authority.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

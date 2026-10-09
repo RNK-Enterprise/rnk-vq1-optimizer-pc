@@ -27,7 +27,7 @@ means the authority deliberately refuses rather than pretending to enforce it.
 | Media panel | Implemented | HTTPS allow-list handoff exists; it does not fetch or bypass services. |
 | Daily workstation report | Implemented | History, HTML/JSON/Markdown delivery, daemon, OS-user scheduling, and sampled process CPU/I/O leaders exist. |
 | History and trends | Implemented | Bounded append-only history and multi-day trend reduction exist. |
-| Local workstation assistant | Implemented | Deterministic facts-only question routing and preview plans exist. |
+| Local workstation assistant | Implemented | Deterministic facts-only routing, preview plans, and an optional bounded language adapter exist. |
 | Protected assets | Implemented | Protected roots and role/path precedence refuse uncertain destructive work. |
 | Preview, verify, audit | Implemented | Covered authorities produce receipts and measured verification; rollback is authority-specific. |
 
@@ -48,12 +48,10 @@ wishlist:
    The explicit-root guard and monitor are implemented.
 6. Full service/decoder media integration. Local metadata and host handoff are
    implemented; the optimizer does not ship a decoder or service downloader.
-7. Optional model-backed natural-language adapter. The current assistant is
-   deliberately deterministic and cannot execute natural-language commands.
-8. Live release evidence: clean-machine install, Windows 11 ROG execution,
+7. Live release evidence: clean-machine install, Windows 11 ROG execution,
    administrative applies, live gateway, signed release tag, checksum, and
    build attestation still require their exact environments and Odinn's signoff.
 
-The eight remaining rows are deliberately separated from source completeness:
+The seven remaining rows are deliberately separated from source completeness:
 unsupported platform authorities and live certification cannot be honestly
 closed by adding tests or changing documentation.

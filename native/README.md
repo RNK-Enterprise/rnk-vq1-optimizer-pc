@@ -456,6 +456,9 @@ command.
 With a workstation report it also answers which observed process is the latest
 CPU or I/O leader; without sampled process-rate evidence it returns an
 observation-required result.
+Hosts may use the optional intent adapter to translate a bounded local response
+into a canonical question; invalid or low-confidence output is refused and no
+adapter output is executed.
 
 `policy-preview` combines local facts into bounded storage, memory/pagefile,
 thermal, gaming/build, battery, and process handoffs. `policy-approve` marks
