@@ -10,6 +10,10 @@
 - Corrected packaged continuous reports to serialize as HTML by default when
   the default `.html` destination is used; explicit report formats remain
   available.
+- Connected packaged report-schedule preview/apply to the same isolated
+  per-user paths and explicit HTML default without bypassing approval.
+- Aligned the user-level scheduler format allow-list with the existing HTML
+  report delivery so scheduled packaged dashboards are valid plans.
 
 - Added the reproducible cross-platform runtime package boundary and fixed
   Windows, Linux, and macOS dashboard launchers; tray lifecycle remains outside

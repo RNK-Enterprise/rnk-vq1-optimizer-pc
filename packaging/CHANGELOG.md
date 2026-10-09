@@ -19,5 +19,9 @@
   bundle; both launchers are included in manifest hashing and verification.
 - Set the continuous-steward launcher's default report format to HTML so its
   default daily report has the declared artifact type.
+- Exposed packaged report scheduling through the existing approval-gated
+  user-level scheduler with the same resolved paths and HTML default.
+- Enabled the scheduler's existing HTML report format in its strict format
+  allow-list.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.

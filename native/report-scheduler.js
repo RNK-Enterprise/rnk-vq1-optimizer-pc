@@ -12,7 +12,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 export const REPORT_SCHEDULER_VERSION = 1;
-const FORMATS = Object.freeze(['json', 'markdown']);
+const FORMATS = Object.freeze(['json', 'markdown', 'html']);
 const TASK_PREFIX = 'RNK-Optimizer-Daily-Report';
 const NAME_PATTERN = /^[A-Za-z0-9._ -]{1,80}$/;
 

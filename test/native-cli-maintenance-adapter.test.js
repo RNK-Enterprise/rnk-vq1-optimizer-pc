@@ -174,6 +174,8 @@ describe('native CLI maintenance adapter', () => {
     await expect(runReportScheduleCommand('report-schedule-preview', scheduleArgs)).resolves.toMatchObject({ state: 'plan-ready' });
     await expect(runReportScheduleCommand('report-schedule-apply', scheduleArgs)).rejects.toThrow('requires --confirm');
     await expect(runReportScheduleCommand('report-schedule-apply', { ...scheduleArgs, confirm: true }, { env: { HOME: root, XDG_CONFIG_HOME: path.join(root, '.config') }, commandRunner: { run: async () => ({ code: 0, stdout: '', stderr: '' }) } })).resolves.toMatchObject({ result: { state: 'applied' } });
+    await expect(runReportScheduleCommand('report-schedule-preview', { packaged: true }, { platform: 'linux', pathResolver: () => ({ state: 'ready', historyPath, reportPath: path.join(root, 'packaged.html') }) })).resolves.toMatchObject({ state: 'plan-ready', format: 'html', outputPath: path.join(root, 'packaged.html') });
+    await expect(runReportScheduleCommand('report-schedule-preview', { packaged: true }, { platform: 'linux', pathResolver: () => ({ state: 'invalid-environment', reason: 'missing root' }) })).rejects.toThrow('missing root');
     await expect(runReportScheduleCommand('report-schedule-restore', { receipt: JSON.stringify({ version: 1, action: 'remove-daily-report-schedule', platform: 'freebsd', taskName: 'RNK-Optimizer-Daily-Report', details: {} }), confirm: true }, { commandRunner: { run: jest.fn() } })).resolves.toMatchObject({ state: 'rejected' });
   });
 

@@ -211,7 +211,7 @@ export async function runStewardSnapshotCommand(args, {
   return { report, entry, delivery: await delivery.deliver(report) };
 }
 
-export async function runReportScheduleCommand(command, args, { commandRunner = createCommandRunner(), env = process.env } = {}) {
+export async function runReportScheduleCommand(command, args, { commandRunner = createCommandRunner(), env = process.env, platform = process.platform, pathResolver = defaultWorkstationPaths } = {}) {
   if (command === 'report-schedule-restore') {
     return restoreReportSchedule(jsonOption(args, 'receipt'), {
       approved: true,
@@ -219,13 +219,15 @@ export async function runReportScheduleCommand(command, args, { commandRunner = 
       commandRunner
     });
   }
+  const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
+  if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
   const plan = previewReportSchedule({
-    platform: process.platform,
+    platform,
     nodePath: process.execPath,
     cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)),
-    historyPath: requireOption(args, 'path'),
-    outputPath: requireOption(args, 'output-path'),
-    format: args.format || 'json',
+    historyPath: defaults?.historyPath || requireOption(args, 'path'),
+    outputPath: defaults?.reportPath || requireOption(args, 'output-path'),
+    format: args.format || (defaults ? 'html' : 'json'),
     time: args.time || '09:00',
     taskName: args['task-name'] || undefined,
     env

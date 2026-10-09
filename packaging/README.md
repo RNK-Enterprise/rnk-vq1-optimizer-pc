@@ -22,6 +22,12 @@ uses the existing approval-gated snapshot and host opener boundary. The
 continuous-steward launcher runs the existing observation/report loop in the
 foreground and exits on the normal console termination signals.
 
+Packaged daily scheduling remains an explicit preview/apply operation. Use the
+runtime CLI with `report-schedule-preview --packaged` to inspect the native
+user-level schedule and `report-schedule-apply --packaged --confirm` only after
+reviewing it. The packaged operation selects the same per-user history and
+HTML-report paths as the launchers.
+
 The source and output roots must be absolute and distinct. Output inside the
 source tree is refused so a package cannot become an input to its own build.
 Use an immutable signed release checkout for release packaging; a working tree
