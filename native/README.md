@@ -265,6 +265,9 @@ browser after confirmation, without arbitrary URL execution or downloads.
 `media-metadata` uses one fixed, shell-free `ffprobe` call to collect bounded
 duration, format, codec, audio-channel, and video-dimension facts. Missing
 `ffprobe`, invalid output, symlinks, and unsupported files stay unavailable.
+The local media player applies queue navigation, shuffle, repeat, search, and
+playlist state locally; actual decoding and playback remain with the approved
+player host.
 
 `workload-preview` detects only declared game evidence, a foreground process
 with an explicit game role, or a caller-supplied exact process name. On

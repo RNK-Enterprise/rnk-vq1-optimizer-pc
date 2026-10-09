@@ -15,6 +15,8 @@
   count observed GPU thermal-throttle events separately from CPU thermal data.
 - Added GPU thermal-throttle event counts and recommendations to multi-day
   workstation trends, preserving unknown samples when the GPU sensor is absent.
+- Made the local music player's shuffle control select a different queued track
+  on `next`, with injectable randomness for deterministic host validation.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added separate GPU temperature evidence to daily workstation reports, with

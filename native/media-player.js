@@ -15,25 +15,32 @@ function text(value) { return typeof value === 'string' && value.trim() ? value.
 function tracks(value) { return Array.isArray(value) ? [...new Set(value.map(text).filter(Boolean))].slice(0, MAX_TRACKS) : []; }
 function stateOf(source) { return Object.freeze({ version: MEDIA_PLAYER_VERSION, queue: Object.freeze(tracks(source.queue)), currentIndex: Number.isInteger(source.currentIndex) && source.currentIndex >= 0 ? source.currentIndex : 0, playing: source.playing === true, shuffle: source.shuffle === true, repeat: REPEAT_MODES.includes(source.repeat) ? source.repeat : 'off', positionSeconds: Number.isFinite(source.positionSeconds) && source.positionSeconds >= 0 ? source.positionSeconds : 0, authority: 'player-host-required', mutation: 'state-only' }); }
 
-function nextState(state, direction) {
+function nextState(state, direction, random) {
   if (!state.queue.length) return stateOf({ ...state, playing: false });
   if (state.repeat === 'one' && direction > 0) return state;
+  if (state.shuffle && direction > 0 && state.queue.length > 1) {
+    const sample = random();
+    const normalized = Number.isFinite(sample) && sample >= 0 && sample < 1 ? sample : 0;
+    const offset = Math.floor(normalized * (state.queue.length - 1)) + 1;
+    return stateOf({ ...state, currentIndex: (state.currentIndex + offset) % state.queue.length, positionSeconds: 0 });
+  }
   const candidate = state.currentIndex + direction;
   if (candidate >= 0 && candidate < state.queue.length) return stateOf({ ...state, currentIndex: candidate, positionSeconds: 0 });
   if (state.repeat === 'all') return stateOf({ ...state, currentIndex: candidate < 0 ? state.queue.length - 1 : 0, positionSeconds: 0 });
   return stateOf({ ...state, playing: false, positionSeconds: 0 });
 }
 
-export function createMediaPlayer({ queue = [], initial = {}, now = Date.now } = {}) {
+export function createMediaPlayer({ queue = [], initial = {}, now = Date.now, random = Math.random } = {}) {
   if (typeof now !== 'function') throw new TypeError('Media player clock must be a function');
+  if (typeof random !== 'function') throw new TypeError('Media player random source must be a function');
   let state = stateOf({ ...initial, queue: queue.length ? queue : initial.queue });
   function read() { return Object.freeze({ ...state, track: state.queue[state.currentIndex] || null, updatedAt: now() }); }
   function command(action, value) {
     switch (action) {
       case 'play': state = state.queue.length ? stateOf({ ...state, playing: true }) : stateOf({ ...state, playing: false }); break;
       case 'pause': state = stateOf({ ...state, playing: false }); break;
-      case 'next': state = nextState(state, 1); break;
-      case 'previous': state = nextState(state, -1); break;
+      case 'next': state = nextState(state, 1, random); break;
+      case 'previous': state = nextState(state, -1, random); break;
       case 'shuffle': state = stateOf({ ...state, shuffle: value === true }); break;
       case 'repeat': if (!REPEAT_MODES.includes(value)) throw new Error('Media player repeat mode is invalid'); state = stateOf({ ...state, repeat: value }); break;
       case 'select': if (!Number.isInteger(value) || value < 0 || value >= state.queue.length) throw new RangeError('Media player track index is invalid'); state = stateOf({ ...state, currentIndex: value, positionSeconds: 0 }); break;
