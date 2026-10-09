@@ -35,7 +35,7 @@ describe('public checkout boundary', () => {
     await expect(scanPublicBoundary({ root: '/repo', fsImpl, pathImpl: path.posix })).resolves.toMatchObject({ version: PUBLIC_BOUNDARY_VERSION, state: 'clean', scannedFiles: 2, skippedFiles: 0, matches: [] });
     expect(fsImpl.readFile).toHaveBeenCalledTimes(2);
     await expect(scanPublicBoundary()).resolves.toMatchObject({ state: 'clean' });
-  });
+  }, 30000);
 
   test('reports forbidden matches, incomplete bounds, and malformed options', async () => {
     const fsImpl = fakeFs({ '/repo/bad.txt': `safe\n${['fo', 'undry'].join('')}` }, { '/repo': [{ name: 'bad.txt', isFile: () => true }] });

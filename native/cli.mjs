@@ -59,7 +59,7 @@ import { applyWorkstationShell, buildWorkstationShellPlan } from './workstation-
 import { defaultWorkstationPaths } from './workstation-paths.js';
 import { applyWorkstationTray, buildWorkstationTrayPlan } from './workstation-tray.js';
 
-export function agentFromArgs(args, { adapter = createPlatformAdapter(), env = process.env } = {}) {
+export function agentFromArgs(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), env = process.env } = {}) {
   return new NativeOptimizerAgent({
     adapter,
     gatewayUrl: args.gateway || env.OPTIMIZER_GATEWAY_URL || '',
@@ -70,7 +70,7 @@ export function agentFromArgs(args, { adapter = createPlatformAdapter(), env = p
   });
 }
 
-export async function runWorkloadCommand(command, args, { adapter = createPlatformAdapter(), apply = applyWorkloadPolicy } = {}) {
+export async function runWorkloadCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), apply = applyWorkloadPolicy } = {}) {
   const facts = await adapter.collectFacts();
   const plan = previewWorkloadPolicy(facts, {
     mode: args.mode || 'balanced',
@@ -86,7 +86,7 @@ export async function runWorkloadCommand(command, args, { adapter = createPlatfo
   return { facts, plan, report: await apply(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
-export async function runWorkloadBudgetCommand(command, args, { adapter = createPlatformAdapter(), apply = applyWorkloadBudget } = {}) {
+export async function runWorkloadBudgetCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), apply = applyWorkloadBudget } = {}) {
   const facts = await adapter.collectFacts();
   const budget = typeof args.budget === 'string' ? jsonOption(args, 'budget') : {
     cpuPercent: args['cpu-percent'] === undefined ? null : numberOption(args, 'cpu-percent', null),
@@ -102,7 +102,7 @@ export async function runWorkloadBudgetCommand(command, args, { adapter = create
   return { facts, plan, report: await apply(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
-export async function runResourceLimitCommand(command, args, { adapter = createPlatformAdapter(), apply = applyResourceLimits } = {}) {
+export async function runResourceLimitCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), apply = applyResourceLimits } = {}) {
   const facts = await adapter.collectFacts();
   const limits = typeof args.limits === 'string' ? jsonOption(args, 'limits') : {
     cpuPercent: args['cpu-percent'] === undefined ? null : numberOption(args, 'cpu-percent', null),
@@ -118,7 +118,7 @@ export async function runResourceLimitCommand(command, args, { adapter = createP
   return { facts, plan, report: await apply(plan, { adapter, approvedPids, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
-export async function runGameSessionCommand(args, { adapter = createPlatformAdapter(), monitorFactory = createGameSessionMonitor } = {}) {
+export async function runGameSessionCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), monitorFactory = createGameSessionMonitor } = {}) {
   const autoApply = args['auto-apply'] === true;
   if (autoApply && args.confirm !== true) throw new Error('game-session-monitor --auto-apply requires --confirm');
   const approvedPids = listOption(args, 'approve-pids');
@@ -187,13 +187,13 @@ export async function runDriveBenchmarkCommand(args, { benchmark = benchmarkDriv
   return benchmark({ root: requireOption(args, 'root'), bytes: numberOption(args, 'bytes', 1024 * 1024) });
 }
 
-export async function runNetworkOverviewCommand(args, { adapter = createPlatformAdapter() } = {}) {
+export async function runNetworkOverviewCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }) } = {}) {
   const facts = await adapter.collectFacts();
   const samples = typeof args.samples === 'string' ? jsonOption(args, 'samples') : facts.networkProcesses?.processes || [];
   return { facts, plan: buildNetworkContentionPlan({ samples, connections: facts.networkConnections?.connections, gamePid: args['game-pid'] === undefined ? null : numberOption(args, 'game-pid', null), latencyMs: args['latency-ms'] === undefined ? null : numberOption(args, 'latency-ms', null) }) };
 }
 
-export async function runNetworkRateMonitorCommand(args, { adapter = createPlatformAdapter(), monitorFactory = createNetworkRateMonitor } = {}) {
+export async function runNetworkRateMonitorCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), monitorFactory = createNetworkRateMonitor } = {}) {
   const monitor = monitorFactory({
     collectSample: async () => (await adapter.collectFacts()).network,
     intervalMs: numberOption(args, 'interval-seconds', 5) * 1000,
@@ -210,7 +210,7 @@ export async function runNetworkRateMonitorCommand(args, { adapter = createPlatf
   return { stopped: true };
 }
 
-export async function runProcessRateMonitorCommand(args, { adapter = createPlatformAdapter(), monitorFactory = createProcessResourceMonitor } = {}) {
+export async function runProcessRateMonitorCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), monitorFactory = createProcessResourceMonitor } = {}) {
   const monitor = monitorFactory({
     collectSample: async () => ({ processes: (await adapter.collectFacts()).processes }),
     intervalMs: numberOption(args, 'interval-seconds', 5) * 1000,
@@ -266,27 +266,27 @@ export async function runPlacementRecommendationCommand(args) {
   });
 }
 
-export async function runAssistantCommand(args, { adapter = createPlatformAdapter() } = {}) {
+export async function runAssistantCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }) } = {}) {
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await adapter.collectFacts();
   const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
   return interpretWorkstationQuestion(requireOption(args, 'question'), facts, { report });
 }
 
-export async function runAssistantAdapterCommand(args, { adapter = createPlatformAdapter(), generate = null } = {}) {
+export async function runAssistantAdapterCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), generate = null } = {}) {
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await adapter.collectFacts();
   const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
   const response = generate || (async () => jsonOption(args, 'adapter-response'));
   return interpretWorkstationQuestionWithAdapter(requireOption(args, 'question'), { generate: response, facts, report });
 }
 
-export async function runWorkstationPolicyCommand(command, args, { adapter = createPlatformAdapter() } = {}) {
+export async function runWorkstationPolicyCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }) } = {}) {
   if (command === 'policy-approve') return approveWorkstationPolicy(jsonOption(args, 'plan'), { approvedIds: textListOption(args, 'approve-ids') });
   const facts = typeof args.facts === 'string' ? jsonOption(args, 'facts') : await adapter.collectFacts();
   const report = typeof args.report === 'string' ? jsonOption(args, 'report') : null;
   return buildWorkstationPolicyPlan(facts, { report, maxActions: numberOption(args, 'max-actions', 16) });
 }
 
-export async function runPowerCommand(command, args, { adapter = createPlatformAdapter(), apply = applyPowerProfile, platform = process.platform } = {}) {
+export async function runPowerCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), apply = applyPowerProfile } = {}) {
   const facts = await adapter.collectFacts();
   if (command === 'power-recommend') return { facts, recommendation: recommendPowerProfile(facts) };
   const profile = requireOption(args, 'profile');
@@ -296,7 +296,7 @@ export async function runPowerCommand(command, args, { adapter = createPlatformA
   return { facts, plan, result: await apply(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
-export async function runGpuPolicyCommand(command, args, { adapter = createPlatformAdapter(), apply = applyGpuPolicy } = {}) {
+export async function runGpuPolicyCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), apply = applyGpuPolicy } = {}) {
   const facts = await adapter.collectFacts();
   const plan = previewGpuPolicy(facts, { policy: requireOption(args, 'policy') });
   if (command === 'gpu-policy-preview') return { facts, plan };
@@ -304,7 +304,7 @@ export async function runGpuPolicyCommand(command, args, { adapter = createPlatf
   return { facts, plan, result: await apply(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
-export async function runPowerMonitorCommand(args, { adapter = createPlatformAdapter(), monitorFactory = createPowerMonitor, platform = process.platform } = {}) {
+export async function runPowerMonitorCommand(args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), monitorFactory = createPowerMonitor } = {}) {
   const autoApply = args['auto-apply'] === true;
   if (autoApply && args.confirm !== true) throw new Error('power-monitor --auto-apply requires --confirm');
   const monitor = monitorFactory({
@@ -327,7 +327,7 @@ export async function runPowerMonitorCommand(args, { adapter = createPlatformAda
   return { stopped: true };
 }
 
-export async function runProcessCommand(command, args, { adapter = createPlatformAdapter(), apply = applyProcessStop } = {}) {
+export async function runProcessCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), apply = applyProcessStop } = {}) {
   const facts = await adapter.collectFacts();
   const protectedNames = typeof args['protected-name'] === 'string' ? args['protected-name'].split(',').filter(Boolean) : [];
   if (command === 'process-overview') return { facts, overview: buildProcessOverview(facts, { protectedNames, maxEntries: numberOption(args, 'max-entries', 128) }) };
@@ -337,7 +337,7 @@ export async function runProcessCommand(command, args, { adapter = createPlatfor
   return { facts, plan, result: await apply(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
-export async function runStartupCommand(command, args, { adapter = createPlatformAdapter(), restore = restoreStartupMutation, preview = previewStartupMutation, apply = applyStartupMutation, commandRunner = createCommandRunner() } = {}) {
+export async function runStartupCommand(command, args, { platform = process.platform, adapter = createPlatformAdapter({ platform }), restore = restoreStartupMutation, preview = previewStartupMutation, apply = applyStartupMutation, commandRunner = createCommandRunner() } = {}) {
   if (command === 'startup-restore') {
     const receipt = jsonOption(args, 'receipt');
     return restore(receipt, { approved: true, allowAdmin: args['allow-admin'] === true, dryRun: args.confirm !== true, commandRunner });
@@ -349,21 +349,28 @@ export async function runStartupCommand(command, args, { adapter = createPlatfor
   return { facts, plan, result: await apply(plan, { approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false, commandRunner }) };
 }
 
-export async function runCli(argv = process.argv.slice(2)) {
+export async function runCli(argv = process.argv.slice(2), {
+  commandRunner = createCommandRunner(),
+  platform = process.platform,
+  adapter = createPlatformAdapter({ commandRunner, platform }),
+  cacheCleaner,
+  storageGuard,
+  downloadGuard
+} = {}) {
   const args = parseArgs(argv);
   const command = args._[0] || 'facts';
-  if (command === 'facts') return agentFromArgs(args).collectFacts();
+  if (command === 'facts') return agentFromArgs(args, { adapter }).collectFacts();
   if (command === 'optimize') {
-    const baseAgent = agentFromArgs(args);
+    const baseAgent = agentFromArgs(args, { adapter });
     const agent = typeof args['history-path'] === 'string'
       ? createAuditedNativeAgent({ agent: baseAgent, historyStore: historyStoreFromArgs({ ...args, path: args['history-path'] }) })
       : baseAgent;
     return agent.optimize({ apply: args.apply === true, profile: args.profile || undefined, approvedActions: approvals(args.approve), dryRun: args.apply !== true, allowAdmin: args['allow-admin'] === true });
   }
-  if (['cache-preview', 'cache-clean', 'cache-quarantine-preview', 'cache-quarantine-apply', 'cache-quarantine-rollback'].includes(command)) return runCacheCommand(command, args);
+  if (['cache-preview', 'cache-clean', 'cache-quarantine-preview', 'cache-quarantine-apply', 'cache-quarantine-rollback'].includes(command)) return runCacheCommand(command, args, { cleaner: cacheCleaner });
   if (['organize-preview', 'organize-apply'].includes(command)) return runOrganizerCommand(command, args);
   if (command === 'file-inspect') return runFileInsightsCommand(args);
-  if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args);
+  if (['storage-preview', 'storage-cleanup'].includes(command)) return runStorageCommand(command, args, { guard: storageGuard });
   if (command === 'steward-history') return runStewardHistoryCommand(args);
   if (command === 'steward-monitor') return runStewardMonitorCommand(args);
   if (command === 'steward-schedule') return runStewardScheduleCommand(args);
@@ -372,37 +379,37 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'steward-snapshot') return runStewardSnapshotCommand(args);
   if (command === 'steward-trends') return runStewardTrendsCommand(args);
   if (['report-schedule-preview', 'report-schedule-apply', 'report-schedule-restore'].includes(command)) return runReportScheduleCommand(command, args);
-  if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args);
+  if (['download-preflight', 'download-scan', 'download-verify'].includes(command)) return runDownloadCommand(command, args, { guard: downloadGuard });
   if (command === 'download-monitor') return runDownloadMonitorCommand(args);
-  if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args);
-  if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args);
-  if (['resource-limit-preview', 'resource-limit-apply'].includes(command)) return runResourceLimitCommand(command, args);
-  if (command === 'game-session-monitor') return runGameSessionCommand(args);
-  if (command === 'drive-health') return runDriveHealthCommand(args);
-  if (command === 'report-open') return runReportViewerCommand(args);
-  if (command === 'steward-dashboard') return runWorkstationShellCommand(args);
-  if (command === 'steward-tray') return runWorkstationTrayCommand(args);
-  if (command === 'volume-storage') return runVolumeStorageCommand();
-  if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
+  if (['workload-preview', 'workload-apply'].includes(command)) return runWorkloadCommand(command, args, { adapter });
+  if (['workload-budget-preview', 'workload-budget-apply'].includes(command)) return runWorkloadBudgetCommand(command, args, { adapter });
+  if (['resource-limit-preview', 'resource-limit-apply'].includes(command)) return runResourceLimitCommand(command, args, { adapter });
+  if (command === 'game-session-monitor') return runGameSessionCommand(args, { adapter });
+  if (command === 'drive-health') return runDriveHealthCommand(args, { commandRunner, platform });
+  if (command === 'report-open') return runReportViewerCommand(args, { commandRunner, platform });
+  if (command === 'steward-dashboard') return runWorkstationShellCommand(args, { commandRunner, platform });
+  if (command === 'steward-tray') return runWorkstationTrayCommand(args, { commandRunner, platform });
+  if (command === 'volume-storage') return runVolumeStorageCommand({ commandRunner, platform });
+  if (command === 'filesystem-health') return runFilesystemHealthCommand(args, { commandRunner, platform });
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
-  if (command === 'network-overview') return runNetworkOverviewCommand(args);
-  if (command === 'network-rate-monitor') return runNetworkRateMonitorCommand(args);
-  if (command === 'process-rate-monitor') return runProcessRateMonitorCommand(args);
+  if (command === 'network-overview') return runNetworkOverviewCommand(args, { adapter });
+  if (command === 'network-rate-monitor') return runNetworkRateMonitorCommand(args, { adapter, platform });
+  if (command === 'process-rate-monitor') return runProcessRateMonitorCommand(args, { adapter, platform });
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (command === 'placement-recommend') return runPlacementRecommendationCommand(args);
   if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
-  if (command === 'assistant') return runAssistantCommand(args);
-  if (command === 'assistant-adapted') return runAssistantAdapterCommand(args);
-  if (['policy-preview', 'policy-approve'].includes(command)) return runWorkstationPolicyCommand(command, args);
-  if (command === 'power-monitor') return runPowerMonitorCommand(args);
-  if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
-  if (['gpu-policy-preview', 'gpu-policy-apply'].includes(command)) return runGpuPolicyCommand(command, args);
-  if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
-  if (['startup-preview', 'startup-apply', 'startup-restore'].includes(command)) return runStartupCommand(command, args);
+  if (command === 'assistant') return runAssistantCommand(args, { adapter });
+  if (command === 'assistant-adapted') return runAssistantAdapterCommand(args, { adapter });
+  if (['policy-preview', 'policy-approve'].includes(command)) return runWorkstationPolicyCommand(command, args, { adapter });
+  if (command === 'power-monitor') return runPowerMonitorCommand(args, { adapter, platform });
+  if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args, { adapter, platform });
+  if (['gpu-policy-preview', 'gpu-policy-apply'].includes(command)) return runGpuPolicyCommand(command, args, { adapter });
+  if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args, { adapter });
+  if (['startup-preview', 'startup-apply', 'startup-restore'].includes(command)) return runStartupCommand(command, args, { adapter, commandRunner });
   if (['media-scan', 'media-play', 'media-panel-open', 'media-metadata', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);
   if (command === 'media-player') return runMediaPlayerCommand(args);
   if (command === 'media-panel') return buildMediaPanelPlan(requireOption(args, 'url'));
-  if (command === 'storage-monitor') return runStorageMonitorCommand(args);
+  if (command === 'storage-monitor') return runStorageMonitorCommand(args, { guard: storageGuard, commandRunner, platform });
   if (['protected-roots-read', 'protected-roots-add', 'protected-roots-remove'].includes(command)) return runProtectedRootsCommand(command, args);
   throw new Error(`Unknown native command: ${command}`);
 }

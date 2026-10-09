@@ -217,13 +217,19 @@ describe('native top-level CLI adapter', () => {
       ['media-panel', '--url=https://www.youtube.com/watch?v=abc'],
       ['protected-roots-read', `--protected-store=${path.join(root, 'protected.json')}`]
     ];
-    for (const argv of routed.filter((argv) => argv[0] !== 'optimize')) await expect(runCli(argv)).resolves.toBeDefined();
-    await expect(runCli(['optimize'])).rejects.toThrow('gateway URL is required');
-    await expect(runCli(['optimize', `--history-path=${path.join(root, 'history.jsonl')}`])).rejects.toThrow('gateway URL is required');
-    await expect(runCli([])).resolves.toBeDefined();
+    const cliAdapter = { collectFacts: jest.fn(async () => facts), applyAction: jest.fn(async () => ({ ok: true })) };
+    const cliCommandRunner = { run: jest.fn(async () => ({ code: 0, stdout: '', stderr: '' })) };
+    const cliCleaner = { preview: jest.fn(async () => ({ target: 'user-temp', platform: 'win32', roots: [], items: [] })) };
+    const cliStorageGuard = { preview: jest.fn(async () => ({ state: 'review-ready', plan: { selected: [] } })) };
+    const cliDownloadGuard = { preflight: jest.fn(() => ({ state: 'observation-required' })) };
+    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, platform: 'win32' };
+    for (const argv of routed.filter((argv) => argv[0] !== 'optimize')) await expect(runCli(argv, cliOptions)).resolves.toBeDefined();
+    await expect(runCli(['optimize'], cliOptions)).rejects.toThrow('gateway URL is required');
+    await expect(runCli(['optimize', `--history-path=${path.join(root, 'history.jsonl')}`], cliOptions)).rejects.toThrow('gateway URL is required');
+    await expect(runCli([], cliOptions)).resolves.toBeDefined();
     const originalArgv = process.argv;
     process.argv = ['node'];
-    await expect(runCli()).resolves.toBeDefined();
+    await expect(runCli(undefined, cliOptions)).resolves.toBeDefined();
     process.argv = originalArgv;
     await expect(runCli(['unknown-command'])).rejects.toThrow('Unknown native command');
     await expect(runCli(['organize-preview'])).rejects.toThrow('--root is required');
@@ -268,4 +274,38 @@ describe('native top-level CLI adapter', () => {
     process.argv = savedArgv;
     expect(isCliEntrypoint('file:///tmp/cli.mjs', '')).toBe(false);
   }, 30000);
+
+  test('covers default CLI dependencies without touching the host platform', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'unsupported' });
+    try {
+      expect(agentFromArgs({})).toBeDefined();
+      await expect(runWorkloadCommand('workload-preview', {})).resolves.toMatchObject({ plan: expect.any(Object) });
+      await expect(runWorkloadBudgetCommand('workload-budget-preview', {})).resolves.toMatchObject({ plan: expect.any(Object) });
+      await expect(runResourceLimitCommand('resource-limit-preview', {})).resolves.toMatchObject({ plan: expect.any(Object) });
+      await expect(runGameSessionCommand({}, { monitorFactory })).resolves.toEqual({ stopped: true });
+      await expect(runDriveHealthCommand({})).resolves.toMatchObject({ available: false });
+      await expect(runReportViewerCommand({})).rejects.toThrow('--path is required');
+      await expect(runWorkstationShellCommand({})).rejects.toThrow('--path is required');
+      await expect(runWorkstationTrayCommand({})).rejects.toThrow('--path is required');
+      await expect(runVolumeStorageCommand()).resolves.toMatchObject({ available: false });
+      await expect(runFilesystemHealthCommand({})).rejects.toThrow('--root is required');
+      await expect(runNetworkOverviewCommand({})).resolves.toMatchObject({ facts: expect.any(Object) });
+      await expect(runNetworkRateMonitorCommand({}, { monitorFactory })).resolves.toEqual({ stopped: true });
+      await expect(runProcessRateMonitorCommand({}, { monitorFactory })).resolves.toEqual({ stopped: true });
+      await expect(runNetworkRateMonitorCommand({ 'interval-seconds': '0' })).rejects.toThrow('interval');
+      await expect(runProcessRateMonitorCommand({ 'interval-seconds': '0' })).rejects.toThrow('interval');
+      await expect(runAssistantCommand({ question: 'What should I fix today?', facts: '{}' })).resolves.toMatchObject({ intent: 'recommendations' });
+      await expect(runAssistantAdapterCommand({ question: 'What should I fix today?', facts: '{}', 'adapter-response': '{"question":"What should I fix today?","confidence":0.9}' })).resolves.toMatchObject({ state: 'delegated' });
+      await expect(runWorkstationPolicyCommand('policy-approve', { plan: '{"version":1,"phase":"recommend","actions":[]}', 'approve-ids': '' })).resolves.toMatchObject({ phase: 'approved' });
+      await expect(runPowerCommand('power-recommend', {})).resolves.toMatchObject({ recommendation: expect.any(Object) });
+      await expect(runGpuPolicyCommand('gpu-policy-preview', { policy: 'balanced' })).resolves.toMatchObject({ plan: expect.any(Object) });
+      await expect(runPowerMonitorCommand({}, { monitorFactory })).resolves.toEqual({ stopped: true });
+      await expect(runProcessCommand('process-overview', {})).resolves.toMatchObject({ overview: expect.any(Object) });
+      await expect(runStartupCommand('startup-restore', { receipt: '{}' }, { restore: () => ({ state: 'restored' }) })).resolves.toEqual({ state: 'restored' });
+      await expect(runStartupCommand('startup-restore', { receipt: '{}' })).rejects.toThrow();
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
 });
