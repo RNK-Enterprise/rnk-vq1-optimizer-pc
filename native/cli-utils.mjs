@@ -101,6 +101,7 @@ export function storageOptionsFromArgs(args) {
     enabledCategories: approvals(args.enable),
     allowUnsafeCategories: args['allow-unsafe'] === true,
     allowAdmin: args['allow-admin'] === true,
+    protectedRoots: typeof args['protected-root'] === 'string' ? args['protected-root'].split(',').map((value) => value.trim()).filter(Boolean) : [],
     abandonedRuntimeRoots: args['abandoned-root'] ? [args['abandoned-root']] : []
   };
 }

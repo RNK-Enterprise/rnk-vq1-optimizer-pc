@@ -5,6 +5,9 @@
 - Split the native CLI into bounded argument, maintenance, media, and
   dispatch modules; each source file remains below the 500-line limit without
   changing the command surface or approval defaults.
+- Exposed explicit user protected roots on Storage Pressure Guard preview and
+  monitor commands so project, model, and document boundaries reach the same
+  cleanup authority as built-in protected roots.
 - Added fixed shell-free Linux swap observation as separate system-managed
   pagefile evidence; swap remains permanently excluded from cleanup.
 - Extended system-managed swap observation to macOS through fixed `sysctl`

@@ -30,7 +30,8 @@ node native/cli.mjs cache-quarantine-apply --target user-temp \
 node native/cli.mjs cache-quarantine-rollback --result '{"version":1,"sourceRoots":["/tmp/cache"],"quarantineRoot":"/tmp/quarantine","moved":[]}'
 node native/cli.mjs cache-clean --target user-temp --confirm
 node native/cli.mjs storage-preview --target-free-gb 5 \
-  --enable=temporary-files,package-cache,browser-automation-cache,gpu-shader-cache
+  --enable=temporary-files,package-cache,browser-automation-cache,gpu-shader-cache \
+  --protected-root "$HOME/projects,$HOME/models"
 node native/cli.mjs storage-cleanup --target-free-gb 5 \
   --enable=temporary-files,package-cache --confirm
 node native/cli.mjs storage-monitor --target-free-gb 5 \
