@@ -13,12 +13,22 @@ function record(value) { return Boolean(value) && typeof value === 'object' && !
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
 function bytes(value) { return Number.isFinite(value) && value >= 0 ? value : null; }
 function entries(snapshot) { return Array.isArray(snapshot?.entries) ? snapshot.entries.filter(record).slice(0, 512) : []; }
+function storageEvidence(snapshot) {
+  const source = record(snapshot?.storage) ? snapshot.storage : {};
+  return Object.freeze({
+    level: typeof source.level === 'string' ? source.level : 'unknown',
+    freeBytes: bytes(source.freeBytes),
+    targetFreeBytes: bytes(source.targetFreeBytes),
+    belowTargetFreeFloor: source.belowTargetFreeFloor === true
+  });
+}
 
 export function compareDownloadSnapshots(previous, current, { intervalMs = 1000 } = {}) {
   if (!record(current)) throw new TypeError('Download monitor current snapshot is required');
   if (previous !== null && previous !== undefined && !record(previous)) throw new TypeError('Download monitor previous snapshot is invalid');
   if (!Number.isFinite(intervalMs) || intervalMs < 1 || intervalMs > 24 * 60 * 60 * 1000) throw new RangeError('Download monitor interval is out of range');
   const old = new Map(entries(previous).map((item) => [text(item.path), bytes(item.sizeBytes) || 0]));
+  const storage = storageEvidence(current);
   const downloads = entries(current).filter((item) => text(item.path)).map((item) => {
     const path = text(item.path);
     const sizeBytes = bytes(item.sizeBytes) || 0;
@@ -28,7 +38,9 @@ export function compareDownloadSnapshots(previous, current, { intervalMs = 1000 
     const state = incomplete ? previousBytes === undefined ? 'incomplete' : deltaBytes > 0 ? 'active' : 'stalled' : 'complete';
     return Object.freeze({ path, name: text(item.name) || path, sizeBytes, deltaBytes, throughputBytesPerSecond: deltaBytes / (intervalMs / 1000), state, incomplete });
   });
-  return Object.freeze({ version: DOWNLOAD_MONITOR_VERSION, root: text(current.root), intervalMs, downloads: Object.freeze(downloads), activeCount: downloads.filter((item) => item.state === 'active').length, stalledCount: downloads.filter((item) => item.state === 'stalled').length, completedCount: downloads.filter((item) => item.state === 'complete').length, totalBytesPerSecond: downloads.reduce((sum, item) => sum + item.throughputBytesPerSecond, 0), mutation: 'none' });
+  const totalBytesPerSecond = downloads.reduce((sum, item) => sum + item.throughputBytesPerSecond, 0);
+  const storageRisk = totalBytesPerSecond > 0 && ['critical', 'emergency'].includes(storage.level) ? 'download-filling-volume' : null;
+  return Object.freeze({ version: DOWNLOAD_MONITOR_VERSION, root: text(current.root), intervalMs, downloads: Object.freeze(downloads), activeCount: downloads.filter((item) => item.state === 'active').length, stalledCount: downloads.filter((item) => item.state === 'stalled').length, completedCount: downloads.filter((item) => item.state === 'complete').length, totalBytesPerSecond, storage, storageRisk, mutation: 'none' });
 }
 
 export function createDownloadMonitor({ scan, intervalMs = 5000, setIntervalImpl = setInterval, clearIntervalImpl = clearInterval } = {}) {

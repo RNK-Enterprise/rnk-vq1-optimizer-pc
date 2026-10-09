@@ -27,7 +27,7 @@ import { NativeOptimizerAgent } from './agent.js';
 import { createPlatformAdapter } from './platform.js';
 import { applyOrganization, previewOrganization } from './organizer.js';
 import { buildFileInsightPlan, scanFileInsights } from './file-insights.js';
-import { createStoragePressureGuard } from './storage-pressure.js';
+import { collectStoragePressureSnapshot, createStoragePressureGuard } from './storage-pressure.js';
 import { createStewardHistoryStore } from './steward-history.js';
 import { createStewardMonitor } from './steward-monitor.js';
 import { createDailyWorkstationScheduler } from './steward-scheduler.js';
@@ -567,7 +567,16 @@ async function runDownloadCommand(command, args) {
 async function runDownloadMonitorCommand(args) {
   const guard = downloadGuardFromArgs(args);
   const root = requireOption(args, 'root');
-  const monitor = createDownloadMonitor({ scan: (target) => guard.scan(target, { hashFiles: false }), intervalMs: numberOption(args, 'interval-seconds', 30) * 1000 });
+  const commandRunner = createCommandRunner();
+  const policy = storagePolicyFromArgs(args);
+  const monitor = createDownloadMonitor({
+    scan: async (target) => {
+      const download = await guard.scan(target, { hashFiles: false });
+      const storage = await collectStoragePressureSnapshot({ platform: process.platform, commandRunner, policy });
+      return { ...download, storage: storage.pressure };
+    },
+    intervalMs: numberOption(args, 'interval-seconds', 30) * 1000
+  });
   process.stdout.write(`${JSON.stringify(await monitor.observe(root))}\n`);
   monitor.start(root, (report) => process.stdout.write(`${JSON.stringify(report)}\n`));
   await new Promise((resolve) => {

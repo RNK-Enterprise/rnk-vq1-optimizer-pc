@@ -41,7 +41,8 @@ node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
-node native/cli.mjs download-monitor --root "$HOME/Downloads" --interval-seconds 30
+node native/cli.mjs download-monitor --root "$HOME/Downloads" \
+  --target-free-gb 5 --interval-seconds 30
 node native/cli.mjs steward-report --path "$HOME/.rnk-optimizer/history.jsonl" \
   --window-hours 24 --max-samples 96
 node native/cli.mjs steward-schedule --path "$HOME/.rnk-optimizer/history.jsonl" \
@@ -216,9 +217,11 @@ explicit root or volume fact set, does not start or intercept downloads, and
 does not move or delete files.
 
 `download-monitor` compares bounded scans of an explicit root and reports
-active, stalled, incomplete, and completed entries with measured byte rate.
-It is trigger-based observation only; it does not intercept downloads or
-change destination, bandwidth, or file state.
+active, stalled, incomplete, and completed entries with measured byte rate. It
+also attaches current Storage Pressure Guard evidence and returns
+`download-filling-volume` when measured growth coincides with critical or
+emergency free-space pressure. It is trigger-based observation only; it does
+not intercept downloads or change destination, bandwidth, or file state.
 
 `network-overview` combines interface facts with optional explicit per-process
 rates and latency to identify gaming/download contention. Per-process

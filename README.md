@@ -188,7 +188,8 @@ node native/cli.mjs download-preflight --size-bytes 12800000000 \
   --destination C: --volumes '[{"mount":"C:","freeBytes":8000000000},{"mount":"E:","freeBytes":100000000000}]'
 node native/cli.mjs download-scan --root "$HOME/Downloads" --hash-files
 node native/cli.mjs download-verify --file "$HOME/Downloads/file.zip" --sha256 HASH
-node native/cli.mjs download-monitor --root "$HOME/Downloads" --interval-seconds 30
+node native/cli.mjs download-monitor --root "$HOME/Downloads" \
+  --target-free-gb 5 --interval-seconds 30
 node native/cli.mjs media-scan --root "$HOME/Music" --hash-files
 node native/cli.mjs media-playlist --state-path "$HOME/.rnk-optimizer/media.json" \
   --name Morning --tracks '["/music/track-a.mp3","/music/track-b.mp3"]'

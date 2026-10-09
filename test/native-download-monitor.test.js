@@ -9,11 +9,11 @@ const first = { root: '/downloads', entries: [{ path: '/downloads/a.part', name:
 
 describe('native download monitor', () => {
   test('reports active, stalled, complete, and first-observation states with throughput', () => {
-    const report = compareDownloadSnapshots({ ...first, entries: [...first.entries, { path: '/downloads/stalled.part', sizeBytes: 4, incomplete: true }, { path: '/downloads/unknown.part', sizeBytes: null, incomplete: true }] }, { ...first, entries: [{ path: '/downloads/a.part', sizeBytes: 300, incomplete: true }, { path: '/downloads/stalled.part', sizeBytes: 4, incomplete: true }, { path: '/downloads/c.crdownload', sizeBytes: 1, incomplete: true }, { path: '/downloads/b.zip', sizeBytes: 500, incomplete: false }] }, { intervalMs: 2000 });
-    expect(report).toMatchObject({ version: DOWNLOAD_MONITOR_VERSION, root: '/downloads', activeCount: 1, stalledCount: 1, completedCount: 1, totalBytesPerSecond: 100, mutation: 'none' });
+    const report = compareDownloadSnapshots({ ...first, entries: [...first.entries, { path: '/downloads/stalled.part', sizeBytes: 4, incomplete: true }, { path: '/downloads/unknown.part', sizeBytes: null, incomplete: true }] }, { ...first, storage: { level: 'critical', freeBytes: 50, targetFreeBytes: 100, belowTargetFreeFloor: true }, entries: [{ path: '/downloads/a.part', sizeBytes: 300, incomplete: true }, { path: '/downloads/stalled.part', sizeBytes: 4, incomplete: true }, { path: '/downloads/c.crdownload', sizeBytes: 1, incomplete: true }, { path: '/downloads/b.zip', sizeBytes: 500, incomplete: false }] }, { intervalMs: 2000 });
+    expect(report).toMatchObject({ version: DOWNLOAD_MONITOR_VERSION, root: '/downloads', activeCount: 1, stalledCount: 1, completedCount: 1, totalBytesPerSecond: 100, storage: { level: 'critical', freeBytes: 50, targetFreeBytes: 100, belowTargetFreeFloor: true }, storageRisk: 'download-filling-volume', mutation: 'none' });
     expect(report.downloads).toEqual(expect.arrayContaining([expect.objectContaining({ path: '/downloads/a.part', state: 'active', deltaBytes: 200, throughputBytesPerSecond: 100 })]));
     expect(report.downloads.find((item) => item.path.endsWith('c.crdownload')).state).toBe('incomplete');
-    expect(compareDownloadSnapshots(null, { root: '', entries: [{ path: '/a', sizeBytes: null, incomplete: false }] }).downloads[0]).toMatchObject({ state: 'complete', sizeBytes: 0, throughputBytesPerSecond: 0 });
+    expect(compareDownloadSnapshots(null, { root: '', entries: [{ path: '/a', sizeBytes: null, incomplete: false }] })).toMatchObject({ storage: { level: 'unknown', freeBytes: null }, storageRisk: null });
   });
 
   test('bounds and validates snapshot inputs', () => {

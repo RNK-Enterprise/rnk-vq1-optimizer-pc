@@ -93,6 +93,9 @@
   fixed commands, bounded output, and fail-closed unavailable states.
 - Added bounded download preflight, incomplete/duplicate scanning, and
   SHA-256 verification commands with no downloader or filesystem mutation.
+- Extended continuous download monitoring with current Storage Pressure Guard
+  evidence and an explicit download-filling-volume risk when measured growth
+  coincides with critical or emergency free-space pressure.
 - Added fixed-root startup inventory for Windows, Linux, and macOS with
   review-only entries and no disable or launch authority.
 - Added authority-side append-only audit wrapping for optimize actions with
