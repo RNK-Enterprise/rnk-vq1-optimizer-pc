@@ -207,6 +207,9 @@ and network telemetry when the host exposes it. Windows uses fixed PowerShell
 queries, Linux uses fixed `ps` plus read-only `/sys`, `/proc`, and startup
 roots; Linux thermal telemetry also reads bounded CPU thermal-throttle counters
 when exposed. macOS uses fixed `ps`, `pmset`, `netstat`, and startup roots.
+Known exact process names are classified as `developer`, `runtime`, or `model`
+for workload policy and process explanations; unrecognized names remain
+`unknown` and are never treated as safe or protected by guesswork.
 Missing sensors and unsupported platforms remain `available: false`; no
 telemetry path grants process-stop, startup-disable, file-delete, or
 network-control authority.

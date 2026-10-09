@@ -13,6 +13,17 @@ import { collectStartupTelemetry } from './startup-telemetry.js';
 
 export const WORKSTATION_TELEMETRY_VERSION = 1;
 const EMPTY = Object.freeze([]);
+const INFERRED_PROCESS_ROLES = new Map([
+  ['codex', 'developer'], ['opencode', 'developer'], ['node', 'developer'],
+  ['nodejs', 'developer'], ['python', 'developer'], ['python3', 'developer'],
+  ['git', 'developer'], ['code', 'developer'], ['code-insiders', 'developer'],
+  ['devenv', 'developer'], ['msbuild', 'developer'], ['dotnet', 'developer'],
+  ['cargo', 'developer'], ['rustc', 'developer'], ['cmake', 'developer'],
+  ['make', 'developer'], ['ninja', 'developer'], ['wsl', 'runtime'],
+  ['wslhost', 'runtime'], ['vmmem', 'runtime'], ['vmmemwsl', 'runtime'],
+  ['ollama', 'model'], ['llama-server', 'model'], ['llama.cpp', 'model'],
+  ['koboldcpp', 'model'], ['lmstudio', 'model'], ['comfyui', 'model']
+]);
 
 function number(value) { const parsed = typeof value === 'string' && value.trim() ? Number(value) : value; return Number.isFinite(parsed) && parsed >= 0 ? parsed : null; }
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
@@ -20,15 +31,22 @@ function json(output) { try { return JSON.parse(String(output || '')); } catch {
 function rows(value) { return Array.isArray(value) ? value : value && typeof value === 'object' ? [value] : []; }
 function commandAvailable(commandRunner) { return Boolean(commandRunner && typeof commandRunner.run === 'function'); }
 
+function inferredRole(name) {
+  const normalized = String(name).trim().toLowerCase().replace(/\.exe$/, '');
+  return INFERRED_PROCESS_ROLES.get(normalized) || null;
+}
+
 function normalizeProcess(row, platform) {
   const pid = number(row?.pid ?? row?.Id);
   if (!Number.isInteger(pid) || pid < 1) return null;
+  const name = text(row?.name ?? row?.ProcessName ?? row?.comm) || 'unknown';
+  const explicitRole = text(row?.role)?.toLowerCase();
   const cpu = number(row?.cpuPercent);
   const cpuSeconds = number(row?.CPU ?? row?.cpuSeconds);
   const memoryBytes = number(row?.memoryBytes ?? row?.WorkingSet64) ?? (number(row?.rssKb) === null ? null : number(row.rssKb) * 1024);
   return Object.freeze({
     pid,
-    name: text(row?.name ?? row?.ProcessName ?? row?.comm) || 'unknown',
+    name,
     cpuPercent: cpu,
     cpuSeconds,
     memoryBytes,
@@ -37,7 +55,7 @@ function normalizeProcess(row, platform) {
     platform,
     foreground: row?.foreground === true,
     protected: row?.protected === true,
-    role: text(row?.role)?.toLowerCase() || 'unknown'
+    role: explicitRole || inferredRole(name) || 'unknown'
   });
 }
 

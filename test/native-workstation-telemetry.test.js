@@ -49,6 +49,7 @@ describe('workstation process telemetry', () => {
     expect(parseProcessTelemetry('{bad}', { platform: 'win32' })).toMatchObject({ available: false, processes: [] });
     const posix = parseProcessTelemetry('10 node 12.5 64 1-02:03:04 R\n11 shell bad 4 02:03 S\n12 shell 1 1 bad S\n13 shell 1 1 x-00:00:01 S\n14 short', { platform: 'linux' });
     expect(posix.processes[0]).toMatchObject({ pid: 10, memoryBytes: 64 * 1024, uptimeSeconds: 93784, state: 'R' });
+    expect(posix.processes[0].role).toBe('developer');
     expect(posix.processes[1]).toMatchObject({ pid: 11, cpuPercent: null, uptimeSeconds: 123 });
     expect(posix.processes[2].uptimeSeconds).toBeNull();
     expect(posix.processes[3].uptimeSeconds).toBeNull();
@@ -56,6 +57,8 @@ describe('workstation process telemetry', () => {
     expect(parseProcessTelemetry()).toMatchObject({ available: false, processes: [] });
     const many = Array.from({ length: 513 }, (_, index) => `${index + 1} item 1 1 00:01 S`).join('\n');
     expect(parseProcessTelemetry(many, { platform: 'linux' }).truncated).toBe(true);
+    const inferred = parseProcessTelemetry('20 ollama.exe 1 1 00:01 S\n21 wslhost 1 1 00:01 S\n22 unknown-tool 1 1 00:01 S', { platform: 'linux' });
+    expect(inferred.processes.map((item) => item.role)).toEqual(['model', 'runtime', 'unknown']);
   });
 
   test('collects with fixed platform commands and fails closed', async () => {

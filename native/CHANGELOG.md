@@ -17,6 +17,9 @@
   workstation trends, preserving unknown samples when the GPU sensor is absent.
 - Made the local music player's shuffle control select a different queued track
   on `next`, with injectable randomness for deterministic host validation.
+- Added exact-name developer workload classification for Codex, OpenCode,
+  Node, Python, Git, compilers, WSL, and known local model runtimes; unknown
+  processes remain unknown and classification grants no mutation authority.
 - Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
   address-space fallback when the memory controller is unavailable.
 - Added separate GPU temperature evidence to daily workstation reports, with
