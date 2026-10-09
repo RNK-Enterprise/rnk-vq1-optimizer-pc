@@ -12,6 +12,8 @@
   controller detection and fail-closed setup/write errors.
 - Added a deterministic top-three `priorities` view to daily workstation
   reports without removing the complete recommendation list.
+- Added pagefile-pressure event counts and recommendations to daily reports;
+  system-managed pagefiles remain observation-only.
 
 - Added cross-platform interface bandwidth-rate derivation and a trigger-based
   `network-rate-monitor` command with counter-reset and per-process authority

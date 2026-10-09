@@ -172,6 +172,8 @@ aggregate thermal reading; missing GPU sensors remain unavailable.
 Network evidence includes cumulative interface counters plus derived receive/send
 rates when consecutive counters are available; first samples, missing counters,
 and counter resets remain explicitly unavailable.
+High pagefile-pressure samples add a dedicated recommendation while pagefile
+cleanup remains permanently disabled.
 The report also includes the latest-evidence policy state and exact handoff IDs
 for review; it does not apply those handoffs.
 `priorities` contains the first three deterministic recommendations for a

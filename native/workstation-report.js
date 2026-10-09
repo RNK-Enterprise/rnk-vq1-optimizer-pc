@@ -175,6 +175,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const temperatures = finiteValues(thermals.map((item) => item.temperatureC));
   const batteryHealth = finiteValues(batteries.map((item) => item.healthPercent));
   const pagefilePressure = finiteValues(pagefile.map((item) => item.pressurePercent));
+  const pagefileEvents = count(pagefile, (item) => item.pressurePercent !== null && item.pressurePercent >= 80);
   const receivedRates = finiteValues(networkRates.map((item) => item.receivedBytesPerSecond));
   const sentRates = finiteValues(networkRates.map((item) => item.sentBytesPerSecond));
   const storageEvents = count(storage, (item) => ['warning', 'critical', 'emergency'].includes(item.level) || item.belowTarget);
@@ -184,6 +185,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const recommendations = [];
   if (storageEvents) recommendations.push('review-storage-pressure');
   if (memoryEvents) recommendations.push('review-memory-and-pagefile');
+  if (pagefileEvents) recommendations.push('review-pagefile-pressure');
   if (throttleEvents) recommendations.push('review-thermal-workload');
   if (abnormalEvents) recommendations.push('review-abnormal-processes');
   if (!samples.length) recommendations.push('collect-workstation-evidence');
@@ -200,7 +202,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     cpuGpu: Object.freeze({ peakCpuPercent: maximum(cpuPercent), peakGpuPercent: maximum(gpuPercent), peakGpuTemperatureC: maximum(gpuTemperatures), latestGpuTemperatureC: last(gpuTemperatures), latestGpuMemoryUsedBytes: last(finiteValues(cpuGpu.map((item) => item.gpuMemoryUsedBytes))) }),
     thermals: Object.freeze({ peakTemperatureC: maximum(temperatures), throttleEvents }),
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
-    pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), systemManaged: true, cleanup: 'never' }),
+    pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
     network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),
