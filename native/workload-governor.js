@@ -31,8 +31,14 @@ function detectGame(facts, gameNames) {
   const declared = declaredGame(facts);
   if (declared) return Object.freeze(declared);
   const processes = rows(facts.processes);
-  const explicit = processes.find((process) => pid(process.pid) && process.foreground === true && ['game', 'gaming'].includes(text(process.role)?.toLowerCase()));
-  if (explicit) return Object.freeze({ detected: true, pid: pid(explicit.pid), name: text(explicit.name), source: 'process-role', confidence: 0.8 });
+  const explicit = processes.find((process) => {
+    if (!pid(process.pid) || !['game', 'gaming'].includes(text(process.role)?.toLowerCase())) return false;
+    return process.foreground === true || Boolean(text(process.path));
+  });
+  if (explicit) {
+    const source = explicit.foreground === true ? 'process-role' : 'trusted-process-path';
+    return Object.freeze({ detected: true, pid: pid(explicit.pid), name: text(explicit.name), source, confidence: source === 'process-role' ? 0.8 : 0.9 });
+  }
   const named = processes.find((process) => pid(process.pid) && gameNames.includes((text(process.name) || '').toLowerCase()));
   if (named) return Object.freeze({ detected: true, pid: pid(named.pid), name: text(named.name), source: 'explicit-name', confidence: 0.7 });
   return Object.freeze({ detected: false, pid: null, name: null, source: 'no-explicit-game-evidence', confidence: 0 });

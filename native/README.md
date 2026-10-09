@@ -272,8 +272,11 @@ The local media player applies queue navigation, shuffle, repeat, search, and
 playlist state locally; actual decoding and playback remain with the approved
 player host.
 
-`workload-preview` detects only declared game evidence, a foreground process
-with an explicit game role, or a caller-supplied exact process name. On
+`workload-preview` detects declared game evidence, a foreground process with
+an explicit game role, a process whose observed executable path is inside a
+Steam `steamapps/common` game root, or a caller-supplied exact process name.
+The trusted-path rule is deliberately narrow and never grants mutation
+authority by itself. On
 Windows, process telemetry also marks the current desktop foreground PID via
 the fixed user32 `GetForegroundWindow` and `GetWindowThreadProcessId` calls;
 other platforms retain explicit caller/platform evidence and fail closed when

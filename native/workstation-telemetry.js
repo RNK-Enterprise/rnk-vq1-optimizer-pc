@@ -31,7 +31,18 @@ function json(output) { try { return JSON.parse(String(output || '')); } catch {
 function rows(value) { return Array.isArray(value) ? value : value && typeof value === 'object' ? [value] : []; }
 function commandAvailable(commandRunner) { return Boolean(commandRunner && typeof commandRunner.run === 'function'); }
 
-function inferredRole(name) {
+function normalizedPath(value) {
+  const path = text(value);
+  return path ? path.replaceAll('\\', '/').toLowerCase() : null;
+}
+
+function trustedGamePath(value) {
+  const path = normalizedPath(value);
+  return Boolean(path && path.includes('/steamapps/common/'));
+}
+
+function inferredRole(name, executablePath) {
+  if (trustedGamePath(executablePath)) return 'game';
   const normalized = String(name).trim().toLowerCase().replace(/\.exe$/, '');
   return INFERRED_PROCESS_ROLES.get(normalized) || null;
 }
@@ -40,6 +51,7 @@ function normalizeProcess(row, platform) {
   const pid = number(row?.pid ?? row?.Id);
   if (!Number.isInteger(pid) || pid < 1) return null;
   const name = text(row?.name ?? row?.ProcessName ?? row?.comm) || 'unknown';
+  const executablePath = text(row?.path ?? row?.Path ?? row?.exePath);
   const explicitRole = text(row?.role)?.toLowerCase();
   const cpu = number(row?.cpuPercent);
   const cpuSeconds = number(row?.CPU ?? row?.cpuSeconds);
@@ -47,6 +59,7 @@ function normalizeProcess(row, platform) {
   return Object.freeze({
     pid,
     name,
+    path: executablePath,
     cpuPercent: cpu,
     cpuSeconds,
     memoryBytes,
@@ -55,7 +68,7 @@ function normalizeProcess(row, platform) {
     platform,
     foreground: row?.foreground === true,
     protected: row?.protected === true,
-    role: explicitRole || inferredRole(name) || 'unknown'
+    role: explicitRole && explicitRole !== 'unknown' ? explicitRole : inferredRole(name, executablePath) || 'unknown'
   });
 }
 
@@ -88,10 +101,24 @@ export function parseProcessTelemetry(output, { platform = 'unknown' } = {}) {
   return Object.freeze({ available: processes.length > 0, processes: Object.freeze(processes), truncated: lines.length > 512 });
 }
 
-export async function collectProcessTelemetry({ platform = process.platform, commandRunner } = {}) {
+async function enrichLinuxProcessPaths(telemetry, fsImpl) {
+  if (typeof fsImpl?.readlink !== 'function' || telemetry.processes.length === 0) return telemetry;
+  const processes = await Promise.all(telemetry.processes.map(async (process) => {
+    try {
+      const path = await fsImpl.readlink(`/proc/${process.pid}/exe`);
+      const role = process.role === 'unknown' ? inferredRole(process.name, path) || 'unknown' : process.role;
+      return Object.freeze({ ...process, path: text(path), role });
+    } catch {
+      return process;
+    }
+  }));
+  return Object.freeze({ ...telemetry, processes: Object.freeze(processes) });
+}
+
+export async function collectProcessTelemetry({ platform = process.platform, commandRunner, fsImpl = fs } = {}) {
   if (!commandAvailable(commandRunner)) return Object.freeze({ available: false, processes: EMPTY, truncated: false, reason: 'command runner unavailable' });
   const command = platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$signature='[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);'; Add-Type -MemberDefinition $signature -Name ForegroundWindow -Namespace RnkNative -ErrorAction Stop; $window=[RnkNative.ForegroundWindow]::GetForegroundWindow(); [uint32]$foregroundPid=0; [void][RnkNative.ForegroundWindow]::GetWindowThreadProcessId($window,[ref]$foregroundPid); Get-Process | ForEach-Object { $cpu=$null; $start=$null; try { $cpu=$_.CPU } catch {}; try { $start=$_.StartTime } catch {}; [pscustomobject]@{ Id=$_.Id; ProcessName=$_.ProcessName; WorkingSet64=$_.WorkingSet64; CPU=$cpu; StartTime=$start; foreground=($_.Id -eq $foregroundPid) } } | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 65536 }]
+    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "$signature='[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);'; Add-Type -MemberDefinition $signature -Name ForegroundWindow -Namespace RnkNative -ErrorAction Stop; $window=[RnkNative.ForegroundWindow]::GetForegroundWindow(); [uint32]$foregroundPid=0; [void][RnkNative.ForegroundWindow]::GetWindowThreadProcessId($window,[ref]$foregroundPid); Get-Process | ForEach-Object { $cpu=$null; $start=$null; $path=$null; try { $cpu=$_.CPU } catch {}; try { $start=$_.StartTime } catch {}; try { $path=$_.Path } catch {}; [pscustomobject]@{ Id=$_.Id; ProcessName=$_.ProcessName; Path=$path; WorkingSet64=$_.WorkingSet64; CPU=$cpu; StartTime=$start; foreground=($_.Id -eq $foregroundPid) } } | ConvertTo-Json -Compress"], { timeoutMs: 5000, maxOutputBytes: 65536 }]
     : platform === 'linux' || platform === 'darwin'
       ? ['ps', ['-eo', 'pid=,comm=,pcpu=,rss=,etime=,state='], { timeoutMs: 2500, maxOutputBytes: 65536 }]
       : null;
@@ -99,7 +126,8 @@ export async function collectProcessTelemetry({ platform = process.platform, com
   try {
     const result = await commandRunner.run(command[0], command[1], command[2]);
     if (result?.code !== 0) return Object.freeze({ available: false, processes: EMPTY, truncated: false, reason: result?.stderr || 'process command failed' });
-    return parseProcessTelemetry(result.stdout, { platform });
+    const telemetry = parseProcessTelemetry(result.stdout, { platform });
+    return platform === 'linux' ? enrichLinuxProcessPaths(telemetry, fsImpl) : telemetry;
   } catch (error) {
     return Object.freeze({ available: false, processes: EMPTY, truncated: false, reason: error.message });
   }

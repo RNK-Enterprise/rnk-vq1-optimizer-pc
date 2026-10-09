@@ -31,6 +31,8 @@ describe('native workload governor', () => {
   test('uses explicit role or name evidence and returns observation-only without a game', () => {
     const byRole = previewWorkloadPolicy({ processes: [{ pid: 1, name: 'unknown', foreground: true, role: 'gaming' }, { pid: 2, name: 'build', role: 'build' }] }, { mode: 'gaming' });
     expect(byRole.game).toMatchObject({ detected: true, source: 'process-role', confidence: 0.8 });
+    const byTrustedPath = previewWorkloadPolicy({ processes: [{ pid: 2, name: 'game', path: '/games/steamapps/common/Game/game', role: 'game' }, { pid: 4, name: 'build' }] }, { mode: 'gaming' });
+    expect(byTrustedPath.game).toMatchObject({ detected: true, source: 'trusted-process-path', confidence: 0.9 });
     const byName = previewWorkloadPolicy({ processes: [{ pid: 3, name: 'Game.EXE' }, { pid: 4, name: 'build' }] }, { mode: 'gaming', gameNames: ['game.exe'] });
     expect(byName.game).toMatchObject({ detected: true, source: 'explicit-name', pid: 3 });
     const none = previewWorkloadPolicy({ processes: [{ pid: 5, name: 'build', foreground: false }] }, { mode: 'gaming' });
