@@ -52,7 +52,8 @@ The current platform adapters provide documented controls for:
 - Windows power profile, process priority, bounded process affinity, and
   approved Job Object CPU/memory limits.
 - Linux power profile, process priority, process I/O priority, bounded process
-  affinity, and approved `prlimit` address-space limits.
+  affinity, and approved cgroup-v2 CPU/memory limits with an explicit
+  address-space fallback when Linux memory control is unavailable.
 - macOS process priority, bounded cache cleanup, and approved process stop.
 - Optimizer-owned temporary-cache preview and explicit cleanup.
 - Storage Pressure Guard for bounded system-drive monitoring, preview, and
@@ -63,11 +64,12 @@ The current platform adapters provide documented controls for:
   provide it.
 
 GPU policy, network tuning, and frame-rate control remain explicit unsupported
-results until a platform-safe implementation is added and proven. Linux CPU
-hard limits and macOS resource limits remain explicit unsupported results.
-Windows resource limits use a fixed Job Object authority and Linux memory
-limits use the process address-space boundary exposed by `prlimit`; neither
-claims a portable RSS or GPU cap. CPU affinity is supported only through fixed
+results until a platform-safe implementation is added and proven. macOS
+resource limits remain explicit unsupported results. Windows resource limits
+use a fixed Job Object authority. Linux uses cgroup-v2 `cpu.max` and
+`memory.max` when controllers are available, with `prlimit` as the explicit
+address-space fallback for unavailable memory control; neither platform claims
+a portable GPU cap. CPU affinity is supported only through fixed
 balanced/performance masks for explicitly approved processes. NVIDIA facts are observational only. The
 browser host under `scripts/pc-host.js` does not execute operating-system
 commands.
@@ -292,9 +294,10 @@ unsupported evidence; the command never claims those limits were enforced.
 
 `resource-limit-preview` and `resource-limit-apply` are the separate hard-limit
 authority for approved background PIDs. Windows applies CPU and per-process
-memory limits through a fixed Job Object script. Linux applies a memory
-address-space limit through `prlimit`; Linux CPU limits and macOS limits refuse
-explicitly. These operations require `--confirm`, approved PIDs, and the
+memory limits through a fixed Job Object script. Linux applies CPU through
+`cpu.max` and memory through `memory.max` when available, with an explicit
+`prlimit` address-space fallback for unavailable memory control; macOS limits
+refuse explicitly. These operations require `--confirm`, approved PIDs, and the
 platform's administrative boundary. A hard limit is not reversible through a
 generic rollback because the operating system owns its lifetime; the process
 must be reconfigured or restarted after review.

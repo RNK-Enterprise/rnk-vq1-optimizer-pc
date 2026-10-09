@@ -4,6 +4,8 @@
 
 - Added cross-platform Linux swap-pressure observation as system-managed
   evidence without granting pagefile or swap cleanup authority.
+- Added Linux cgroup-v2 `memory.max` enforcement with explicit `prlimit`
+  address-space fallback when the memory controller is unavailable.
 - Added a bounded trigger-based daily report scheduler with one-delivery-per-day
   suppression, forced delivery, callback error handling, and a CLI command.
 
