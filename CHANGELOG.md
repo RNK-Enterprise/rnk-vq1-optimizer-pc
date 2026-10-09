@@ -13,6 +13,9 @@
   platform counters remain unknown rather than inferred.
 - Added optional NVIDIA compute-process GPU-memory evidence to matching process
   facts; graphics-process coverage and GPU hard caps remain unsupported.
+- Added trigger-based per-process CPU, read/write I/O, memory-delta, and
+  observed GPU-memory rates with PID identity and counter-reset handling; the
+  new monitor remains observation-only.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

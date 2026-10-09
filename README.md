@@ -174,6 +174,7 @@ node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
+node native/cli.mjs process-rate-monitor --interval-seconds 5
 node native/cli.mjs file-inspect --root "$HOME/Downloads" \
   --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
@@ -318,6 +319,12 @@ recommendations. Missing samples remain unknown.
 `network-monitor` adds trigger-based contention history around an explicit
 platform or caller per-process sampler. It reports gaming/download contention
 transitions and never claims to enforce a network budget.
+
+`process-rate-monitor` derives bounded CPU, read/write I/O, memory-delta, and
+observed GPU-memory evidence for matching process identities from consecutive
+fact samples. New PIDs, changed executable identities, missing counters, and
+counter resets remain explicit instead of becoming guessed rates. It is
+observation-only and does not start, stop, reprioritize, or limit processes.
 
 `file-inspect` provides bounded read-only evidence for incomplete downloads,
 stale installers, large files, models, archives, ISO files, protected paths,

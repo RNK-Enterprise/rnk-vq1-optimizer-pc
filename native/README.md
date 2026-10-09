@@ -327,6 +327,12 @@ platform counters. The first sample, missing counters, and counter resets stay
 explicitly unavailable. Interface rates do not identify a process; per-process
 bandwidth remains available only when the host supplies that evidence.
 
+`process-rate-monitor` derives bounded CPU, read/write I/O, memory-delta, and
+observed GPU-memory evidence for matching process identities from consecutive
+fact samples. New PIDs, changed executable identities, missing counters, and
+counter resets remain explicit instead of becoming guessed rates. It is
+observation-only and does not start, stop, reprioritize, or limit processes.
+
 `file-inspect` scans one explicit root for incomplete downloads, stale
 installers, large files, models, archives, ISO files, protected paths, and
 hash-backed duplicate groups. It returns a review-only plan; `organize-preview`

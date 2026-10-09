@@ -19,6 +19,7 @@ import {
   runGameSessionCommand,
   runNetworkOverviewCommand,
   runNetworkRateMonitorCommand,
+  runProcessRateMonitorCommand,
   runPlacementCommand,
   runPlacementPolicyCommand,
   runPlacementRecommendationCommand,
@@ -138,6 +139,7 @@ describe('native top-level CLI adapter', () => {
     const networkAdapter = { collectFacts: jest.fn(async () => ({ networkConnections: { connections: [] }, network: {} })) };
     await expect(runNetworkOverviewCommand({ samples: '[]', 'game-pid': '1', 'latency-ms': '20' }, { adapter: networkAdapter })).resolves.toMatchObject({ plan: expect.any(Object) });
     await expect(runNetworkRateMonitorCommand({ 'interval-seconds': '1' }, { adapter: networkAdapter, monitorFactory })).resolves.toEqual({ stopped: true });
+    await expect(runProcessRateMonitorCommand({ 'interval-seconds': '1' }, { adapter: { collectFacts: jest.fn(async () => ({ processes: [] })) }, monitorFactory })).resolves.toEqual({ stopped: true });
 
     const plan = { state: 'plan-ready' };
     const preview = jest.fn(() => plan);
@@ -220,6 +222,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runCli(['filesystem-health'])).rejects.toThrow('--root is required');
     await expect(runCli(['drive-benchmark'])).rejects.toThrow('--root is required');
     await expect(runCli(['network-rate-monitor', '--interval-seconds=0'])).rejects.toThrow('interval');
+    await expect(runCli(['process-rate-monitor', '--interval-seconds=0'])).rejects.toThrow('interval');
     await expect(runCli(['placement-preview'])).rejects.toThrow('--files is required');
     await expect(runCli(['placement-recommend'])).rejects.toThrow('--volumes is required');
     await expect(runCli(['placement-policy-preview'])).rejects.toThrow('--scan is required');

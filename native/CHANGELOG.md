@@ -12,6 +12,10 @@
 - Added optional fixed NVIDIA compute-process memory evidence and attached it to
   matching process facts without claiming graphics-process coverage or GPU
   enforcement.
+- Added a trigger-based `process-rate-monitor` that derives bounded CPU,
+  read/write I/O, memory-delta, and observed GPU-memory rates from matching
+  process samples; PID identity changes, missing counters, and counter resets
+  remain explicit and the monitor has no process-control authority.
 - Added an explicit bounded multi-drive SMART observer that reuses validated
   inventory devices without changing normal inventory-only facts collection.
 - Corrected the Linux mounted-volume command so GNU `df` no longer receives the

@@ -20,7 +20,7 @@ means the authority deliberately refuses rather than pretending to enforce it.
 | Battery and power | Implemented | Telemetry and documented profiles exist; ASUS-specific live behavior is unverified. |
 | Thermal and cooling | Implemented | Read-only sensors exist; undocumented firmware fan control is refused. |
 | Memory and pagefile | Implemented | Pagefile/swap is separate system-managed evidence and never a cleanup target. |
-| Process and startup | Implemented | Role, usage, cumulative I/O, stop-impact, startup preview, apply, and restore exist. |
+| Process and startup | Implemented | Role, usage, cumulative and sampled I/O, process-rate evidence, stop-impact, startup preview, apply, and restore exist. |
 | Network observation | Implemented | Interface rates, connections, and explicit per-process evidence exist; shaping does not. |
 | Media library | Implemented | Local catalogue, metadata, duplicates, favorites, recents, and playlists exist. |
 | Music player | Implemented | Browser-owned local playback state and host are present; no downloader is included. |

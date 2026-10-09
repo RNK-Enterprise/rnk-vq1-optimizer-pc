@@ -23,6 +23,7 @@ import { collectFilesystemHealth } from './filesystem-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
 import { createNetworkRateMonitor } from './network-rate.js';
+import { createProcessResourceMonitor } from './process-rate.js';
 import { applyFilePlacement, previewFilePlacement, rollbackFilePlacement } from './file-placement.js';
 import { applyPlacementPolicy, previewPlacementPolicy, recommendPlacementTargets, rollbackPlacementPolicy } from './file-placement-policy.js';
 import { interpretWorkstationQuestion } from './workstation-assistant.js';
@@ -188,6 +189,23 @@ export async function runNetworkRateMonitorCommand(args, { adapter = createPlatf
   return { stopped: true };
 }
 
+export async function runProcessRateMonitorCommand(args, { adapter = createPlatformAdapter(), monitorFactory = createProcessResourceMonitor } = {}) {
+  const monitor = monitorFactory({
+    collectSample: async () => ({ processes: (await adapter.collectFacts()).processes }),
+    intervalMs: numberOption(args, 'interval-seconds', 5) * 1000,
+    onReport: (report) => process.stdout.write(`${JSON.stringify(report)}\n`),
+    onError: (error) => process.stderr.write(`process rate monitor: ${error.message}\n`)
+  });
+  await monitor.collect();
+  monitor.start();
+  await new Promise((resolve) => {
+    const stop = () => { monitor.stop(); resolve(); };
+    process.once('SIGINT', stop);
+    process.once('SIGTERM', stop);
+  });
+  return { stopped: true };
+}
+
 export async function runPlacementCommand(command, args, { preview = previewFilePlacement, apply = applyFilePlacement, rollback = rollbackFilePlacement } = {}) {
   if (command === 'placement-rollback') return rollback(jsonOption(args, 'result'));
   const plan = preview({
@@ -331,6 +349,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);
   if (command === 'network-rate-monitor') return runNetworkRateMonitorCommand(args);
+  if (command === 'process-rate-monitor') return runProcessRateMonitorCommand(args);
   if (['placement-preview', 'placement-apply', 'placement-rollback'].includes(command)) return runPlacementCommand(command, args);
   if (command === 'placement-recommend') return runPlacementRecommendationCommand(args);
   if (['placement-policy-preview', 'placement-policy-apply', 'placement-policy-rollback'].includes(command)) return runPlacementPolicyCommand(command, args);
