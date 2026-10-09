@@ -34,7 +34,8 @@ import {
   runWorkloadBudgetCommand,
   runWorkloadCommand,
   runWorkstationPolicyCommand,
-  runWorkstationShellCommand
+  runWorkstationShellCommand,
+  runWorkstationTrayCommand
 } from '../native/cli.mjs';
 
 const facts = { platform: 'linux', processes: [] };
@@ -138,6 +139,10 @@ describe('native top-level CLI adapter', () => {
     await expect(runWorkstationShellCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html'), confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
     await expect(runWorkstationShellCommand({ packaged: true }, { platform: 'linux', env: { XDG_STATE_HOME: root }, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ state: 'review-ready', historyPath: path.join(root, 'RNK', 'Optimizer', 'history.jsonl') });
     await expect(runWorkstationShellCommand({ packaged: true }, { platform: 'linux', env: {}, pathResolver: () => ({ state: 'invalid-environment', reason: 'missing root' }) })).rejects.toThrow('missing root');
+    await expect(runWorkstationTrayCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html') }, { platform: 'linux' })).resolves.toMatchObject({ state: 'review-ready' });
+    await expect(runWorkstationTrayCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html'), confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
+    await expect(runWorkstationTrayCommand({ packaged: true }, { platform: 'linux', env: { XDG_STATE_HOME: root }, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ state: 'review-ready' });
+    await expect(runWorkstationTrayCommand({ packaged: true }, { platform: 'linux', env: {}, pathResolver: () => ({ state: 'invalid-environment', reason: 'missing root' }) })).rejects.toThrow('missing root');
     await expect(runVolumeStorageCommand({ collector: async () => ({ state: 'volumes' }), commandRunner })).resolves.toEqual({ state: 'volumes' });
     await expect(runFilesystemHealthCommand({ root }, { collector: async () => ({ state: 'filesystem' }), commandRunner })).resolves.toEqual({ state: 'filesystem' });
     await expect(runDriveBenchmarkCommand({ root, bytes: '8' }, { benchmark: async (options) => ({ state: 'benchmark', options }) })).resolves.toMatchObject({ state: 'benchmark', options: { root, bytes: 8 } });
@@ -229,6 +234,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runCli(['game-session-monitor', '--auto-apply'])).rejects.toThrow('requires --confirm');
     await expect(runCli(['report-open'])).rejects.toThrow('--path is required');
     await expect(runCli(['steward-dashboard'])).rejects.toThrow('--path is required');
+    await expect(runCli(['steward-tray'])).rejects.toThrow('--path is required');
     await expect(runCli(['filesystem-health'])).rejects.toThrow('--root is required');
     await expect(runCli(['drive-benchmark'])).rejects.toThrow('--root is required');
     await expect(runCli(['network-rate-monitor', '--interval-seconds=0'])).rejects.toThrow('interval');

@@ -23,5 +23,8 @@
   user-level scheduler with the same resolved paths and HTML default.
 - Enabled the scheduler's existing HTML report format in its strict format
   allow-list.
+- Added a manifest-hashed tray launcher for the fixed Windows, Linux, and
+  macOS tray authorities, with explicit refusal when the host utility is not
+  installed.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.

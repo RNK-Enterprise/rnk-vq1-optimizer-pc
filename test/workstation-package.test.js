@@ -6,14 +6,14 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { buildWorkstationPackagePlan, isEntrypoint, materializeWorkstationPackage, packageWorkstation, parseWorkstationPackageArgs, renderWorkstationLauncher, renderWorkstationStewardLauncher, runIfEntrypoint, runWorkstationPackage, setExitCode, verifyWorkstationPackage, WORKSTATION_PACKAGE_VERSION } from '../scripts/workstation-package.js';
+import { buildWorkstationPackagePlan, isEntrypoint, materializeWorkstationPackage, packageWorkstation, parseWorkstationPackageArgs, renderWorkstationLauncher, renderWorkstationStewardLauncher, renderWorkstationTrayLauncher, runIfEntrypoint, runWorkstationPackage, setExitCode, verifyWorkstationPackage, WORKSTATION_PACKAGE_VERSION } from '../scripts/workstation-package.js';
 
 describe('workstation package boundary', () => {
   test('plans only supported platforms and bounded source files', () => {
     const base = { sourceRoot: '/repo', outputRoot: '/tmp/package', version: '3.1.1' };
-    expect(buildWorkstationPackagePlan({ ...base, platform: 'linux' })).toMatchObject({ version: WORKSTATION_PACKAGE_VERSION, state: 'review-ready', launcher: 'rnk-optimizer-dashboard', stewardLauncher: 'rnk-optimizer-steward' });
-    expect(buildWorkstationPackagePlan({ ...base, platform: 'win32' })).toMatchObject({ state: 'review-ready', launcher: 'rnk-optimizer-dashboard.cmd', stewardLauncher: 'rnk-optimizer-steward.cmd' });
-    expect(buildWorkstationPackagePlan({ ...base, platform: 'darwin' })).toMatchObject({ state: 'review-ready', stewardLauncher: 'rnk-optimizer-steward' });
+    expect(buildWorkstationPackagePlan({ ...base, platform: 'linux' })).toMatchObject({ version: WORKSTATION_PACKAGE_VERSION, state: 'review-ready', launcher: 'rnk-optimizer-dashboard', stewardLauncher: 'rnk-optimizer-steward', trayLauncher: 'rnk-optimizer-tray' });
+    expect(buildWorkstationPackagePlan({ ...base, platform: 'win32' })).toMatchObject({ state: 'review-ready', launcher: 'rnk-optimizer-dashboard.cmd', stewardLauncher: 'rnk-optimizer-steward.cmd', trayLauncher: 'rnk-optimizer-tray.cmd' });
+    expect(buildWorkstationPackagePlan({ ...base, platform: 'darwin' })).toMatchObject({ state: 'review-ready', stewardLauncher: 'rnk-optimizer-steward', trayLauncher: 'rnk-optimizer-tray' });
     expect(buildWorkstationPackagePlan({ ...base, platform: 'freebsd' })).toMatchObject({ state: 'unsupported-platform' });
     expect(buildWorkstationPackagePlan()).toMatchObject({ state: 'invalid-input' });
     expect(buildWorkstationPackagePlan({ ...base, sourceRoot: 'relative' })).toMatchObject({ state: 'invalid-input' });
@@ -35,6 +35,10 @@ describe('workstation package boundary', () => {
     expect(renderWorkstationStewardLauncher('darwin')).toContain('steward-daemon --packaged');
     expect(renderWorkstationStewardLauncher('win32')).toContain('steward-daemon --packaged');
     expect(() => renderWorkstationStewardLauncher('freebsd')).toThrow('unsupported');
+    expect(renderWorkstationTrayLauncher('linux')).toContain('steward-tray --packaged --confirm');
+    expect(renderWorkstationTrayLauncher('darwin')).toContain('steward-tray --packaged --confirm');
+    expect(renderWorkstationTrayLauncher('win32')).toContain('steward-tray --packaged --confirm');
+    expect(() => renderWorkstationTrayLauncher('freebsd')).toThrow('unsupported');
     expect(() => renderWorkstationLauncher('freebsd')).toThrow('unsupported');
     expect(parseWorkstationPackageArgs(['--platform', 'linux', '--source', '/repo', '--output', '/tmp/out', '--version', '3.1.1', '--dry-run'])).toMatchObject({ platform: 'linux', dryRun: true });
     expect(() => parseWorkstationPackageArgs([])).toThrow('--output');
@@ -58,9 +62,10 @@ describe('workstation package boundary', () => {
     await expect(materializeWorkstationPackage(plan)).resolves.toMatchObject({ state: 'written', written: true });
     await expect(fs.readFile(path.join(output, 'bundle', 'rnk-optimizer-dashboard'), 'utf8')).resolves.toContain('steward-dashboard');
     await expect(fs.readFile(path.join(output, 'bundle', 'rnk-optimizer-steward'), 'utf8')).resolves.toContain('steward-daemon');
+    await expect(fs.readFile(path.join(output, 'bundle', 'rnk-optimizer-tray'), 'utf8')).resolves.toContain('steward-tray');
     await expect(fs.readFile(path.join(output, 'bundle', 'package-manifest.json'), 'utf8')).resolves.toContain('3.1.1');
     const manifest = JSON.parse(await fs.readFile(path.join(output, 'bundle', 'package-manifest.json'), 'utf8'));
-    expect(manifest.files).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'native/cli.mjs', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-dashboard', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-steward', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) })]));
+    expect(manifest.files).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'native/cli.mjs', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-dashboard', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-steward', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) }), expect.objectContaining({ path: 'rnk-optimizer-tray', sha256: expect.stringMatching(/^[a-f0-9]{64}$/) })]));
     await expect(verifyWorkstationPackage({ root: path.join(output, 'bundle') })).resolves.toMatchObject({ state: 'verified', fileCount: manifest.files.length });
     await expect(runWorkstationPackage({ argv: ['--verify', '--source', path.join(output, 'bundle')], write: jest.fn(), errorWrite: jest.fn() })).resolves.toBe(0);
     await fs.writeFile(path.join(output, 'bundle', 'native', 'cli.mjs'), 'tampered');
@@ -82,7 +87,7 @@ describe('workstation package boundary', () => {
     const invalidEntryFs = { readFile: jest.fn(async () => JSON.stringify({ packageVersion: WORKSTATION_PACKAGE_VERSION, files: [{ path: 'socket', sha256: 'a'.repeat(64) }] })), readdir: jest.fn(async () => [{ name: 'socket', isDirectory: () => false, isFile: () => false }]) };
     await expect(verifyWorkstationPackage({ root: '/tmp/bundle', fsImpl: invalidEntryFs })).resolves.toMatchObject({ state: 'unavailable', reason: expect.stringContaining('unsupported') });
     const windowsPlan = buildWorkstationPackagePlan({ platform: 'win32', sourceRoot: source, outputRoot: path.join(output, 'windows'), version: '3.1.1' });
-    await expect(materializeWorkstationPackage(windowsPlan)).resolves.toMatchObject({ state: 'written', launcherPath: path.join(output, 'windows', 'rnk-optimizer-dashboard.cmd'), stewardLauncherPath: path.join(output, 'windows', 'rnk-optimizer-steward.cmd') });
+    await expect(materializeWorkstationPackage(windowsPlan)).resolves.toMatchObject({ state: 'written', launcherPath: path.join(output, 'windows', 'rnk-optimizer-dashboard.cmd'), stewardLauncherPath: path.join(output, 'windows', 'rnk-optimizer-steward.cmd'), trayLauncherPath: path.join(output, 'windows', 'rnk-optimizer-tray.cmd') });
     const fakeFs = { mkdir: jest.fn(), cp: jest.fn(), writeFile: jest.fn(), chmod: jest.fn(), readdir: jest.fn(async () => [{ name: 'socket', isDirectory: () => false, isFile: () => false }]) };
     await expect(materializeWorkstationPackage(plan, { fsImpl: fakeFs })).rejects.toThrow('unsupported package entry');
     await expect(packageWorkstation({ options: { platform: 'linux', sourceRoot: source, outputRoot: path.join(output, 'dry-run'), version: '3.1.1', dryRun: true } })).resolves.toMatchObject({ state: 'review-ready' });

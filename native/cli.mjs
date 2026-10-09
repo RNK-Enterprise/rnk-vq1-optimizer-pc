@@ -56,6 +56,7 @@ import { buildMediaPanelPlan, runMediaCommand, runMediaPlayerCommand } from './c
 import { applyReportViewer, buildReportViewerPlan } from './report-viewer.js';
 import { applyWorkstationShell, buildWorkstationShellPlan } from './workstation-shell.js';
 import { defaultWorkstationPaths } from './workstation-paths.js';
+import { applyWorkstationTray, buildWorkstationTrayPlan } from './workstation-tray.js';
 
 export function agentFromArgs(args, { adapter = createPlatformAdapter(), env = process.env } = {}) {
   return new NativeOptimizerAgent({
@@ -161,6 +162,14 @@ export async function runWorkstationShellCommand(args, { apply = applyWorkstatio
   const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
   if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
   const plan = buildWorkstationShellPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
+  if (args.confirm !== true) return plan;
+  return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
+}
+
+export async function runWorkstationTrayCommand(args, { apply = applyWorkstationTray, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath, env = process.env, pathResolver = defaultWorkstationPaths } = {}) {
+  const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
+  if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
+  const plan = buildWorkstationTrayPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
   if (args.confirm !== true) return plan;
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }
@@ -363,6 +372,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (command === 'report-open') return runReportViewerCommand(args);
   if (command === 'steward-dashboard') return runWorkstationShellCommand(args);
+  if (command === 'steward-tray') return runWorkstationTrayCommand(args);
   if (command === 'volume-storage') return runVolumeStorageCommand();
   if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);

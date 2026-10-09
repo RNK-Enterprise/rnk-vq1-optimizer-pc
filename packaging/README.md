@@ -22,6 +22,12 @@ uses the existing approval-gated snapshot and host opener boundary. The
 continuous-steward launcher runs the existing observation/report loop in the
 foreground and exits on the normal console termination signals.
 
+The tray launcher performs an approved local snapshot and starts the fixed
+platform tray host. Windows uses the documented PowerShell Forms tray API,
+macOS uses the documented `osascript` Cocoa status item, and Linux uses the
+fixed `yad` notification host when installed. A missing host utility is
+reported as a refusal; the package does not install a service or listener.
+
 Packaged daily scheduling remains an explicit preview/apply operation. Use the
 runtime CLI with `report-schedule-preview --packaged` to inspect the native
 user-level schedule and `report-schedule-apply --packaged --confirm` only after

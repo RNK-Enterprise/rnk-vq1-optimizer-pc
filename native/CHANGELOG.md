@@ -14,6 +14,9 @@
   per-user paths and explicit HTML default without bypassing approval.
 - Aligned the user-level scheduler format allow-list with the existing HTML
   report delivery so scheduled packaged dashboards are valid plans.
+- Added an approval-gated native tray session for Windows, Linux, and macOS.
+  Each plan writes one local HTML snapshot first, then starts only the fixed
+  platform tray host; missing host tooling remains an explicit apply refusal.
 
 - Added the reproducible cross-platform runtime package boundary and fixed
   Windows, Linux, and macOS dashboard launchers; tray lifecycle remains outside
