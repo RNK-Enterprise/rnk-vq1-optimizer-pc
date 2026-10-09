@@ -57,8 +57,10 @@ describe('native protocol', () => {
     expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 1 })).toThrow('bounded range');
     expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 2 ** 41 })).toThrow('bounded range');
     expect(validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'io-bytes-per-second', limit: 4096, device: '8:0' })).toEqual(expect.objectContaining({ device: '8:0' }));
+    expect(validateNativeAction({ type: 'set-gpu-policy', key: 'gpu.policy', value: 'balanced', limitWatts: 80 })).toEqual(expect.objectContaining({ limitWatts: 80 }));
     expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'io-bytes-per-second', limit: 4096 })).toThrow('major:minor');
     expect(() => validateNativeAction({ type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'io-bytes-per-second', limit: 11 * 1024 ** 3, device: '8:0' })).toThrow('major:minor');
+    expect(() => validateNativeAction({ type: 'set-gpu-policy', key: 'gpu.policy', value: 'balanced', limitWatts: 9 })).toThrow('bounded range');
   });
 
   test('validates bounded plans and expiry', () => {

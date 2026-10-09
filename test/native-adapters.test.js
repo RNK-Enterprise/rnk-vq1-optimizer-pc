@@ -18,6 +18,7 @@ const valid = {
   memoryLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'memory-bytes', limit: 1024 * 1024 * 1024 },
   ioLimit: { type: 'set-process-resource-limit', key: 'process.resource-limit', value: 'io-bytes-per-second', limit: 4096, device: '8:0' },
   gpu: { type: 'set-gpu-policy', key: 'gpu.policy', value: 'performance' },
+  gpuLimit: { type: 'set-gpu-policy', key: 'gpu.policy', value: 'balanced', limitWatts: 80 },
   memory: { type: 'set-memory-policy', key: 'memory.policy', value: 'background-low' },
   cache: { type: 'clear-cache', key: 'cache', value: 'user-temp' },
   stop: { type: 'stop-approved-process', key: 'process.stop', value: 'background-approved' }
@@ -50,6 +51,10 @@ describe('native adapters', () => {
     expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.ioLimit, { targetPid: 123 })).reason).toContain('not supported');
+    expect(adapter.requiresAdmin(valid.gpuLimit)).toBe(true);
+    expect((await adapter.applyAction(valid.gpuLimit)).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.gpuLimit, limitWatts: 9 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.gpuLimit, limitWatts: 2001 })).ok).toBe(false);
     expect((await adapter.applyAction({ ...valid.cpuLimit, limit: 101 }, { targetPid: 123 })).ok).toBe(false);
     expect((await adapter.applyAction({ type: 'set-process-resource-limit' }, { targetPid: 123 })).ok).toBe(false);
     expect((await adapter.applyAction({ ...valid.memoryLimit, limit: 1 }, { targetPid: 123 })).ok).toBe(false);
@@ -70,6 +75,7 @@ describe('native adapters', () => {
     await expect(adapter.applyAction({ ...valid.priority, value: 'low' }, { targetPid: 123 })).resolves.toMatchObject({ ok: false, reason: 'set-process-priority failed' });
     for (const action of [valid.io, valid.gpu, valid.memory]) expect((await adapter.applyAction(action)).ok).toBe(false);
     expect(h.calls[0]).toEqual(['powercfg.exe', ['/setactive', '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c']]);
+    expect(h.calls).toEqual(expect.arrayContaining([['nvidia-smi.exe', ['--power-limit', '80']]]));
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'win32' }));
   });
 
@@ -87,6 +93,10 @@ describe('native adapters', () => {
     expect(adapter.requiresAdmin(valid.memoryLimit)).toBe(true);
     expect(adapter.requiresAdmin(valid.cpuLimit)).toBe(true);
     expect(adapter.requiresAdmin(valid.ioLimit)).toBe(true);
+    expect(adapter.requiresAdmin(valid.gpuLimit)).toBe(true);
+    expect((await adapter.applyAction(valid.gpuLimit)).ok).toBe(true);
+    expect((await adapter.applyAction({ ...valid.gpuLimit, limitWatts: 9 })).ok).toBe(false);
+    expect((await adapter.applyAction({ ...valid.gpuLimit, limitWatts: 2001 })).ok).toBe(false);
     expect((await adapter.applyAction(valid.memoryLimit, { targetPid: 123 })).ok).toBe(true);
     expect((await adapter.applyAction(valid.cpuLimit, { targetPid: 123 })).ok).toBe(false);
     const cgroupFs = { readFile: jest.fn(async () => 'cpu memory'), mkdir: jest.fn(async () => {}), writeFile: jest.fn(async () => {}) };
@@ -129,6 +139,7 @@ describe('native adapters', () => {
       ['ionice', ['-c', '2', '-n', '7', '-p', '123']],
       ['taskset', ['-p', expect.stringMatching(/^0x/), '123']],
       ['prlimit', ['--pid', '123', '--as=1073741824:1073741824']],
+      ['nvidia-smi', ['--power-limit', '80']],
       ['kill', ['-TERM', '123']]
     ]));
     await expect(adapter.collectFacts()).resolves.toEqual(expect.objectContaining({ platform: 'linux' }));

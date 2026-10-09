@@ -164,6 +164,8 @@ node native/cli.mjs resource-limit-preview --limits \
 node native/cli.mjs resource-limit-apply --limits \
   '{"cpuPercent":50,"memoryBytes":8589934592}' --target-pids 1234 \
   --approve-pids 1234 --allow-admin --confirm
+node native/cli.mjs gpu-policy-preview --policy balanced
+node native/cli.mjs gpu-policy-apply --policy battery --allow-admin --confirm
 node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234,5678 --interval-seconds 10
 node native/cli.mjs game-session-monitor --game-names game.exe \
@@ -335,9 +337,10 @@ The workload governor connects gaming/build coexistence policy to the native
 priority authority. It detects only explicit game evidence, excludes protected
 and system processes, previews exact PID operations, and requires explicit
 approval before applying them. Hard CPU and RAM limits are delegated to the
-separate platform resource-limit authority where the adapter proves support;
-GPU hard caps remain unsupported. Unsupported results are reported rather than
-presented as enforcement.
+separate platform resource-limit authority where the adapter proves support. The
+bounded GPU policy authority can apply an approved NVIDIA power limit on
+supported Windows/Linux hosts when current, minimum, and maximum watt evidence
+is present; universal FPS control and non-NVIDIA caps remain unsupported.
 
 `workload-budget-preview` compares explicit per-process CPU, memory, I/O, and
 GPU limits with observed facts. `workload-budget-apply` can apply only the
@@ -345,8 +348,8 @@ supported soft responses—lower process priority and, on Linux, lower I/O
 priority—to explicitly approved background PIDs. Hard CPU and memory limits
 use the existing resource-limit authority. Linux hard I/O byte-rate limits
 require an observed `ioDevice` major:minor pair and use cgroup-v2 `io.max`;
-Windows and macOS report that dimension as unsupported. GPU hard caps stay
-unsupported evidence.
+Windows and macOS report that dimension as unsupported. GPU percentage caps and
+universal frame-rate control remain unsupported evidence.
 
 `resource-limit-preview` and `resource-limit-apply` are the separate hard-limit
 authority for approved background PIDs. Windows applies CPU and per-process

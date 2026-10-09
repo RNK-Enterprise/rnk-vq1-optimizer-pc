@@ -11,6 +11,9 @@
 - Added a bounded browser native-messaging download-preflight bridge and an
   advisory browser adapter. It exchanges only size and mount facts, has no HTTP
   listener, and does not cancel or rewrite downloads.
+- Added bounded NVIDIA GPU power-policy preview/apply for supported Windows and
+  Linux hosts when current, minimum, and maximum watt limits are observed;
+  universal frame-rate and non-NVIDIA GPU caps remain unsupported.
 - Added a packaged System Drive Guard launcher that continuously observes the
   configured free-space floor with the existing protected-root and approval
   boundaries; automatic cleanup remains opt-in and category-limited.

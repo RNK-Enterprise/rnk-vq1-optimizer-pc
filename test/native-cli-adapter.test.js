@@ -17,6 +17,7 @@ import {
   runDriveBenchmarkCommand,
   runDriveHealthCommand,
   runFilesystemHealthCommand,
+  runGpuPolicyCommand,
   runGameSessionCommand,
   runNetworkOverviewCommand,
   runNetworkRateMonitorCommand,
@@ -108,6 +109,9 @@ describe('native top-level CLI adapter', () => {
     await expect(runPowerCommand('power-preview', { profile: 'balanced' }, { adapter, platform: 'linux' })).resolves.toMatchObject({ plan: expect.any(Object) });
     await expect(runPowerCommand('power-apply', { profile: 'balanced', confirm: true }, { adapter, apply: applied })).resolves.toMatchObject({ result: { state: 'applied' } });
     await expect(runPowerCommand('power-apply', { profile: 'balanced' }, { adapter, apply: applied })).rejects.toThrow('requires --confirm');
+    await expect(runGpuPolicyCommand('gpu-policy-preview', { policy: 'balanced' }, { adapter })).resolves.toMatchObject({ plan: expect.any(Object) });
+    await expect(runGpuPolicyCommand('gpu-policy-apply', { policy: 'balanced', confirm: true }, { adapter, apply: applied })).resolves.toMatchObject({ result: { state: 'applied' } });
+    await expect(runGpuPolicyCommand('gpu-policy-apply', { policy: 'balanced' }, { adapter, apply: applied })).rejects.toThrow('requires --confirm');
     await expect(runPowerMonitorCommand({ 'interval-seconds': '1' }, { adapter, monitorFactory, platform: 'linux' })).resolves.toEqual({ stopped: true });
     await expect(runPowerMonitorCommand({ 'auto-apply': true })).rejects.toThrow('requires --confirm');
 
@@ -204,6 +208,7 @@ describe('native top-level CLI adapter', () => {
       ['workload-preview'],
       ['workload-budget-preview'],
       ['resource-limit-preview'],
+      ['gpu-policy-preview', '--policy=balanced'],
       ['drive-health'],
       ['volume-storage'],
       ['network-overview'],
@@ -249,6 +254,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runCli(['policy-approve'])).rejects.toThrow('--plan is required');
     await expect(runCli(['power-monitor', '--auto-apply'])).rejects.toThrow('requires --confirm');
     await expect(runCli(['power-preview'])).rejects.toThrow('--profile is required');
+    await expect(runCli(['gpu-policy-preview'])).rejects.toThrow('--policy is required');
     await expect(runCli(['storage-monitor', '--auto-clean'])).rejects.toThrow('requires explicitly enabled categories');
     await expect(runCli(['startup-preview', '--facts={}'])).rejects.toThrow('--name is required');
     await expect(runCli(['protected-roots-add'])).rejects.toThrow('--protected-store is required');

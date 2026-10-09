@@ -31,7 +31,7 @@ function percentage(used, total) {
 }
 
 function unavailableGpu() {
-  return { available: false, vendor: null, utilizationPercent: null, memoryUsedBytes: null, memoryTotalBytes: null, temperatureC: null, thermalThrottling: null };
+  return { available: false, vendor: null, utilizationPercent: null, memoryUsedBytes: null, memoryTotalBytes: null, temperatureC: null, thermalThrottling: null, powerLimitWatts: null, powerMinLimitWatts: null, powerMaxLimitWatts: null };
 }
 
 function unavailableGpuProcesses(platform = 'unknown', reason = 'unavailable') {
@@ -67,8 +67,8 @@ export function collectBaseFacts({ platform = process.platform, osImpl = os } = 
 function parseNvidiaLine(output) {
   const parts = String(output || '').trim().split(',').map((part) => Number(part.trim()));
   if (parts.length < 4 || parts.some((value) => !Number.isFinite(value))) return null;
-  const [utilizationPercent, memoryTotalMiB, memoryUsedMiB, temperatureC] = parts;
-  const thermalFlags = parts.slice(4);
+  const [utilizationPercent, memoryTotalMiB, memoryUsedMiB, temperatureC, hardwareThermal, softwareThermal, powerLimitWatts, powerMinLimitWatts, powerMaxLimitWatts] = parts;
+  const thermalFlags = parts.slice(4, 6);
   return {
     available: true,
     vendor: 'nvidia',
@@ -76,9 +76,10 @@ function parseNvidiaLine(output) {
     memoryUsedBytes: memoryUsedMiB * 1024 ** 2,
     memoryTotalBytes: memoryTotalMiB * 1024 ** 2,
     temperatureC,
-    thermalThrottling: thermalFlags.length >= 2
-      ? thermalFlags[0] !== 0 || thermalFlags[1] !== 0
-      : null
+    thermalThrottling: thermalFlags.length >= 2 ? hardwareThermal !== 0 || softwareThermal !== 0 : null,
+    powerLimitWatts: Number.isFinite(powerLimitWatts) && powerLimitWatts > 0 ? powerLimitWatts : null,
+    powerMinLimitWatts: Number.isFinite(powerMinLimitWatts) && powerMinLimitWatts > 0 ? powerMinLimitWatts : null,
+    powerMaxLimitWatts: Number.isFinite(powerMaxLimitWatts) && powerMaxLimitWatts > 0 ? powerMaxLimitWatts : null
   };
 }
 
@@ -89,7 +90,7 @@ export async function collectGpuFacts({ platform, commandRunner } = {}) {
   }
   try {
     const result = await commandRunner.run('nvidia-smi', [
-      '--query-gpu=utilization.gpu,memory.total,memory.used,temperature.gpu,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.sw_thermal_slowdown',
+      '--query-gpu=utilization.gpu,memory.total,memory.used,temperature.gpu,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.sw_thermal_slowdown,power.limit,power.min_limit,power.max_limit',
       '--format=csv,noheader,nounits'
     ], { timeoutMs: 2500, maxOutputBytes: 2048 });
     return result.code === 0 ? (parseNvidiaLine(result.stdout) || unavailableGpu()) : unavailableGpu();

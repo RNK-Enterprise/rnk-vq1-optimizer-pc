@@ -55,6 +55,8 @@ function validResourceLimit(action) {
   return action.value === 'io-bytes-per-second' && action.limit <= MAX_LINUX_IO_BYTES_PER_SECOND && validLinuxBlockDevice(action.device);
 }
 
+function validGpuPowerLimit(value) { return Number.isFinite(value) && value >= 10 && value <= 2000; }
+
 function approvedPid(context, pid) {
   const list = context?.approvedBackgroundPids;
   return Array.isArray(list) ? list.includes(pid) : list instanceof Set ? list.has(pid) : false;
@@ -113,6 +115,7 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
         || (action.type === 'set-process-resource-limit' && action.value === 'memory-bytes')
         || (action.type === 'set-process-resource-limit' && action.value === 'cpu-percent')
         || (action.type === 'set-process-resource-limit' && action.value === 'io-bytes-per-second')
+        || action.type === 'set-gpu-policy'
         || (action.type === 'set-process-priority' && action.value === 'high')
         || (action.type === 'set-process-io-priority' && action.value === 'high');
     },
@@ -146,6 +149,9 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
           const memoryCgroup = await applyMemoryCgroupLimit(pid, action.limit, { fsImpl, cgroupRoot });
           if (memoryCgroup.ok || memoryCgroup.fallback !== true) return memoryCgroup;
           return resultFromCommand(await commandRunner.run('prlimit', ['--pid', String(pid), `--as=${action.limit}:${action.limit}`]), 'set-process-resource-limit');
+        case 'set-gpu-policy':
+          if (!validGpuPowerLimit(action.limitWatts)) return { ok: false, reason: 'GPU power limit requires a bounded watt value' };
+          return resultFromCommand(await commandRunner.run('nvidia-smi', ['--power-limit', String(action.limitWatts)]), 'set-gpu-policy');
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'linux' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });
@@ -155,7 +161,6 @@ export function createLinuxAdapter({ commandRunner, cacheCleaner, cpuCount = os.
             return { ok: false, reason: 'process stop requires an approved background process id' };
           }
           return resultFromCommand(await commandRunner.run('kill', ['-TERM', String(pid)]), 'stop-approved-process');
-        case 'set-gpu-policy':
         case 'set-memory-policy':
           return { ok: false, reason: `${action.type} is not supported by the Linux adapter` };
         default:

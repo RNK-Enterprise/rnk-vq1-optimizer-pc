@@ -76,6 +76,8 @@ function validResourceLimit(action) {
     && (action.value !== 'memory-bytes' || (action.limit >= MIN_RESOURCE_MEMORY_BYTES && action.limit <= MAX_RESOURCE_MEMORY_BYTES));
 }
 
+function validGpuPowerLimit(value) { return Number.isFinite(value) && value >= 10 && value <= 2000; }
+
 function approvedPid(context, pid) {
   const list = context?.approvedBackgroundPids;
   if (Array.isArray(list)) return list.includes(pid);
@@ -95,7 +97,8 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
     requiresAdmin(action) {
       return action.type === 'stop-approved-process'
         || action.type === 'set-process-affinity'
-        || action.type === 'set-process-resource-limit';
+        || action.type === 'set-process-resource-limit'
+        || action.type === 'set-gpu-policy';
     },
 
     collectFacts() {
@@ -130,6 +133,9 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
             '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command',
             RESOURCE_LIMIT_SCRIPT, '--', String(pid), String(action.limit), action.value
           ]), 'set-process-resource-limit');
+        case 'set-gpu-policy':
+          if (!validGpuPowerLimit(action.limitWatts)) return { ok: false, reason: 'GPU power limit requires a bounded watt value' };
+          return resultFromCommand(await commandRunner.run('nvidia-smi.exe', ['--power-limit', String(action.limitWatts)]), 'set-gpu-policy');
         case 'clear-cache': {
           const preview = await cacheCleaner.preview({ target: action.value, platform: 'win32' });
           return cacheCleaner.clean(preview, { approved: context.approved === true, dryRun: false });
@@ -140,7 +146,6 @@ export function createWindowsAdapter({ commandRunner, cacheCleaner } = {}) {
           }
           return resultFromCommand(await commandRunner.run('taskkill.exe', ['/PID', String(pid), '/T']), 'stop-approved-process');
         case 'set-process-io-priority':
-        case 'set-gpu-policy':
         case 'set-memory-policy':
           return { ok: false, reason: `${action.type} is not supported by the Windows adapter` };
         default:

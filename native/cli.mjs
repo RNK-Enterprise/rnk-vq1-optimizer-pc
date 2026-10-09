@@ -30,6 +30,7 @@ import { interpretWorkstationQuestion } from './workstation-assistant.js';
 import { interpretWorkstationQuestionWithAdapter } from './workstation-intent-adapter.js';
 import { approveWorkstationPolicy, buildWorkstationPolicyPlan } from './workstation-policy.js';
 import { applyPowerProfile, previewPowerProfile, recommendPowerProfile } from './power-manager.js';
+import { applyGpuPolicy, previewGpuPolicy } from './gpu-policy.js';
 import { createPowerMonitor } from './power-monitor.js';
 import { applyProcessStop, buildProcessOverview, previewProcessStop } from './process-manager.js';
 import { applyStartupMutation, previewStartupMutation, restoreStartupMutation } from './startup-manager.js';
@@ -295,6 +296,14 @@ export async function runPowerCommand(command, args, { adapter = createPlatformA
   return { facts, plan, result: await apply(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
 }
 
+export async function runGpuPolicyCommand(command, args, { adapter = createPlatformAdapter(), apply = applyGpuPolicy } = {}) {
+  const facts = await adapter.collectFacts();
+  const plan = previewGpuPolicy(facts, { policy: requireOption(args, 'policy') });
+  if (command === 'gpu-policy-preview') return { facts, plan };
+  if (args.confirm !== true) throw new Error('gpu-policy-apply requires --confirm');
+  return { facts, plan, result: await apply(plan, { adapter, approved: true, allowAdmin: args['allow-admin'] === true, dryRun: false }) };
+}
+
 export async function runPowerMonitorCommand(args, { adapter = createPlatformAdapter(), monitorFactory = createPowerMonitor, platform = process.platform } = {}) {
   const autoApply = args['auto-apply'] === true;
   if (autoApply && args.confirm !== true) throw new Error('power-monitor --auto-apply requires --confirm');
@@ -387,6 +396,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['policy-preview', 'policy-approve'].includes(command)) return runWorkstationPolicyCommand(command, args);
   if (command === 'power-monitor') return runPowerMonitorCommand(args);
   if (['power-preview', 'power-apply', 'power-recommend'].includes(command)) return runPowerCommand(command, args);
+  if (['gpu-policy-preview', 'gpu-policy-apply'].includes(command)) return runGpuPolicyCommand(command, args);
   if (['process-overview', 'process-stop-preview', 'process-stop-apply'].includes(command)) return runProcessCommand(command, args);
   if (['startup-preview', 'startup-apply', 'startup-restore'].includes(command)) return runStartupCommand(command, args);
   if (['media-scan', 'media-play', 'media-panel-open', 'media-metadata', 'media-read', 'media-favorite', 'media-played', 'media-playlist', 'media-export', 'media-import', 'media-playback-plan'].includes(command)) return runMediaCommand(command, args);

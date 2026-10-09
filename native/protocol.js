@@ -106,6 +106,9 @@ export function validateNativeAction(action) {
     case 'set-gpu-policy':
       requireKey(action, 'gpu.policy');
       requireChoice(action, GPU_POLICIES);
+      if ('limitWatts' in action && (!Number.isFinite(action.limitWatts) || action.limitWatts < 10 || action.limitWatts > 2000)) {
+        throw new Error('GPU power limit is outside the bounded range');
+      }
       break;
     case 'set-memory-policy':
       requireKey(action, 'memory.policy');

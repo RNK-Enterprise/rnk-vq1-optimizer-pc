@@ -81,6 +81,8 @@ node native/cli.mjs resource-limit-preview --limits '{"cpuPercent":50,"memoryByt
   --target-pids 1234
 node native/cli.mjs resource-limit-apply --limits '{"memoryBytes":8589934592}' \
   --target-pids 1234 --approve-pids 1234 --allow-admin --confirm
+node native/cli.mjs gpu-policy-preview --policy balanced
+node native/cli.mjs gpu-policy-apply --policy battery --allow-admin --confirm
 node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234,5678 --interval-seconds 10
 node native/cli.mjs game-session-monitor --game-names game.exe \
@@ -408,7 +410,10 @@ macOS process I/O priority uses the fixed `taskpolicy` background policy for
 approved targets. CPU and memory hard limits are available through the
 separate resource-limit authority when the adapter proves support. GPU hard
 caps remain unsupported, and the governor does not claim an exact restore
-without pre-change priority evidence.
+without pre-change priority evidence. `gpu-policy-preview` and
+`gpu-policy-apply` can apply a bounded NVIDIA power limit on Windows/Linux only
+when the facts layer reports current, minimum, and maximum watt limits;
+universal FPS control and non-NVIDIA caps remain unsupported.
 
 `workload-budget-preview` compares explicit CPU, memory, I/O, and GPU limits
 with observed process facts. The default priority mode can lower process and
@@ -417,7 +422,8 @@ to route bounded CPU and memory breaches through the existing resource-limit
 authority. On Linux, a hard `ioBytesPerSecond` budget is enforceable only when
 the budget also supplies an observed block-device `ioDevice` such as `8:0`;
 the adapter writes a cgroup-v2 `io.max` rule. Windows and macOS return explicit
-unsupported I/O byte-rate results, and GPU hard caps remain unsupported.
+unsupported I/O byte-rate results, and GPU percentage/FPS caps remain
+unsupported.
 
 `game-session-monitor` watches explicit game process evidence on a trigger
 interval. It can apply only approved background priority/I/O operations when
