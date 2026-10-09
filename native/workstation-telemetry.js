@@ -315,7 +315,11 @@ export function parseNetworkTelemetry(output, { platform = 'unknown' } = {}) {
     const interfaces = String(output || '').split(/\r?\n/).map((line) => { const [name, values] = line.split(':'); const fields = values?.trim().split(/\s+/); return fields?.length >= 9 ? Object.freeze({ name: name.trim(), receivedBytes: number(fields[0]), sentBytes: number(fields[8]), state: 'observed' }) : null; }).filter(Boolean);
     return Object.freeze({ available: interfaces.length > 0, interfaces: Object.freeze(interfaces), source: '/proc/net/dev' });
   }
-  const interfaces = String(output || '').split(/\r?\n/).filter((line) => line.trim() && !/^name\s/i.test(line)).map((line) => Object.freeze({ name: line.trim().split(/\s+/)[0], receivedBytes: null, sentBytes: null, state: 'observed' }));
+  const interfaces = String(output || '').split(/\r?\n/).map((line) => {
+    const fields = line.trim().split(/\s+/);
+    if (fields.length < 10 || /^name$/i.test(fields[0])) return null;
+    return Object.freeze({ name: fields[0], receivedBytes: number(fields.at(-5)), sentBytes: number(fields.at(-2)), state: 'observed' });
+  }).filter(Boolean);
   return Object.freeze({ available: interfaces.length > 0, interfaces: Object.freeze(interfaces), source: 'netstat' });
 }
 

@@ -229,7 +229,8 @@ describe('workstation network telemetry', () => {
     expect(windows.interfaces[0]).toMatchObject({ name: 'Ethernet', receivedBytes: 10, sentBytes: 20, state: 'Up' });
     expect(parseNetworkTelemetry(JSON.stringify({}), { platform: 'win32' }).interfaces[0]).toMatchObject({ name: 'unknown', state: 'unknown' });
     expect(parseNetworkTelemetry('eth0: 1 2 3 4 5 6 7 8 9', { platform: 'linux' }).interfaces[0]).toMatchObject({ name: 'eth0', receivedBytes: 1, sentBytes: 9 });
-    expect(parseNetworkTelemetry('Name Mtu Network\nen0 1500 local', { platform: 'darwin' })).toMatchObject({ available: true, interfaces: [{ name: 'en0' }] });
+    expect(parseNetworkTelemetry('Name Mtu Network Address Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll\nen0 1500 <Link#1> aa 10 0 100 20 0 200 0', { platform: 'darwin' })).toMatchObject({ available: true, interfaces: [{ name: 'en0', receivedBytes: 100, sentBytes: 200 }] });
+    expect(parseNetworkTelemetry('Name Mtu Network\nen0 1500 local', { platform: 'darwin' })).toMatchObject({ available: false, interfaces: [] });
     expect(parseNetworkTelemetry('{bad}', { platform: 'win32' })).toMatchObject({ available: false, interfaces: [] });
     expect(parseNetworkTelemetry('', { platform: 'linux' })).toMatchObject({ available: false, interfaces: [] });
     expect(parseNetworkTelemetry()).toMatchObject({ available: false, interfaces: [] });
@@ -240,7 +241,7 @@ describe('workstation network telemetry', () => {
     await expect(collectNetworkTelemetry({ platform: 'linux', fsImpl: fakeFs({}, new Set(['/proc/net/dev'])) })).resolves.toMatchObject({ source: 'proc unavailable' });
     await expect(collectNetworkTelemetry({ platform: 'win32', commandRunner: runner({ code: 0, stdout: JSON.stringify({ Name: 'Wi-Fi', ReceivedBytes: 1, SentBytes: 2 }) }) })).resolves.toMatchObject({ available: true });
     await expect(collectNetworkTelemetry({ platform: 'win32', commandRunner: runner({ code: 1, stderr: 'denied' }) })).resolves.toMatchObject({ source: 'denied' });
-    await expect(collectNetworkTelemetry({ platform: 'darwin', commandRunner: runner({ code: 0, stdout: 'Name Mtu Network\nen0 1500 local' }) })).resolves.toMatchObject({ available: true });
+    await expect(collectNetworkTelemetry({ platform: 'darwin', commandRunner: runner({ code: 0, stdout: 'Name Mtu Network Address Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll\nen0 1500 <Link#1> aa 10 0 100 20 0 200 0' }) })).resolves.toMatchObject({ available: true, interfaces: [{ receivedBytes: 100, sentBytes: 200 }] });
     await expect(collectNetworkTelemetry({ platform: 'darwin', commandRunner: { run: jest.fn().mockRejectedValue(new Error('missing')) } })).resolves.toMatchObject({ source: 'missing' });
     await expect(collectNetworkTelemetry({ platform: 'freebsd', commandRunner: runner({ code: 0 }) })).resolves.toMatchObject({ source: 'platform unsupported' });
     await expect(collectNetworkTelemetry({ platform: 'win32' })).resolves.toMatchObject({ source: 'command runner unavailable' });
