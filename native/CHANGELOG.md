@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added a cross-platform packaged-session user-data path resolver for Windows,
+  Linux, and macOS. Packaged dashboard launchers now use isolated per-user
+  history and report paths instead of requiring manual path arguments.
+
 - Added the reproducible cross-platform runtime package boundary and fixed
   Windows, Linux, and macOS dashboard launchers; tray lifecycle remains outside
   this public authority.

@@ -54,8 +54,8 @@ export function buildWorkstationPackagePlan({ platform = process.platform, sourc
 export function renderWorkstationLauncher(platform) {
   const normalizedPlatform = text(platform)?.toLowerCase();
   if (!PLATFORMS.has(normalizedPlatform)) throw new Error('unsupported workstation package platform');
-  if (normalizedPlatform === 'win32') return '@echo off\r\nnode "%~dp0native\\cli.mjs" steward-dashboard %*\r\n';
-  return '#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "${RNK_NODE:-node}" "$SCRIPT_DIR/native/cli.mjs" steward-dashboard "$@"\n';
+  if (normalizedPlatform === 'win32') return '@echo off\r\nnode "%~dp0native\\cli.mjs" steward-dashboard --packaged %*\r\n';
+  return '#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "${RNK_NODE:-node}" "$SCRIPT_DIR/native/cli.mjs" steward-dashboard --packaged "$@"\n';
 }
 
 function validPlan(plan) {

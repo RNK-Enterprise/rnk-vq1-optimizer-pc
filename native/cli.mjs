@@ -55,6 +55,7 @@ import {
 import { buildMediaPanelPlan, runMediaCommand, runMediaPlayerCommand } from './cli-media.mjs';
 import { applyReportViewer, buildReportViewerPlan } from './report-viewer.js';
 import { applyWorkstationShell, buildWorkstationShellPlan } from './workstation-shell.js';
+import { defaultWorkstationPaths } from './workstation-paths.js';
 
 export function agentFromArgs(args, { adapter = createPlatformAdapter(), env = process.env } = {}) {
   return new NativeOptimizerAgent({
@@ -156,8 +157,10 @@ export async function runReportViewerCommand(args, { apply = applyReportViewer, 
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }
 
-export async function runWorkstationShellCommand(args, { apply = applyWorkstationShell, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath } = {}) {
-  const plan = buildWorkstationShellPlan({ platform, historyPath: requireOption(args, 'path'), reportPath: requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
+export async function runWorkstationShellCommand(args, { apply = applyWorkstationShell, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath, env = process.env, pathResolver = defaultWorkstationPaths } = {}) {
+  const defaults = args.packaged === true ? pathResolver({ platform, env }) : null;
+  if (defaults && defaults.state !== 'ready') throw new Error(defaults.reason);
+  const plan = buildWorkstationShellPlan({ platform, historyPath: defaults?.historyPath || requireOption(args, 'path'), reportPath: defaults?.reportPath || requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
   if (args.confirm !== true) return plan;
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }

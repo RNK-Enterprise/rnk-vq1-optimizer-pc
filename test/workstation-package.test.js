@@ -27,8 +27,10 @@ describe('workstation package boundary', () => {
 
   test('renders shell-safe platform launchers and validates options', () => {
     expect(renderWorkstationLauncher('win32')).toContain('native\\cli.mjs');
+    expect(renderWorkstationLauncher('win32')).toContain('--packaged');
     expect(renderWorkstationLauncher('linux')).toContain('RNK_NODE');
-    expect(renderWorkstationLauncher('darwin')).toContain('steward-dashboard');
+    expect(renderWorkstationLauncher('linux')).toContain('--packaged');
+    expect(renderWorkstationLauncher('darwin')).toContain('steward-dashboard --packaged');
     expect(() => renderWorkstationLauncher('freebsd')).toThrow('unsupported');
     expect(parseWorkstationPackageArgs(['--platform', 'linux', '--source', '/repo', '--output', '/tmp/out', '--version', '3.1.1', '--dry-run'])).toMatchObject({ platform: 'linux', dryRun: true });
     expect(() => parseWorkstationPackageArgs([])).toThrow('--output');

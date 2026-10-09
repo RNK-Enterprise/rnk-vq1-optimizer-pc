@@ -13,5 +13,7 @@
   runtime bundles after build and manifest verification.
 - Normalized runtime archive ordering, timestamps, and ownership metadata for
   reproducible release artifacts.
+- Fixed packaged dashboard launchers to pass the packaged-session flag so a
+  fresh bundle resolves its per-user history and HTML report paths directly.
 - Kept services, listeners, tray lifecycle, and privileged behavior outside the
   package builder's authority.
