@@ -266,6 +266,12 @@ download review, duplicate groups, and SHA-256 verification. It requires an
 explicit root or volume fact set, does not start or intercept downloads, and
 does not move or delete files.
 
+Storage Pressure Guard package-cache roots include explicit npm, pip, Yarn,
+pnpm, and Cargo cache locations when present. Browser automation cache roots
+cover Puppeteer, Selenium, and Playwright generated-cache locations. These
+roots remain category-allow-listed, age-bounded, and protected by the same
+preview and approval boundary.
+
 `download-monitor` compares bounded scans of an explicit root and reports
 active, stalled, incomplete, and completed entries with measured byte rate. It
 also attaches current Storage Pressure Guard evidence and returns

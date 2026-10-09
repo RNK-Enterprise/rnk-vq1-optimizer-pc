@@ -16,6 +16,9 @@
   only a dry run and applies no system action.
 - Extended audited before/apply/verify fact snapshots with bounded mounted
   volume evidence so storage and placement actions retain multi-volume proof.
+- Expanded explicit regenerable cache-root evidence for pip, Yarn, pnpm, Cargo,
+  and Playwright alongside the existing npm, Puppeteer, and Selenium roots;
+  no active runtime or user-data discovery was added.
 - Added an approval-gated, reversible user-level daily-report scheduler for
   Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
   schedule artifacts are fixed, local, and cleaned up on failed installation.

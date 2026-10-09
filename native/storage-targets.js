@@ -55,13 +55,22 @@ export function resolveStorageCategoryRoots({
     'package-cache': [
       env.NPM_CONFIG_CACHE,
       joinIf(local, pathImpl, 'npm-cache'),
-      joinIf(user, pathImpl, '.npm')
+      joinIf(user, pathImpl, '.npm'),
+      env.PIP_CACHE_DIR,
+      env.YARN_CACHE_FOLDER,
+      env.PNPM_STORE_DIR,
+      joinIf(user, pathImpl, '.cache', 'pip'),
+      joinIf(user, pathImpl, '.cache', 'yarn'),
+      joinIf(user, pathImpl, '.cache', 'pnpm'),
+      joinIf(user, pathImpl, '.cargo', 'registry', 'cache')
     ],
     'browser-automation-cache': [
       joinIf(local, pathImpl, 'puppeteer', 'Cache'),
       joinIf(user, pathImpl, '.cache', 'puppeteer'),
       joinIf(local, pathImpl, 'selenium'),
-      joinIf(user, pathImpl, '.cache', 'selenium')
+      joinIf(user, pathImpl, '.cache', 'selenium'),
+      joinIf(local, pathImpl, 'ms-playwright'),
+      joinIf(user, pathImpl, '.cache', 'ms-playwright')
     ],
     'gpu-shader-cache': [
       joinIf(local, pathImpl, 'D3DSCache'),

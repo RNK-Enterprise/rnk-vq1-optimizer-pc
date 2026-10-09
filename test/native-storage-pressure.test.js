@@ -103,7 +103,8 @@ describe('native storage target policy', () => {
     });
     expect(categories['temporary-files']).toEqual([env.TEMP, env.TMP, path.join(env.LOCALAPPDATA, 'Temp')]);
     expect(categories['package-cache']).toContain(path.join(env.USERPROFILE, '.npm'));
-    expect(categories['browser-automation-cache']).toHaveLength(4);
+    expect(categories['browser-automation-cache']).toHaveLength(6);
+    expect(categories['browser-automation-cache']).toContain(path.join(env.LOCALAPPDATA, 'ms-playwright'));
     expect(categories['gpu-shader-cache']).toHaveLength(5);
     expect(categories['windows-update-download'][0]).toContain('SoftwareDistribution');
     expect(categories['abandoned-runtime-remnants']).toEqual([path.join(root, 'abandoned')]);
@@ -111,6 +112,7 @@ describe('native storage target policy', () => {
     expect(resolveStorageCategoryRoots({ platform: 'win32', env: {} })['windows-update-download'][0]).toContain('C:');
     expect(resolveStorageCategoryRoots({ platform: 'linux', env: {} })['windows-update-download']).toEqual([]);
     expect(resolveStorageCategoryRoots({ platform: 'linux', env: { HOME: root } })['package-cache']).toContain(path.join(root, '.npm'));
+    expect(resolveStorageCategoryRoots({ platform: 'linux', env: { HOME: root } })['package-cache']).toContain(path.join(root, '.cargo', 'registry', 'cache'));
     expect(resolveStorageCategoryRoots({ platform: 'linux', env: { USERPROFILE: root } })['package-cache']).toContain(path.join(root, '.npm'));
     expect(resolveStorageCategoryRoots({ platform: 'linux', env: {}, abandonedRuntimeRoots: 'not-a-list' })['temporary-files']).toEqual([]);
     expect(defaultProtectedStorageRoots({ platform: 'win32', env }).some((item) => item.endsWith('System32'))).toBe(true);
