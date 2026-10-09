@@ -243,3 +243,10 @@
 - Added preview-first cache cleanup with explicit approval and symlink refusal.
 - Added a separate preview/confirm/rollback-capable file organization path.
 - Added facts, optimization, cache, and organizer CLI commands.
+## Unreleased
+
+- Expanded the local HTML workstation report dashboard with bounded volume,
+  drive-health, network-rate, workload-contention, cleanup, and policy evidence.
+  Missing evidence remains visibly `unknown` or an explicit empty-state row;
+  the dashboard remains self-contained and does not transmit report data.
+

@@ -286,7 +286,10 @@ Use `--output-path PATH --format json|markdown|html` with `steward-schedule`, or
 `--report-output-path PATH --format json|markdown|html` with `steward-daemon`, to
 persist the daily report as a bounded local artifact. HTML is a self-contained
 browser-readable dashboard with escaped report data. No external delivery is
-performed.
+performed. The dashboard includes the current storage-volume table and
+evidence for drive health, network rates/connections, development and gaming
+contention, cleanup recovery, and policy state; missing evidence remains
+explicitly unknown.
 
 Use `node native/cli.mjs report-open --path PATH --confirm` to open one explicit
 local HTML report through the fixed platform default opener. The command does
