@@ -408,9 +408,13 @@ npm run pc:vq1:check
 ```
 
 The Jest configuration is a strict 100% statements, branches, functions, and
-lines gate over every tracked JavaScript runtime file in `pc/`, `native/`,
-and the retained PC host/client modules. No runtime path is excluded from
-coverage. The CI workflow runs the same commands from a clean checkout.
+lines gate over every collected JavaScript (`.js`) runtime authority file in
+`pc/`, `native/`, and the retained PC host/client modules. The native and
+script ESM CLI adapters (`.mjs`) are intentionally kept as thin dispatch
+surfaces; CI applies ESLint and `node --check` to every one of them. The
+benchmark adapter is observational tooling and is not part of the runtime
+coverage authority. The CI workflow runs these checks from a clean checkout;
+the `.mjs` boundary is not presented as Jest coverage.
 
 The benchmark is observational evidence only. A passing local suite does not
 prove a clean-machine install, Windows execution, a live gateway, or a real

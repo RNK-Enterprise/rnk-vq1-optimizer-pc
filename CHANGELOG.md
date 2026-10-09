@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Clarified the public verification boundary: the strict Jest 100% gate covers
+  every collected JavaScript authority module, while all ESM CLI adapters are
+  independently linted and syntax-checked without being misreported as Jest
+  coverage.
 - Added cross-platform Linux swap-pressure observation as system-managed
   evidence without granting pagefile or swap cleanup authority.
 - Extended system-managed swap-pressure observation to macOS through fixed
