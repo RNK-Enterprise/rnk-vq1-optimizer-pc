@@ -188,7 +188,7 @@ export async function runDriveBenchmarkCommand(args, { benchmark = benchmarkDriv
 
 export async function runNetworkOverviewCommand(args, { adapter = createPlatformAdapter() } = {}) {
   const facts = await adapter.collectFacts();
-  const samples = typeof args.samples === 'string' ? jsonOption(args, 'samples') : [];
+  const samples = typeof args.samples === 'string' ? jsonOption(args, 'samples') : facts.networkProcesses?.processes || [];
   return { facts, plan: buildNetworkContentionPlan({ samples, connections: facts.networkConnections?.connections, gamePid: args['game-pid'] === undefined ? null : numberOption(args, 'game-pid', null), latencyMs: args['latency-ms'] === undefined ? null : numberOption(args, 'latency-ms', null) }) };
 }
 

@@ -149,6 +149,8 @@ describe('native top-level CLI adapter', () => {
 
     const networkAdapter = { collectFacts: jest.fn(async () => ({ networkConnections: { connections: [] }, network: {} })) };
     await expect(runNetworkOverviewCommand({ samples: '[]', 'game-pid': '1', 'latency-ms': '20' }, { adapter: networkAdapter })).resolves.toMatchObject({ plan: expect.any(Object) });
+    await expect(runNetworkOverviewCommand({}, { adapter: networkAdapter })).resolves.toMatchObject({ plan: { usage: { available: false } } });
+    await expect(runNetworkOverviewCommand({}, { adapter: { collectFacts: jest.fn(async () => ({ networkProcesses: { processes: [{ pid: 7, sentBytesPerSecond: 1, receivedBytesPerSecond: 2 }] }, networkConnections: { connections: [] } })) } })).resolves.toMatchObject({ plan: { usage: { available: true } } });
     await expect(runNetworkRateMonitorCommand({ 'interval-seconds': '1' }, { adapter: networkAdapter, monitorFactory })).resolves.toEqual({ stopped: true });
     await expect(runProcessRateMonitorCommand({ 'interval-seconds': '1' }, { adapter: { collectFacts: jest.fn(async () => ({ processes: [] })) }, monitorFactory })).resolves.toEqual({ stopped: true });
 

@@ -148,6 +148,7 @@ export async function collectSystemFacts({ platform = process.platform, osImpl =
   facts.fans = telemetry.fans;
   facts.network = telemetry.network;
   facts.networkConnections = telemetry.networkConnections;
+  facts.networkProcesses = telemetry.networkProcesses;
   facts.startup = telemetry.startup;
   facts.telemetry = telemetry;
   facts.drives = drives;
