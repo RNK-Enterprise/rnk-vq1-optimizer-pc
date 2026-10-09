@@ -12,6 +12,9 @@
   advisory browser adapter. It exchanges only size and mount facts, has no HTTP
   listener, and now supports explicitly configured cancellation at the browser
   filename-determination boundary without rewriting downloads.
+- Added a Windows, Linux, and macOS CI host-runtime matrix that runs the strict
+  verification gate and exercises live facts and mounted-volume probes on each
+  runner; target-machine and administrator evidence remain separate.
 - Added bounded NVIDIA GPU power-policy preview/apply for supported Windows and
   Linux hosts when current, minimum, and maximum watt limits are observed;
   universal frame-rate and non-NVIDIA GPU caps remain unsupported.

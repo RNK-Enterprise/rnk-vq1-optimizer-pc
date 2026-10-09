@@ -49,3 +49,23 @@ jobs:
             exit 1
           }
           Write-Output 'PowerShell parse OK'
+
+  host-runtime:
+    name: Host runtime (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: node native/cli.mjs facts
+      - run: node native/cli.mjs volume-storage
