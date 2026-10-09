@@ -42,7 +42,7 @@ export function createDownloadExtension({ api, destinationMount = null, hostName
     if (!record(result) || !ENFORCEABLE_STATES.includes(result.state)) return;
     notify(action ? { downloadId: item.id, result, action } : { downloadId: item.id, result });
   }
-  function observe(item, onResult = () => {}) {
+  function observe(item, onResult) {
     const port = browserApi.runtime.connectNative(hostName);
     port.onMessage?.addListener((result) => { onResult(result); port.disconnect?.(); });
     port.onDisconnect?.addListener(() => {});

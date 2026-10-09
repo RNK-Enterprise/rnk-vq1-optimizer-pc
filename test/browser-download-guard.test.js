@@ -68,6 +68,12 @@ describe('browser download guard', () => {
     await new Promise((resolve) => setImmediate(resolve));
     expect(h.cancelled).toEqual([12]);
     expect(h.notifications).toEqual([{ downloadId: 12, result: { state: 'insufficient-space' }, action: 'cancelled' }]);
+    listener({ id: 14, fileSize: 99 }, jest.fn());
+    h.ports[1].emit({ state: 'allow' });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(h.notifications).toHaveLength(1);
+    listener({ id: 15, fileSize: 99 });
+    h.ports[2].emit({ state: 'allow' });
     extension.detach();
     expect(h.filenameListeners.size).toBe(0);
   });
@@ -77,5 +83,17 @@ describe('browser download guard', () => {
     expect(() => createDownloadExtension({ api: h.api, enforceStates: ['allow'] })).toThrow('enforceStates');
     expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, cancel: null } }, enforceStates: ['redirect'] })).toThrow('cancellation');
     expect(() => createDownloadExtension({ api: { ...h.api, downloads: { ...h.api.downloads, onDeterminingFilename: null } }, enforceStates: ['redirect'] })).toThrow('filename determination');
+  });
+
+  test('reports cancellation failures without hiding the preflight decision', async () => {
+    const h = browserHarness();
+    h.api.downloads.cancel.mockRejectedValueOnce(new Error('browser denied'));
+    const extension = createDownloadExtension({ api: h.api, enforceStates: ['redirect'], notify: (item) => h.notifications.push(item) });
+    extension.attach();
+    const listener = [...h.filenameListeners][0];
+    listener({ id: 13, fileSize: 99 }, jest.fn());
+    h.ports[0].emit({ state: 'redirect' });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(h.notifications).toEqual([{ downloadId: 13, result: { state: 'redirect' }, action: 'cancel-failed' }]);
   });
 });
