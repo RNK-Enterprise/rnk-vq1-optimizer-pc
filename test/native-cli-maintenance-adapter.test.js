@@ -306,6 +306,10 @@ describe('native CLI maintenance adapter', () => {
     await expect(runNetworkMonitorCommand({})).rejects.toThrow('platform adapter');
     setImmediate(() => process.emit('SIGINT'));
     await expect(runNetworkMonitorCommand({ 'interval-seconds': '1' }, { adapter: { collectFacts: async () => ({ networkProcesses: { processes: [] } }) } })).resolves.toEqual({ stopped: true });
+    const signalEmitter = { once: jest.fn((event, listener) => listener()) };
+    const monitor = { collect: jest.fn(), start: jest.fn(), stop: jest.fn() };
+    const signalMonitorFactory = (config) => ({ ...monitor, collect: jest.fn(() => config.collectSample()) });
+    await expect(runNetworkMonitorCommand({ 'interval-seconds': '1' }, { adapter: { collectFacts: async () => ({}) }, monitorFactory: signalMonitorFactory, signalEmitter })).resolves.toEqual({ stopped: true });
     expect(stdout).toHaveBeenCalled();
   });
 });

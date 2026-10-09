@@ -225,7 +225,9 @@ describe('native top-level CLI adapter', () => {
     const cliCleaner = { preview: jest.fn(async () => ({ target: 'user-temp', platform: 'win32', roots: [], items: [] })) };
     const cliStorageGuard = { preview: jest.fn(async () => ({ state: 'review-ready', plan: { selected: [] } })) };
     const cliDownloadGuard = { preflight: jest.fn(() => ({ state: 'observation-required' })) };
-    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, networkMonitorFactory: monitorFactory, platform: 'win32' };
+    const cliNetworkMonitorFactory = () => ({ collect: async () => {}, start: jest.fn(), stop: jest.fn() });
+    const cliNetworkMonitorSignalEmitter = { once: jest.fn((event, listener) => listener()) };
+    const cliOptions = { adapter: cliAdapter, commandRunner: cliCommandRunner, cacheCleaner: cliCleaner, storageGuard: cliStorageGuard, downloadGuard: cliDownloadGuard, networkMonitorFactory: cliNetworkMonitorFactory, networkMonitorSignalEmitter: cliNetworkMonitorSignalEmitter, platform: 'win32' };
     for (const argv of routed.filter((argv) => argv[0] !== 'optimize')) await expect(runCli(argv, cliOptions)).resolves.toBeDefined();
     await expect(runCli(['optimize'], cliOptions)).rejects.toThrow('gateway URL is required');
     await expect(runCli(['optimize', `--history-path=${path.join(root, 'history.jsonl')}`], cliOptions)).rejects.toThrow('gateway URL is required');

@@ -368,7 +368,8 @@ export async function runDownloadMonitorCommand(args, {
 
 export async function runNetworkMonitorCommand(args, {
   adapter,
-  monitorFactory = createNetworkMonitor
+  monitorFactory = createNetworkMonitor,
+  signalEmitter = process
 } = {}) {
   if (!adapter || typeof adapter.collectFacts !== 'function') throw new TypeError('network monitor requires a platform adapter');
   const monitor = monitorFactory({
@@ -390,8 +391,8 @@ export async function runNetworkMonitorCommand(args, {
   monitor.start();
   await new Promise((resolve) => {
     const stop = () => { monitor.stop(); resolve(); };
-    process.once('SIGINT', stop);
-    process.once('SIGTERM', stop);
+    signalEmitter.once('SIGINT', stop);
+    signalEmitter.once('SIGTERM', stop);
   });
   return { stopped: true };
 }
