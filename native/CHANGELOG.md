@@ -6,6 +6,9 @@
   inventory devices without changing normal inventory-only facts collection.
 - Corrected the Linux mounted-volume command so GNU `df` no longer receives the
   mutually exclusive `-P` and `--output` flags.
+- Added a self-contained escaped HTML daily-report dashboard format for local
+  scheduled delivery; it opens in a browser without adding a server or network
+  transport.
 - Added the bounded cross-platform `volume-storage` observer and system-facts
   integration for mounted-volume free/total/used evidence. PowerShell
   `Get-Volume`, Linux `df`, and macOS `df` remain fixed read-only commands;

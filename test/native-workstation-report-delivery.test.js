@@ -3,13 +3,15 @@ import { createWorkstationReportFileDelivery, formatWorkstationReport, WORKSTATI
 const report = { generatedAt: '2026-10-08T12:00:00.000Z', storage: { latestFreeBytes: 5 } };
 
 describe('native workstation report delivery', () => {
-  test('formats explicit JSON and Markdown artifacts', () => {
+  test('formats explicit JSON, Markdown, and HTML artifacts', () => {
     expect(formatWorkstationReport(report)).toContain('"latestFreeBytes": 5');
     expect(formatWorkstationReport(report, 'json')).toMatch(/^\{/);
     expect(formatWorkstationReport(report, 'markdown')).toMatch(/^# Daily Workstation Report/);
+    expect(formatWorkstationReport({ generatedAt: '<now>', storage: { latestFreeBytes: 5 }, memory: {}, thermals: {}, battery: {}, priorities: ['review&protect'] }, 'html')).toContain('&lt;now&gt;');
+    expect(formatWorkstationReport({}, 'html')).toContain('<li>no-change</li>');
     expect(formatWorkstationReport({}, 'markdown')).toMatch(/Generated: unknown/);
     expect(() => formatWorkstationReport(null)).toThrow('required');
-    expect(() => formatWorkstationReport(report, 'html')).toThrow('Unsupported');
+    expect(() => formatWorkstationReport(report, 'pdf')).toThrow('Unsupported');
     expect(() => formatWorkstationReport(report, '')).not.toThrow();
   });
 
@@ -20,8 +22,10 @@ describe('native workstation report delivery', () => {
     const receipt = await delivery.deliver(report);
     expect(receipt).toMatchObject({ state: 'delivered', path: '/tmp/report.md', format: 'markdown' });
     expect(fsImpl.writeFile).toHaveBeenCalledWith('/tmp/report.md', expect.stringContaining('# Daily Workstation Report'), { encoding: 'utf8', mode: 0o600 });
+    const htmlDelivery = createWorkstationReportFileDelivery({ filePath: '/tmp/report.html', format: 'html', fsImpl });
+    await expect(htmlDelivery.deliver({ generatedAt: 'now', priorities: [] })).resolves.toMatchObject({ state: 'delivered', format: 'html' });
     expect(() => createWorkstationReportFileDelivery()).toThrow('output path');
-    expect(() => createWorkstationReportFileDelivery({ filePath: '/tmp/report', format: 'html' })).toThrow('Unsupported');
+    expect(() => createWorkstationReportFileDelivery({ filePath: '/tmp/report', format: 'pdf' })).toThrow('Unsupported');
     expect(() => createWorkstationReportFileDelivery({ filePath: '/tmp/report', maxBytes: 1023 })).toThrow('output limit');
     expect(() => createWorkstationReportFileDelivery({ filePath: '/tmp/report', maxBytes: 10 * 1024 * 1024 + 1 })).toThrow('output limit');
     expect(() => createWorkstationReportFileDelivery({ filePath: '/tmp/report', fsImpl: {} })).toThrow('file writer');

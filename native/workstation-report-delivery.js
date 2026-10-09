@@ -11,16 +11,27 @@ import fs from 'fs/promises';
 
 export const WORKSTATION_REPORT_DELIVERY_VERSION = 1;
 const MAX_REPORT_BYTES = 10 * 1024 * 1024;
-const FORMATS = Object.freeze(['json', 'markdown']);
+const FORMATS = Object.freeze(['json', 'markdown', 'html']);
 
 function record(value) { return Boolean(value) && typeof value === 'object' && !Array.isArray(value); }
 function text(value) { return typeof value === 'string' && value.trim() ? value.trim() : null; }
 function formatName(value) { const normalized = text(value)?.toLowerCase() || 'json'; if (!FORMATS.includes(normalized)) throw new Error(`Unsupported workstation report format: ${normalized}`); return normalized; }
+function html(value) { return String(value ?? 'unknown').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+function htmlReport(report) {
+  const storage = record(report.storage) ? report.storage : {};
+  const memory = record(report.memory) ? report.memory : {};
+  const thermals = record(report.thermals) ? report.thermals : {};
+  const battery = record(report.battery) ? report.battery : {};
+  const priorities = Array.isArray(report.priorities) ? report.priorities.filter((item) => typeof item === 'string').slice(0, 3) : [];
+  const items = priorities.length ? priorities.map((item) => `<li>${html(item)}</li>`).join('') : '<li>no-change</li>';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Daily Workstation Report</title><style>body{font:16px system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;background:#f5f7fb;color:#172033}main{display:grid;gap:1rem}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}.card{background:#fff;border:1px solid #dbe2ee;border-radius:.7rem;padding:1rem}.label{color:#56637a;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}ul{margin:.5rem 0 0;padding-left:1.2rem}pre{background:#101827;color:#d7e2f2;padding:1rem;overflow:auto;border-radius:.7rem}</style></head><body><main><header><h1>Daily Workstation Report</h1><p>Generated: ${html(report.generatedAt)}</p></header><section class="cards"><article class="card"><div class="label">Storage free</div><div>${html(storage.latestFreeBytes)} bytes</div></article><article class="card"><div class="label">Memory peak</div><div>${html(memory.peakUsedPercent)}%</div></article><article class="card"><div class="label">Peak thermal</div><div>${html(thermals.peakTemperatureC)} C</div></article><article class="card"><div class="label">Battery health</div><div>${html(battery.minimumHealthPercent)}%</div></article></section><section class="card"><div class="label">Top priorities</div><ul>${items}</ul></section><details><summary>Full report data</summary><pre>${html(JSON.stringify(report, null, 2))}</pre></details></main></body></html>\n`;
+}
 
 export function formatWorkstationReport(report, format = 'json') {
   if (!record(report)) throw new TypeError('Workstation report is required');
   const normalized = formatName(format);
   if (normalized === 'json') return `${JSON.stringify(report, null, 2)}\n`;
+  if (normalized === 'html') return htmlReport(report);
   const title = text(report.generatedAt) || 'unknown';
   return `# Daily Workstation Report\n\nGenerated: ${title}\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n`;
 }

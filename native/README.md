@@ -228,9 +228,10 @@ Task Scheduler, a Linux systemd user timer, or a macOS launchd agent. The receip
 from apply is consumed by `report-schedule-restore --confirm`; failed artifact
 installation is cleaned up and no privileged service is created.
 
-Pass `--output-path PATH --format json|markdown` to persist the delivered report
-as a bounded local artifact. `steward-daemon` accepts the corresponding
-`--report-output-path PATH --format json|markdown` option. The file sink is
+Pass `--output-path PATH --format json|markdown|html` to persist the delivered
+report as a bounded local artifact. `steward-daemon` accepts the corresponding
+`--report-output-path PATH --format json|markdown|html` option. HTML is a
+self-contained browser-readable dashboard with escaped data. The file sink is
 local-only and does not upload or notify external services.
 
 `steward-daemon` combines the observation and daily-report loops in one

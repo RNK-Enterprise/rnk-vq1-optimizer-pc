@@ -282,9 +282,10 @@ and remains active only while the command is running. The separate
 user-level Windows Task Scheduler task, Linux systemd user timer, or macOS
 launchd agent; restore consumes its receipt and no privileged service is used.
 
-Use `--output-path PATH --format json|markdown` with `steward-schedule`, or
-`--report-output-path PATH --format json|markdown` with `steward-daemon`, to
-persist the daily report as a bounded local artifact. No external delivery is
+Use `--output-path PATH --format json|markdown|html` with `steward-schedule`, or
+`--report-output-path PATH --format json|markdown|html` with `steward-daemon`, to
+persist the daily report as a bounded local artifact. HTML is a self-contained
+browser-readable dashboard with escaped report data. No external delivery is
 performed.
 
 `steward-daemon` combines the observation and daily-report loops in one
