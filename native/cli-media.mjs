@@ -9,6 +9,7 @@
 import { createCommandRunner } from './command-runner.js';
 import { createMediaLibrary, scanMediaRoot } from './media-library.js';
 import { buildMediaPanelPlan, createMediaPlayer } from './media-player.js';
+import { createMediaSession } from './media-session.js';
 import { applyMediaPlayback, buildMediaPlaybackPlan } from './media-playback.js';
 import { applyMediaPanelOpen, buildMediaPanelOpenPlan } from './media-panel.js';
 import { collectMediaMetadata } from './media-metadata.js';
@@ -47,6 +48,17 @@ export async function runMediaCommand(command, args) {
 
 export async function runMediaPlayerCommand(args) {
   const queue = JSON.parse(requireOption(args, 'tracks'));
+  if (args.action === 'play') {
+    const session = createMediaSession({
+      queue,
+      initial: typeof args.initial === 'string' ? JSON.parse(args.initial) : {},
+      platform: process.platform,
+      commandRunner: createCommandRunner(),
+      approved: args.confirm === true,
+      dryRun: args.confirm !== true
+    });
+    return session.play();
+  }
   const player = createMediaPlayer({ queue, initial: typeof args.initial === 'string' ? JSON.parse(args.initial) : {} });
   const action = args.action || 'read';
   if (action === 'read') return player.read();

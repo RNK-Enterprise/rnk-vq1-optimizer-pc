@@ -240,6 +240,12 @@ also attaches current Storage Pressure Guard evidence and returns
 emergency free-space pressure. It is trigger-based observation only; it does
 not intercept downloads or change destination, bandwidth, or file state.
 
+`media-player --action play --tracks ... --confirm` uses the selected local
+track from the deterministic queue and delegates only to the fixed platform
+default-player opener. Without confirmation it returns a preview or approval
+result; the optimizer does not embed a decoder or claim control over external
+player state.
+
 `network-overview` combines interface facts with optional explicit per-process
 rates and latency to identify gaming/download contention. Per-process
 bandwidth remains unavailable when the host does not provide counters, and no
