@@ -228,6 +228,9 @@ never recursively deletes a directory because it is large.
 Linux and macOS system-drive pressure use fixed read-only `df` collectors;
 Windows pagefile evidence remains separate from reclaimable storage.
 
+Multiple abandoned-runtime roots can be supplied explicitly as a comma-separated
+`--abandoned-root PATH1,PATH2` value; the category remains approval-gated.
+
 The live storage monitor also retains bounded in-process growth evidence. Its
 output identifies falling free space and reclaimable categories whose observed
 bytes are increasing; this does not add scan, move, or delete authority.

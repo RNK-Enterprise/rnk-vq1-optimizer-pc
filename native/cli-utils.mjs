@@ -113,7 +113,9 @@ export async function storageOptionsFromArgs(args) {
     allowUnsafeCategories: args['allow-unsafe'] === true,
     allowAdmin: args['allow-admin'] === true,
     protectedRoots: [...configured.roots, ...requested],
-    abandonedRuntimeRoots: args['abandoned-root'] ? [args['abandoned-root']] : []
+    abandonedRuntimeRoots: typeof args['abandoned-root'] === 'string'
+      ? args['abandoned-root'].split(',').map((value) => value.trim()).filter(Boolean)
+      : []
   };
 }
 

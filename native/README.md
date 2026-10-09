@@ -178,6 +178,10 @@ or document roots in a path-only registry. Pass the same `--protected-store`
 to Storage Pressure Guard commands to load it. Registry changes require
 `--confirm`; malformed or unavailable registries fail closed.
 
+Pass multiple abandoned-runtime roots as a comma-separated
+`--abandoned-root PATH1,PATH2` value. Those roots remain review-only until the
+category is explicitly enabled and approved.
+
 The workstation steward also exposes an append-only history store and a
 cross-platform observation monitor. `steward-history` supports read, append,
 rollback-preview, and quarantine-preview operations; `steward-monitor` records
