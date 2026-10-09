@@ -21,6 +21,7 @@ function compactFacts(facts) {
     memory: record(source.memory) ? source.memory : null,
     gpu: record(source.gpu) ? source.gpu : null,
     storage: Array.isArray(source.storage) ? source.storage.slice(0, 16) : [],
+    volumes: record(source.volumes) && Array.isArray(source.volumes.volumes) ? source.volumes.volumes.slice(0, 32) : [],
     pagefile: record(source.pagefile) ? source.pagefile : null,
     storagePressure: record(source.storagePressure) ? source.storagePressure : null,
     battery: record(source.battery) ? source.battery : null,

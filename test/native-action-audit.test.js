@@ -41,7 +41,7 @@ describe('native action audit', () => {
     expect(result.report).toEqual({ dryRun: true, applied: [], wouldApply: [] });
     expect(result.history.map((entry) => entry.event)).toEqual(['observation', 'preview', 'apply', 'verify']);
     expect(h.historyStore.append).toHaveBeenCalledTimes(4);
-    expect(result.verification.before).toMatchObject({ platform: 'linux', processCount: 1, startupCount: 1 });
+    expect(result.verification.before).toMatchObject({ platform: 'linux', processCount: 1, startupCount: 1, volumes: [] });
     expect(result.verification.after).toMatchObject({ platform: 'unknown', processCount: 0, startupCount: 0 });
     expect(h.agent.applyPlan).toHaveBeenCalledWith(plan, { dryRun: true });
   });
@@ -50,11 +50,13 @@ describe('native action audit', () => {
     const h = harness();
     const audited = createAuditedNativeAgent({ ...h, now: () => 200 });
     const result = await audited.applyPlan({ ...plan, planId: '' }, { beforeFacts: null, approvedActions: true });
-    expect(result.verification.before).toMatchObject({ platform: 'unknown', storage: [], network: null });
+    expect(result.verification.before).toMatchObject({ platform: 'unknown', storage: [], volumes: [], network: null });
     expect(h.agent.collectFacts).toHaveBeenCalledTimes(1);
     expect(h.agent.applyPlan).toHaveBeenCalledWith({ ...plan, planId: '' }, { approvedActions: true });
     const sparse = await audited.applyPlan(plan, { beforeFacts: { thermals: {}, network: {} } });
     expect(sparse.verification.before).toMatchObject({ thermals: { maxTemperatureC: null }, network: { interfaces: [] } });
+    const withVolumes = await audited.applyPlan(plan, { beforeFacts: { volumes: { volumes: [{ mount: 'C:' }, { mount: 'E:' }] } } });
+    expect(withVolumes.verification.before.volumes).toEqual([{ mount: 'C:' }, { mount: 'E:' }]);
   });
 
   test('optimizes through the audited path and propagates history failures', async () => {

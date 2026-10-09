@@ -14,6 +14,8 @@
 - Extended the observational host benchmark's cache-reclamation evidence with
   bounded byte estimates in addition to candidate counts; it still performs
   only a dry run and applies no system action.
+- Extended audited before/apply/verify fact snapshots with bounded mounted
+  volume evidence so storage and placement actions retain multi-volume proof.
 - Added an approval-gated, reversible user-level daily-report scheduler for
   Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
   schedule artifacts are fixed, local, and cleaned up on failed installation.
