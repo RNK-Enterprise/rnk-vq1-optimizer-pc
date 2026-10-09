@@ -42,18 +42,50 @@ function parseTraceLine(line) {
   return { pid: processId, name: fields.slice(2, -3).join(' ') || 'unknown', sentBytesPerSecond: sent * 1024, receivedBytesPerSecond: received * 1024 };
 }
 
+function csvFields(line) {
+  return String(line).split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map((field) => field.trim().replace(/^"|"$/g, ''));
+}
+
+function parseNettop(output, platform) {
+  const lines = String(output || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const headerIndex = lines.findIndex((line) => {
+    const fields = csvFields(line).map((field) => field.toLowerCase());
+    return fields.includes('pid') && fields.includes('bytes_in') && fields.includes('bytes_out');
+  });
+  if (headerIndex < 0) return unavailable(platform, 'nettop CSV header unavailable');
+  const header = csvFields(lines[headerIndex]).map((field) => field.toLowerCase());
+  const pidIndex = header.indexOf('pid');
+  const processIndex = header.indexOf('process');
+  const inputIndex = header.indexOf('bytes_in');
+  const outputIndex = header.indexOf('bytes_out');
+  const processes = lines.slice(headerIndex + 1).map((line) => {
+    const fields = csvFields(line);
+    const processId = pid(fields[pidIndex]);
+    const input = number(fields[inputIndex]);
+    const output = number(fields[outputIndex]);
+    if (!processId || input === null || output === null) return null;
+    return Object.freeze({ pid: processId, name: fields[processIndex] || 'unknown', sentBytesPerSecond: output, receivedBytesPerSecond: input, platform, source: 'nettop', units: 'bytes-per-sample' });
+  }).filter(Boolean);
+  return Object.freeze({ version: PROCESS_NETWORK_VERSION, available: processes.length > 0, platform, processes: Object.freeze(processes.slice(0, MAX_PROCESSES)), truncated: processes.length > MAX_PROCESSES, source: 'nettop' });
+}
+
 export function parseProcessNetworkTelemetry(output, { platform = 'linux' } = {}) {
+  if (platform === 'darwin') return parseNettop(output, platform);
+  if (platform !== 'linux') return unavailable(platform, 'platform per-process network counters unavailable');
   const lines = String(output || '').split(/\r?\n/).filter((line) => line.trim());
   const processes = lines.map(parseTraceLine).filter(Boolean).map((item) => Object.freeze({ ...item, platform, source: 'nethogs', units: 'bytes-per-second' }));
   return Object.freeze({ version: PROCESS_NETWORK_VERSION, available: processes.length > 0, platform, processes: Object.freeze(processes.slice(0, MAX_PROCESSES)), truncated: processes.length > MAX_PROCESSES, source: 'nethogs' });
 }
 
 export async function collectProcessNetworkTelemetry({ platform = process.platform, commandRunner } = {}) {
-  if (platform !== 'linux') return unavailable(platform, 'platform per-process network counters unavailable');
+  if (platform !== 'linux' && platform !== 'darwin') return unavailable(platform, 'platform per-process network counters unavailable');
   if (!commandRunner || typeof commandRunner.run !== 'function') return unavailable(platform, 'command runner unavailable');
   try {
-    const result = await commandRunner.run('nethogs', ['-t', '-c', '1', '-d', '1', '-v', '0'], { timeoutMs: 5000, maxOutputBytes: 65536 });
-    if (result?.code !== 0) return unavailable(platform, result?.stderr || 'nethogs command failed');
+    const command = platform === 'linux'
+      ? ['nethogs', ['-t', '-c', '1', '-d', '1', '-v', '0']]
+      : ['nettop', ['-P', '-L', '1', '-x', '-n', '-J', 'pid,process,bytes_in,bytes_out']];
+    const result = await commandRunner.run(command[0], command[1], { timeoutMs: 5000, maxOutputBytes: 65536 });
+    if (result?.code !== 0) return unavailable(platform, result?.stderr || `${command[0]} command failed`);
     return parseProcessNetworkTelemetry(result.stdout, { platform });
   } catch (error) {
     return unavailable(platform, error.message);
