@@ -115,6 +115,17 @@ function driveSample(facts) {
   return { available: source.available === true, count: drives.length, degraded: count(drives, (item) => item.health === 'degraded'), failed: count(drives, (item) => item.health === 'failed') };
 }
 
+function volumeSample(facts) {
+  const source = record(facts.volumes) ? facts.volumes : {};
+  const volumes = rows(source.volumes).map((item) => Object.freeze({
+    mount: text(item.mount),
+    totalBytes: nonNegative(item.totalBytes),
+    freeBytes: nonNegative(item.freeBytes),
+    usedBytes: nonNegative(item.usedBytes)
+  })).filter((item) => item.mount);
+  return { available: source.available === true, volumes };
+}
+
 function processSample(facts) {
   const processes = rows(facts.processes);
   const abnormal = processes.filter((process) => process.abnormal === true || ['crashed', 'failed', 'zombie', 'unresponsive'].includes(text(process.state)?.toLowerCase()));
@@ -175,6 +186,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const batteries = samples.map((entry) => batterySample(entry.facts));
   const pagefile = samples.map((entry) => pagefileSample(entry.facts));
   const drives = samples.map((entry) => driveSample(entry.facts));
+  const volumes = samples.map((entry) => volumeSample(entry.facts));
   const processes = samples.map((entry) => processSample(entry.facts));
   const network = samples.map((entry) => networkSample(entry.facts));
   const networkRates = networkRateSamples(samples);
@@ -182,6 +194,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
   const cleanup = samples.map((entry) => cleanupSample(entry, entry.facts));
   const policy = buildWorkstationPolicyPlan(samples.at(-1)?.facts || {});
   const storageFree = finiteValues(storage.map((item) => item.freeBytes));
+  const volumeFree = finiteValues(volumes.flatMap((sample) => sample.volumes.map((item) => item.freeBytes)));
   const memoryUsed = finiteValues(memory.map((item) => item.usedBytes));
   const memoryPercent = finiteValues(memory.map((item) => item.usedPercent));
   const cpuPercent = finiteValues(cpuGpu.map((item) => item.cpuPercent));
@@ -222,6 +235,7 @@ export function buildDailyWorkstationReport(entries, { now = Date.now, windowMs 
     battery: Object.freeze({ latestChargePercent: last(finiteValues(batteries.map((item) => item.chargePercent))), minimumHealthPercent: minimum(batteryHealth), latestCycleCount: last(finiteValues(batteries.map((item) => item.cycleCount))) }),
     pagefile: Object.freeze({ peakPressurePercent: maximum(pagefilePressure), latestCurrentBytes: last(finiteValues(pagefile.map((item) => item.currentBytes))), pressureEvents: pagefileEvents, systemManaged: true, cleanup: 'never' }),
     drives: Object.freeze({ latestCount: last(drives.map((item) => item.count)), latestDegradedCount: last(drives.map((item) => item.degraded)), latestFailedCount: last(drives.map((item) => item.failed)), observedSamples: count(drives, (item) => item.available) }),
+    volumes: Object.freeze({ latest: Object.freeze(volumes.at(-1)?.volumes || []), latestCount: volumes.at(-1)?.volumes.length || 0, minimumFreeBytes: minimum(volumeFree), observedSamples: count(volumes, (item) => item.available) }),
     processes: Object.freeze({ peakCount: maximum(processes.map((item) => item.count)), abnormalEvents, latestTopMemory: processes.at(-1)?.topMemory || null }),
     network: Object.freeze({ latestReceivedBytes: last(network.map((item) => item.receivedBytes)), latestSentBytes: last(network.map((item) => item.sentBytes)), latestInterfaceCount: last(network.map((item) => item.interfaceCount)), latestConnectionCount: last(network.map((item) => item.connectionCount)), latestReceivedBytesPerSecond: last(networkRates.map((item) => item.receivedBytesPerSecond)), latestSentBytesPerSecond: last(networkRates.map((item) => item.sentBytesPerSecond)), peakReceivedBytesPerSecond: maximum(receivedRates), peakSentBytesPerSecond: maximum(sentRates), rateSamples: count(networkRates, (item) => item.state === 'rate-ready'), counterResetEvents: count(networkRates, (item) => item.state === 'counter-reset'), latestRateState: last(networkRates.map((item) => item.state)) }),
     development: Object.freeze({ activeClasses, contentionEvents: count(workloads, (item) => item.contention) }),

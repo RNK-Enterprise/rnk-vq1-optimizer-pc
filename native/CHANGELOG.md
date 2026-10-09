@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added the bounded cross-platform `volume-storage` observer and system-facts
+  integration for mounted-volume free/total/used evidence. PowerShell
+  `Get-Volume`, Linux `df`, and macOS `df` remain fixed read-only commands;
+  malformed, unsupported, and failed volume probes stay unavailable.
 - Added an approval-gated, reversible user-level daily-report scheduler for
   Windows Task Scheduler, Linux systemd user timers, and macOS launchd agents;
   schedule artifacts are fixed, local, and cleaned up on failed installation.

@@ -85,6 +85,7 @@ node native/cli.mjs game-session-monitor --game-names game.exe \
   --background-pids 1234 --approve-pids 1234 --auto-apply --confirm
 node native/cli.mjs drive-health
 node native/cli.mjs drive-health --smart-device /dev/nvme0n1
+node native/cli.mjs volume-storage
 node native/cli.mjs filesystem-health --root /
 node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
@@ -376,6 +377,11 @@ path after strict device-path validation. It reports available temperature,
 percentage-used, power-on-hour, unsafe-shutdown, and critical-warning
 attributes. Missing `smartctl`, unsupported devices, attributes, and command
 failures remain unavailable.
+
+`volume-storage` inventories mounted volumes with fixed read-only commands.
+Windows uses `Get-Volume`; Linux and macOS use `df`. It reports mount, device,
+filesystem, total, free, used, health, and read-only evidence without treating
+an unavailable volume as healthy or selecting a placement destination.
 
 `drive-benchmark` writes one bounded temporary sample under an explicit root,
 reads it back, verifies the byte count, reports write/read throughput, and

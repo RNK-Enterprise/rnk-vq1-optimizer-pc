@@ -18,6 +18,7 @@ import { applyWorkloadBudget, previewWorkloadBudget } from './workload-budget.js
 import { applyResourceLimits, previewResourceLimits } from './resource-limits.js';
 import { createGameSessionMonitor } from './game-session.js';
 import { collectDriveHealth, collectSmartHealth } from './drive-health.js';
+import { collectVolumeStorage } from './volume-storage.js';
 import { collectFilesystemHealth } from './filesystem-health.js';
 import { benchmarkDrive } from './drive-benchmark.js';
 import { buildNetworkContentionPlan } from './network-manager.js';
@@ -145,6 +146,10 @@ async function runDriveHealthCommand(args) {
   const inventory = await collectDriveHealth({ platform: process.platform, commandRunner: createCommandRunner() });
   if (typeof args['smart-device'] !== 'string') return inventory;
   return { inventory, smart: await collectSmartHealth(args['smart-device'], { platform: process.platform, commandRunner: createCommandRunner() }) };
+}
+
+async function runVolumeStorageCommand() {
+  return collectVolumeStorage({ platform: process.platform, commandRunner: createCommandRunner() });
 }
 
 async function runFilesystemHealthCommand(args) {
@@ -307,6 +312,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (['resource-limit-preview', 'resource-limit-apply'].includes(command)) return runResourceLimitCommand(command, args);
   if (command === 'game-session-monitor') return runGameSessionCommand(args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
+  if (command === 'volume-storage') return runVolumeStorageCommand();
   if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);
   if (command === 'network-overview') return runNetworkOverviewCommand(args);

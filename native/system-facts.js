@@ -23,6 +23,7 @@ import os from 'os';
 import { collectStoragePressureSnapshot } from './storage-pressure.js';
 import { collectWorkstationTelemetry } from './workstation-telemetry.js';
 import { collectDriveHealth } from './drive-health.js';
+import { collectVolumeStorage } from './volume-storage.js';
 
 function percentage(used, total) {
   if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(used)) return null;
@@ -99,6 +100,7 @@ export async function collectSystemFacts({ platform = process.platform, osImpl =
   const storage = await collectStoragePressureSnapshot({ platform, commandRunner });
   const telemetry = await collectWorkstationTelemetry({ platform, commandRunner });
   const drives = await collectDriveHealth({ platform, commandRunner });
+  const volumes = await collectVolumeStorage({ platform, commandRunner });
   facts.storage = storage.storage;
   facts.pagefile = storage.pagefile;
   facts.storagePressure = storage.pressure;
@@ -112,5 +114,6 @@ export async function collectSystemFacts({ platform = process.platform, osImpl =
   facts.startup = telemetry.startup;
   facts.telemetry = telemetry;
   facts.drives = drives;
+  facts.volumes = volumes;
   return facts;
 }
