@@ -498,8 +498,9 @@ Odinn's sign-off.
 
 Public release tags must be annotated, signed, and point at the exact tested
 commit. Release automation produces a deterministic archive, SHA-256
-checksum, provenance metadata, and a GitHub build attestation. Unsigned or
-floating branch installs are not release evidence.
+checksum, provenance metadata, and a GitHub build attestation. The release
+workflow runs the same full `npm run verify` gate before producing those
+artifacts. Unsigned or floating branch installs are not release evidence.
 
 ## License and attribution
 

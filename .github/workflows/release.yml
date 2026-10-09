@@ -32,8 +32,7 @@ jobs:
           test -n "$RNK_RELEASE_PUBLIC_KEY"
           printf '%s\n' "$RNK_RELEASE_PUBLIC_KEY" | gpg --batch --import
       - run: git verify-tag --raw "$GITHUB_REF_NAME"
-      - run: npm test -- --runInBand
-      - run: npm run lint
+      - run: npm run verify
       - run: git archive --format=tar.gz --prefix=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}/ --output=rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz "${GITHUB_SHA}"
       - run: sha256sum "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz" > "rnk-vq1-optimizer-pc-${GITHUB_REF_NAME}.tar.gz.sha256"
       - name: Build and verify runtime bundles
