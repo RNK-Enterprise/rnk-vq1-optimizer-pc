@@ -96,6 +96,8 @@ node native/cli.mjs drive-benchmark --root "$HOME/.cache"
 node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
   --samples '[{"pid":1234,"role":"game","receivedBytesPerSecond":1000}]'
 node native/cli.mjs network-rate-monitor --interval-seconds 5
+node native/cli.mjs network-monitor --game-pid 1234 --latency-ms 80 \
+  --interval-seconds 5 --download-threshold-bytes-per-second 1048576
 node native/cli.mjs file-inspect --root "$HOME/Downloads" \
   --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \

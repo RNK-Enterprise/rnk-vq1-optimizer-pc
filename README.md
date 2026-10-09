@@ -179,6 +179,7 @@ node native/cli.mjs network-overview --game-pid 1234 --latency-ms 80 \
 node native/cli.mjs process-rate-monitor --interval-seconds 5
 node native/cli.mjs network-monitor --game-pid 1234 --latency-ms 80 \
   --interval-seconds 5 --download-threshold-bytes-per-second 1048576
+# Equivalent package command: npm run native:network:contention -- --game-pid 1234
 node native/cli.mjs file-inspect --root "$HOME/Downloads" \
   --target-root /mnt/archive --hash-files --protected-root "$HOME/projects"
 node native/cli.mjs placement-preview --source-root "$HOME/Downloads" \
