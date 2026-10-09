@@ -8,7 +8,7 @@
  * operating-system changes require --apply and destructive approvals.
  */
 
-import { pathToFileURL } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { NativeOptimizerAgent } from './agent.js';
 import { createCommandRunner } from './command-runner.js';
 import { createPlatformAdapter } from './platform.js';
@@ -54,6 +54,7 @@ import {
 } from './cli-maintenance.mjs';
 import { buildMediaPanelPlan, runMediaCommand, runMediaPlayerCommand } from './cli-media.mjs';
 import { applyReportViewer, buildReportViewerPlan } from './report-viewer.js';
+import { applyWorkstationShell, buildWorkstationShellPlan } from './workstation-shell.js';
 
 export function agentFromArgs(args, { adapter = createPlatformAdapter(), env = process.env } = {}) {
   return new NativeOptimizerAgent({
@@ -151,6 +152,12 @@ export async function runDriveHealthCommand(args, { inventoryCollector = collect
 
 export async function runReportViewerCommand(args, { apply = applyReportViewer, commandRunner = createCommandRunner(), platform = process.platform } = {}) {
   const plan = buildReportViewerPlan(requireOption(args, 'path'), { platform });
+  if (args.confirm !== true) return plan;
+  return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
+}
+
+export async function runWorkstationShellCommand(args, { apply = applyWorkstationShell, commandRunner = createCommandRunner(), platform = process.platform, nodePath = process.execPath } = {}) {
+  const plan = buildWorkstationShellPlan({ platform, historyPath: requireOption(args, 'path'), reportPath: requireOption(args, 'output-path'), cliPath: fileURLToPath(new URL('./cli.mjs', import.meta.url)), nodePath });
   if (args.confirm !== true) return plan;
   return { plan, result: await apply(plan, { commandRunner, approved: true, dryRun: false }) };
 }
@@ -352,6 +359,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (command === 'game-session-monitor') return runGameSessionCommand(args);
   if (command === 'drive-health') return runDriveHealthCommand(args);
   if (command === 'report-open') return runReportViewerCommand(args);
+  if (command === 'steward-dashboard') return runWorkstationShellCommand(args);
   if (command === 'volume-storage') return runVolumeStorageCommand();
   if (command === 'filesystem-health') return runFilesystemHealthCommand(args);
   if (command === 'drive-benchmark') return runDriveBenchmarkCommand(args);

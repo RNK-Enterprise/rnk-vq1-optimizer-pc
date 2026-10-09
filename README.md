@@ -400,6 +400,8 @@ boundaries.
 An optional caller-owned language adapter may translate a bounded JSON response
 into a canonical question; the deterministic assistant remains the authority.
 The CLI exposes this boundary as `assistant-adapted` with `--adapter-response`.
+`steward-dashboard --path HISTORY --output-path REPORT.html --confirm` captures
+one report and opens the local HTML dashboard through the fixed platform opener.
 When supplied a workstation report, it also answers which observed process is
 the latest CPU or I/O leader; without sampled report evidence it returns an
 observation-required result.

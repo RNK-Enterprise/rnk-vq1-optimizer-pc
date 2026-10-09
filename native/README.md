@@ -461,6 +461,8 @@ into a canonical question; invalid or low-confidence output is refused and no
 adapter output is executed.
 The CLI form is `assistant-adapted --question TEXT --adapter-response JSON`;
 host applications may inject a generator when calling the adapter function.
+`steward-dashboard` composes one snapshot and local HTML open after explicit
+confirmation; it is a session launcher, not a background service or tray.
 
 `policy-preview` combines local facts into bounded storage, memory/pagefile,
 thermal, gaming/build, battery, and process handoffs. `policy-approve` marks

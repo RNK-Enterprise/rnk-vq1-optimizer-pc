@@ -26,6 +26,8 @@
   into the deterministic assistant without granting model output execution authority.
 - Exposed that adapter through the explicit `assistant-adapted` CLI boundary;
   its fallback response is caller-supplied JSON, not a network or execution path.
+- Added a cross-platform `steward-dashboard` session launcher that writes one
+  local HTML report and opens it through the fixed shell-free platform opener.
 - Added the reproducible `npm run verify` gate and bounded public-checkout
   identity scanner used by CI and local verification.
 

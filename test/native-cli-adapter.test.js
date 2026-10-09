@@ -33,7 +33,8 @@ import {
   runVolumeStorageCommand,
   runWorkloadBudgetCommand,
   runWorkloadCommand,
-  runWorkstationPolicyCommand
+  runWorkstationPolicyCommand,
+  runWorkstationShellCommand
 } from '../native/cli.mjs';
 
 const facts = { platform: 'linux', processes: [] };
@@ -133,6 +134,8 @@ describe('native top-level CLI adapter', () => {
     await fs.writeFile(reportPath, '<html></html>');
     await expect(runReportViewerCommand({ path: reportPath }, { platform: 'linux', commandRunner })).resolves.toMatchObject({ state: 'review-ready' });
     await expect(runReportViewerCommand({ path: reportPath, confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'opened' })) })).resolves.toMatchObject({ result: { state: 'opened' } });
+    await expect(runWorkstationShellCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html') }, { platform: 'linux' })).resolves.toMatchObject({ state: 'review-ready', operation: 'open-workstation-dashboard' });
+    await expect(runWorkstationShellCommand({ path: path.join(root, 'history.jsonl'), 'output-path': path.join(root, 'report.html'), confirm: true }, { platform: 'linux', commandRunner, apply: jest.fn(async () => ({ state: 'applied' })) })).resolves.toMatchObject({ result: { state: 'applied' } });
     await expect(runVolumeStorageCommand({ collector: async () => ({ state: 'volumes' }), commandRunner })).resolves.toEqual({ state: 'volumes' });
     await expect(runFilesystemHealthCommand({ root }, { collector: async () => ({ state: 'filesystem' }), commandRunner })).resolves.toEqual({ state: 'filesystem' });
     await expect(runDriveBenchmarkCommand({ root, bytes: '8' }, { benchmark: async (options) => ({ state: 'benchmark', options }) })).resolves.toMatchObject({ state: 'benchmark', options: { root, bytes: 8 } });
@@ -223,6 +226,7 @@ describe('native top-level CLI adapter', () => {
     await expect(runCli(['download-monitor'])).rejects.toThrow('--root is required');
     await expect(runCli(['game-session-monitor', '--auto-apply'])).rejects.toThrow('requires --confirm');
     await expect(runCli(['report-open'])).rejects.toThrow('--path is required');
+    await expect(runCli(['steward-dashboard'])).rejects.toThrow('--path is required');
     await expect(runCli(['filesystem-health'])).rejects.toThrow('--root is required');
     await expect(runCli(['drive-benchmark'])).rejects.toThrow('--root is required');
     await expect(runCli(['network-rate-monitor', '--interval-seconds=0'])).rejects.toThrow('interval');
