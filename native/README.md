@@ -312,11 +312,12 @@ default-player opener. Without confirmation it returns a preview or approval
 result; the optimizer does not embed a decoder or claim control over external
 player state.
 
-`network-overview` combines interface facts with optional explicit per-process
-rates, observed connection ownership, and latency to identify gaming/download
-contention. Per-process
-bandwidth remains unavailable when the host does not provide counters, and no
-network throttle is claimed or applied.
+`network-overview` combines interface facts with native Linux NetHogs or macOS
+`nettop` per-process rates when available, optional explicit caller rates,
+observed connection ownership, and latency to identify gaming/download
+contention. Per-process bandwidth remains unavailable when the host tool or
+permission boundary does not provide it, and no network throttle is claimed
+or applied.
 
 Workstation facts also include fixed read-only connection evidence from
 Windows `Get-NetTCPConnection`, Linux `ss`, or macOS `lsof` when available.
@@ -331,8 +332,8 @@ intercept traffic or claim bandwidth enforcement.
 
 `network-rate-monitor` derives interface receive/send rates from consecutive
 platform counters. The first sample, missing counters, and counter resets stay
-explicitly unavailable. Interface rates do not identify a process; per-process
-bandwidth remains available only when the host supplies that evidence.
+explicitly unavailable. Interface rates do not identify a process; native
+per-process rates remain optional and host-tool dependent.
 
 `process-rate-monitor` derives bounded CPU, read/write I/O, memory-delta, and
 observed GPU-memory evidence for matching process identities from consecutive

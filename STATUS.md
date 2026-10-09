@@ -40,8 +40,8 @@ wishlist:
    tray, and System Drive Guard launchers now exist; live host/tool proof
    remains.
 2. Platform-native per-process network byte counters and traffic shaping. The
-   Linux facts path now consumes bounded NetHogs rate evidence when available;
-   Windows/macOS counter availability and all traffic shaping remain explicit
+   Linux and macOS facts paths now consume bounded NetHogs/nettop evidence when
+   available; Windows counters and all traffic shaping remain explicit
    host-dependent or unsupported.
 3. Safe GPU hard caps and universal frame-rate control. Current GPU evidence is
    observational and no platform-safe portable cap is claimed.
