@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Split the native CLI into bounded argument, maintenance, media, and
+  dispatch modules; each source file remains below the 500-line limit without
+  changing the command surface or approval defaults.
 - Added fixed shell-free Linux swap observation as separate system-managed
   pagefile evidence; swap remains permanently excluded from cleanup.
 - Extended system-managed swap observation to macOS through fixed `sysctl`
