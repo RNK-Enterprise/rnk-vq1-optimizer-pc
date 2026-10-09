@@ -17,7 +17,8 @@ export function defaultGitExec(file, args) {
   return execFileSync(file, args, { encoding: 'utf8' });
 }
 
-export function validateReleaseProvenance({ tag, currentCommit, taggedCommit, tagType, tagContents } = {}) {
+export function validateReleaseProvenance(input) {
+  const { tag, currentCommit, taggedCommit, tagType, tagContents } = input && typeof input === 'object' ? input : {};
   if (typeof tag !== 'string' || !RELEASE_TAG.test(tag)) throw new Error('release tag must match vX.Y.Z');
   if (!COMMIT.test(currentCommit) || !COMMIT.test(taggedCommit)) throw new Error('release commits must be full SHA-1 values');
   if (currentCommit.toLowerCase() !== taggedCommit.toLowerCase()) throw new Error('release tag does not point to the tested commit');
